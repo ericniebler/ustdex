@@ -15,6 +15,10 @@
  */
 #pragma once
 
+#include "config.hpp"
+
+#include <utility>
+
 namespace ustdex {
   template <class...>
   using _mvoid = void;

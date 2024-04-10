@@ -39,7 +39,7 @@ namespace ustdex {
       class Then,
       template <class, class...>
       class Else>
-    extern Else _gather_sig<ActualTag(Ts...), WantedTag, Then, Else>;
+    extern Else<ActualTag, Ts...> _gather_sig<ActualTag(Ts...), WantedTag, Then, Else>;
 
     template <
       class... Ts,
