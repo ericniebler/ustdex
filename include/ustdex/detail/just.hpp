@@ -47,7 +47,7 @@ namespace ustdex {
       _tuple_for<Ts...> _values;
 
       auto get_completion_signatures(_ignore = {}) const noexcept
-        -> completion_signatures<set_value_t(Ts...)> {
+        -> completion_signatures<SetTag(Ts...)> {
         return {};
       }
 
