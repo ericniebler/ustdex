@@ -15,9 +15,13 @@
  */
 #pragma once
 
-#include "run_loop.hpp"
+#include "config.hpp"
 
-#include <thread>
+#ifndef USTDEX_CUDA
+
+#  include "run_loop.hpp"
+
+#  include <thread>
 
 namespace ustdex {
   struct thread_context {
@@ -45,3 +49,5 @@ namespace ustdex {
     run_loop _loop;
   };
 } // namespace ustdex
+
+#endif

@@ -24,7 +24,7 @@ namespace ustdex {
   using _fnptr = Ty && (*) () noexcept;
 
   template <class Ty>
-  Ty&& _declval() noexcept;
+  Ty &&_declval() noexcept;
 
 #if __CUDACC__
 #  define DECLVAL(...) _declval<__VA_ARGS__>()

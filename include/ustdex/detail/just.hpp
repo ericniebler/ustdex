@@ -24,9 +24,9 @@
 namespace ustdex {
   template <class JustTag, class SetTag>
   struct _just {
-  #ifndef __CUDACC__
-  private:
-  #endif
+#ifndef __CUDACC__
+   private:
+#endif
     template <class Rcvr, class... Ts>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
@@ -36,7 +36,9 @@ namespace ustdex {
       struct _complete_fn {
         opstate_t *_self;
 
-        USTDEX_HOST_DEVICE void operator()(Ts &...ts) const noexcept {
+        USTDEX_HOST_DEVICE
+        void
+          operator()(Ts &...ts) const noexcept {
           SetTag()(static_cast<Rcvr &&>(_self->_rcvr), static_cast<Ts &&>(ts)...);
         }
       };

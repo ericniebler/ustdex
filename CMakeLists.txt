@@ -26,7 +26,8 @@ if (USTDEX_ENABLE_CUDA)
   message(STATUS "ustdex: CUDA support enabled")
   enable_language(CUDA)
   set(CMAKE_CUDA_ARCHITECTURES 86)
-  set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr --extended-lambda --keep ${CMAKE_CUDA_FLAGS}")
+  set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr --extended-lambda --keep \
+                       -DUSTDEX_CUDA=1 ${CMAKE_CUDA_FLAGS}")
 endif()
 
 add_library(ustdex INTERFACE)

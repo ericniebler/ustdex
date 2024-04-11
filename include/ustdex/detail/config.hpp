@@ -19,14 +19,14 @@
 #include <type_traits>
 
 #ifdef __CUDACC__
-#  define USTDEX_DEVICE __device__
+#  define USTDEX_DEVICE      __device__
 #  define USTDEX_HOST_DEVICE __host__ __device__
 #  define USTDEX_TRY
 #  define USTDEX_CATCH(...) if constexpr (false)
 #else
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE
-#  define USTDEX_TRY try
+#  define USTDEX_TRY   try
 #  define USTDEX_CATCH catch
 #endif
 
@@ -48,8 +48,8 @@
 #  define USTDEX_ATTR_ALWAYS_INLINE
 #endif
 
-#  define USTDEX_INLINE                                                                  \
-    USTDEX_ATTR_ALWAYS_INLINE USTDEX_ATTR_ARTIFICIAL USTDEX_ATTR_NODEBUG inline
+#define USTDEX_INLINE                                                                    \
+  USTDEX_ATTR_ALWAYS_INLINE USTDEX_ATTR_ARTIFICIAL USTDEX_ATTR_NODEBUG inline
 
 #if __has_builtin(__is_same)
 #  define USTDEX_IS_SAME(...) __is_same(__VA_ARGS__)
@@ -71,12 +71,14 @@ namespace ustdex {
   template <class Ty>
   using _remove_reference_t = __remove_reference(Ty);
 } // namespace ustdex
+
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
 #elif __has_builtin(__remove_reference_t)
 namespace ustdex {
   template <class Ty>
   using _remove_reference_t = __remove_reference_t(Ty);
 } // namespace ustdex
+
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
 #else
 #  define USTDEX_REMOVE_REFERENCE(...) std::remove_reference_t<__VA_ARGS__>
@@ -90,4 +92,10 @@ namespace ustdex {
 
 #ifndef USTDEX_ASSERT
 #  define USTDEX_ASSERT assert
+#endif
+
+#ifdef USTDEX_CUDA
+#  if USTDEX_CUDA == 0
+#    undef USTDEX_CUDA
+#  endif
 #endif

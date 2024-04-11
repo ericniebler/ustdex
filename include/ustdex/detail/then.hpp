@@ -42,9 +42,9 @@ namespace ustdex {
 
   template <class UponTag, class SetTag>
   struct _upon {
-    #ifndef __CUDACC__
-    private:
-    #endif
+#ifndef __CUDACC__
+   private:
+#endif
     template <class Sndr, class Rcvr, class Fn>
     struct _opstate_t : _immovable {
       using operation_state_concept = operation_state_t;
@@ -77,9 +77,10 @@ namespace ustdex {
         } else
           USTDEX_TRY {
             _set<true>(static_cast<Ts &&>(ts)...);
-          } USTDEX_CATCH (...) {
-            ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
           }
+        USTDEX_CATCH(...) {
+          ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+        }
       }
 
       template <class Tag, class... Ts>

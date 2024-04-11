@@ -25,9 +25,9 @@
 
 namespace ustdex {
   USTDEX_DEVICE constexpr struct continue_on_t {
-    #ifndef __CUDACC__
+#ifndef __CUDACC__
    private:
-   #endif
+#endif
     template <class... As>
     using _set_value_tuple_t = _tuple_for<set_value_t, _decay_t<As>...>;
 

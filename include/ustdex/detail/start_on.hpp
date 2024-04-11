@@ -24,9 +24,9 @@
 
 namespace ustdex {
   USTDEX_DEVICE constexpr struct start_on_t {
-    #ifndef __CUDACC__
+#ifndef __CUDACC__
    private:
-   #endif
+#endif
     template <class Sch, class Rcvr>
     struct _rcvr_t {
       using receiver_concept = receiver_t;
