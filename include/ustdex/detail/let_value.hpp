@@ -22,16 +22,21 @@
 #include "variant.hpp"
 
 namespace ustdex {
+  template <class Sndr, class Fn>
+  struct _let_function_must_return_a_sender_ { };
+
   template <class LetTag, class SetTag>
   struct _let {
+    #ifndef __CUDACC__
    private:
+   #endif
     template <class, class...>
     using _empty_tuple = _tuple_for<>;
 
     /// @brief Computes the type of a variant of tuples to hold the results of
     /// the predecessor sender.
     template <class CvSndr, class Env>
-    using _results = _impl::_gather_completion_signatures<
+    using _results = _gather_completion_signatures<
       completion_signatures_of_t<CvSndr, Env>,
       SetTag,
       _decayed_tuple,
@@ -39,7 +44,7 @@ namespace ustdex {
       _variant>;
 
     template <class Fn, class Rcvr>
-    struct _let_fn_opstate {
+    struct _opstate_fn {
       template <class... As>
       using _f = connect_result_t<_call_result_t<Fn, _decay_t<As> &...>, Rcvr *>;
     };
@@ -47,10 +52,10 @@ namespace ustdex {
     /// @brief Computes the type of a variant of operation states to hold
     /// the second operation state.
     template <class CvSndr, class Fn, class Rcvr>
-    using _opstate2_t = _impl::_gather_completion_signatures<
+    using _opstate2_t = _gather_completion_signatures<
       completion_signatures_of_t<CvSndr, Rcvr>,
       SetTag,
-      _let_fn_opstate<Fn, Rcvr>::template _f,
+      _opstate_fn<Fn, Rcvr>::template _f,
       _empty_tuple,
       _variant>;
 
@@ -69,7 +74,8 @@ namespace ustdex {
       connect_result_t<CvSndr, _opstate_t *> _opstate1;
       _opstate2_t<CvSndr, Fn, Rcvr> _opstate2;
 
-      USTDEX_HOST_DEVICE _opstate_t(CvSndr &&sndr, Fn fn, Rcvr rcvr)
+      USTDEX_HOST_DEVICE _opstate_t(CvSndr &&sndr, Fn fn, Rcvr rcvr) noexcept(
+        _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _opstate_t *>)
         : _rcvr(static_cast<Rcvr &&>(rcvr))
         , _fn(static_cast<Fn &&>(fn))
         , _opstate1(ustdex::connect(static_cast<CvSndr &&>(sndr), this)) {
@@ -113,27 +119,46 @@ namespace ustdex {
         _complete(set_stopped_t());
       }
 
-      auto get_env() const noexcept {
+      USTDEX_HOST_DEVICE auto get_env() const noexcept {
         return ustdex::get_env(_rcvr);
       }
     };
 
     template <class Fn, class... Env>
     struct _completions_fn {
+      template <class Ty>
+      using _ensure_sender = _mif<
+        _is_sender<Ty> || _is_mexception<Ty>,
+        Ty,
+        _mexception<_let_function_must_return_a_sender_<Ty, Fn>>>;
+
+      // This computes the result of calling the function with the
+      // predecessor sender's results. If the function is not callable with
+      // the results, it returns an _mexception.
       template <class... As>
-      using _f =
-        completion_signatures_of_t<_call_result_t<Fn, _decay_t<As> &...>, Env...>;
+      using _call_result = _minvoke<
+        _mtry_quote<_call_result_t, _mexception<_not_callable_with<Fn, As...>>>,
+        Fn,
+        _decay_t<As> &...>;
+
+      // This computes the completion signatures of the `let_*` sender,
+      // or returns an _mexception if it cannot.
+      template <class... As>
+      using _f = _minvoke<
+        _mtry_quote<completion_signatures_of_t>,
+        _ensure_sender<_call_result<As...>>,
+        Env...>;
     };
 
     /// @brief Computes the completion signatures of the
     /// `let_(value|error|stopped)` sender.
     template <class CvSndr, class Fn, class... Env>
-    using _completions = _impl::_gather_completion_signatures<
+    using _completions = _gather_completion_signatures<
       completion_signatures_of_t<CvSndr, Env...>,
       SetTag,
       _completions_fn<Fn, Env...>::template _f,
-      _impl::_default_completions,
-      _impl::_concat_completion_signatures>;
+      _default_completions,
+      _concat_completion_signatures>;
 
     /// @brief The `let_(value|error|stopped)` sender.
     /// @tparam Sndr The predecessor sender.
@@ -148,45 +173,51 @@ namespace ustdex {
 
       template <class... Env>
       auto get_completion_signatures(const Env &...) && //
-        -> _completions<Sndr, Fn, Env...> {
-        return {};
-      }
+        -> _completions<Sndr, Fn, Env...>;
 
       template <class... Env>
       auto get_completion_signatures(const Env &...) const & //
-        -> _completions<const Sndr &, Fn, Env...> {
-        return {};
+        -> _completions<const Sndr &, Fn, Env...>;
+
+      template <class Rcvr>
+      USTDEX_HOST_DEVICE auto connect(Rcvr &&rcvr) && noexcept(
+        _nothrow_constructible<_opstate_t<Sndr, Fn, Rcvr>, Sndr, Fn, Rcvr>)
+        -> _opstate_t<Sndr, Fn, Rcvr> {
+        return _opstate_t<Sndr, Fn, Rcvr>(
+          static_cast<Sndr &&>(_sndr),
+          static_cast<Fn &&>(_fn),
+          static_cast<Rcvr &&>(rcvr));
       }
 
       template <class Rcvr>
-      auto connect(Rcvr &&rcvr) && {
-        return _opstate_t<Sndr, Fn, Rcvr>{
-          static_cast<Sndr &&>(_sndr), _fn, static_cast<Rcvr &&>(rcvr)};
+      USTDEX_HOST_DEVICE auto connect(Rcvr &&rcvr) const & noexcept( //
+        _nothrow_constructible<
+          _opstate_t<const Sndr &, Fn, Rcvr>,
+          const Sndr &,
+          const Fn &,
+          Rcvr>) //
+        -> _opstate_t<const Sndr &, Fn, Rcvr> {
+        return _opstate_t<const Sndr &, Fn, Rcvr>(_sndr, _fn, static_cast<Rcvr &&>(rcvr));
       }
 
-      template <class Rcvr>
-      auto connect(Rcvr &&rcvr) const & {
-        return _opstate_t<const Sndr &, Fn, Rcvr>{_sndr, _fn, static_cast<Rcvr &&>(rcvr)};
-      }
-
-      decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
         return ustdex::get_env(_sndr);
       }
     };
 
    public:
     template <class Sndr, class Fn>
-    _sndr_t<Sndr, Fn> operator()(Sndr sndr, Fn fn) const {
+    USTDEX_HOST_DEVICE _sndr_t<Sndr, Fn> operator()(Sndr sndr, Fn fn) const {
       return _sndr_t<Sndr, Fn>{{}, static_cast<Fn &&>(fn), static_cast<Sndr &&>(sndr)};
     }
   };
 
-  inline constexpr struct let_value_t : _let<let_value_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct let_value_t : _let<let_value_t, set_value_t> {
   } let_value{};
 
-  inline constexpr struct let_error_t : _let<let_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct let_error_t : _let<let_error_t, set_error_t> {
   } let_error{};
 
-  inline constexpr struct let_stopped_t : _let<let_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct let_stopped_t : _let<let_stopped_t, set_stopped_t> {
   } let_stopped{};
 } // namespace ustdex

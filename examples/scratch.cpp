@@ -41,7 +41,9 @@ struct sink {
 };
 
 template <class>
-struct undef;
+[[deprecated]]
+void print() {
+}
 
 int main() {
   run_loop loop;
@@ -67,7 +69,6 @@ int main() {
   });
   auto o3 = connect(s3, sink{});
   start(o3);
-  // undef<X> x;
 
   // _variant<int, std::string, _tuple_for<int, int>> v{};
   // v.emplace<_tuple_for<int, int>>(1,2);

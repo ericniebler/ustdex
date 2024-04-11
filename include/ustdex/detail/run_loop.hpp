@@ -35,7 +35,7 @@ namespace ustdex {
       _task *_tail;
     };
 
-    void _execute() noexcept {
+    USTDEX_HOST_DEVICE void _execute() noexcept {
       (*_execute_fn)(this);
     }
   };
@@ -45,30 +45,30 @@ namespace ustdex {
     run_loop *_loop;
     [[no_unique_address]] Rcvr _rcvr;
 
-    static void _execute_impl(_task *_p) noexcept {
+    USTDEX_HOST_DEVICE static void _execute_impl(_task *_p) noexcept {
       auto &_rcvr = static_cast<_operation *>(_p)->_rcvr;
-      try {
+      USTDEX_TRY {
         if (get_stop_token(get_env(_rcvr)).stop_requested()) {
           set_stopped(static_cast<Rcvr &&>(_rcvr));
         } else {
           set_value(static_cast<Rcvr &&>(_rcvr));
         }
-      } catch (...) {
+      } USTDEX_CATCH (...) {
         set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
       }
     }
 
-    explicit _operation(_task *_tail) noexcept
+    USTDEX_HOST_DEVICE explicit _operation(_task *_tail) noexcept
       : _task{._tail = _tail} {
     }
 
-    _operation(_task *_next, run_loop *_loop, Rcvr _rcvr)
+    USTDEX_HOST_DEVICE _operation(_task *_next, run_loop *_loop, Rcvr _rcvr)
       : _task{{}, _next, {&_execute_impl}}
       , _loop{_loop}
       , _rcvr{static_cast<Rcvr &&>(_rcvr)} {
     }
 
-    void start() & noexcept;
+    USTDEX_HOST_DEVICE void start() & noexcept;
   };
 
   class run_loop {
@@ -92,7 +92,7 @@ namespace ustdex {
           set_stopped_t()>;
 
         template <class Rcvr>
-        auto connect(Rcvr _rcvr) const noexcept -> _operation<Rcvr> {
+        USTDEX_HOST_DEVICE auto connect(Rcvr _rcvr) const noexcept -> _operation<Rcvr> {
           return {&_loop->_head, _loop, static_cast<Rcvr &&>(_rcvr)};
         }
 
@@ -103,16 +103,16 @@ namespace ustdex {
           run_loop *_loop;
 
           template <class Tag>
-          auto query(get_completion_scheduler_t<Tag>) const noexcept -> _scheduler {
+          USTDEX_HOST_DEVICE auto query(get_completion_scheduler_t<Tag>) const noexcept -> _scheduler {
             return _loop->get_scheduler();
           }
         };
 
-        auto get_env() const noexcept -> _env {
+        USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env {
           return _env{_loop};
         }
 
-        explicit _schedule_task(run_loop *_loop) noexcept
+        USTDEX_HOST_DEVICE explicit _schedule_task(run_loop *_loop) noexcept
           : _loop(_loop) {
         }
 
@@ -121,11 +121,11 @@ namespace ustdex {
 
       friend run_loop;
 
-      explicit _scheduler(run_loop *_loop) noexcept
+      USTDEX_HOST_DEVICE explicit _scheduler(run_loop *_loop) noexcept
         : _loop(_loop) {
       }
 
-      auto query(get_forward_progress_guarantee_t) const noexcept
+      USTDEX_HOST_DEVICE auto query(get_forward_progress_guarantee_t) const noexcept
         -> forward_progress_guarantee {
         return forward_progress_guarantee::parallel;
       }
@@ -136,30 +136,30 @@ namespace ustdex {
       using scheduler_concept = scheduler_t;
 
       [[nodiscard]]
-      auto schedule() const noexcept -> _schedule_task {
+      USTDEX_HOST_DEVICE auto schedule() const noexcept -> _schedule_task {
         return _schedule_task{_loop};
       }
 
-      friend bool operator==(const _scheduler &_a, const _scheduler &_b) noexcept {
+      USTDEX_HOST_DEVICE friend bool operator==(const _scheduler &_a, const _scheduler &_b) noexcept {
         return _a._loop == _b._loop;
       }
 
-      friend bool operator!=(const _scheduler &_a, const _scheduler &_b) noexcept {
+      USTDEX_HOST_DEVICE friend bool operator!=(const _scheduler &_a, const _scheduler &_b) noexcept {
         return _a._loop != _b._loop;
       }
     };
 
-    auto get_scheduler() noexcept -> _scheduler {
+    USTDEX_HOST_DEVICE auto get_scheduler() noexcept -> _scheduler {
       return _scheduler{this};
     }
 
-    void run();
+    USTDEX_HOST_DEVICE void run();
 
-    void finish();
+    USTDEX_HOST_DEVICE void finish();
 
    private:
-    void _push_back(_task *_task);
-    auto _pop_front() -> _task *;
+    USTDEX_HOST_DEVICE void _push_back(_task *_task);
+    USTDEX_HOST_DEVICE auto _pop_front() -> _task *;
 
     std::mutex _mutex;
     std::condition_variable _cv;
@@ -168,34 +168,34 @@ namespace ustdex {
   };
 
   template <class Rcvr>
-  inline void _operation<Rcvr>::start() & noexcept {
-    try {
+  USTDEX_HOST_DEVICE inline void _operation<Rcvr>::start() & noexcept {
+    USTDEX_TRY {
       _loop->_push_back(this);
-    } catch (...) {
+    } USTDEX_CATCH (...) {
       set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
     }
   }
 
-  inline void run_loop::run() {
+  USTDEX_HOST_DEVICE inline void run_loop::run() {
     for (_task *_task; (_task = _pop_front()) != &_head;) {
       _task->_execute();
     }
   }
 
-  inline void run_loop::finish() {
+  USTDEX_HOST_DEVICE inline void run_loop::finish() {
     std::unique_lock _lock{_mutex};
     _stop = true;
     _cv.notify_all();
   }
 
-  inline void run_loop::_push_back(_task *_task) {
+  USTDEX_HOST_DEVICE inline void run_loop::_push_back(_task *_task) {
     std::unique_lock _lock{_mutex};
     _task->_next = &_head;
     _head._tail = _head._tail->_next = _task;
     _cv.notify_one();
   }
 
-  inline auto run_loop::_pop_front() -> _task * {
+  USTDEX_HOST_DEVICE inline auto run_loop::_pop_front() -> _task * {
     std::unique_lock _lock{_mutex};
     _cv.wait(_lock, [this] { return _head._next != &_head || _stop; });
     if (_head._tail == _head._next)

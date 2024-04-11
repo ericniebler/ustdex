@@ -23,8 +23,10 @@
 #include "variant.hpp"
 
 namespace ustdex {
-  inline constexpr struct start_on_t {
+  USTDEX_DEVICE constexpr struct start_on_t {
+    #ifndef __CUDACC__
    private:
+   #endif
     template <class Sch, class Rcvr>
     struct _rcvr_t {
       using receiver_concept = receiver_t;
@@ -74,7 +76,7 @@ namespace ustdex {
       connect_result_t<schedule_result_t<Sch>, _opstate_t *> _opstate1;
       connect_result_t<Sndr, _rcvr_t<Sch, Rcvr>> _opstate2;
 
-      _opstate_t(Sch sch, Rcvr rcvr, Sndr &&sndr)
+      USTDEX_HOST_DEVICE _opstate_t(Sch sch, Rcvr rcvr, Sndr &&sndr)
         : _pair{sch, rcvr}
         , _opstate1{connect(schedule(_pair.first), this)}
         , _opstate2{connect(static_cast<Sndr &&>(sndr), _rcvr_t<Sch, Rcvr>{&_pair})} {

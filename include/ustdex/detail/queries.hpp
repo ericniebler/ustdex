@@ -19,14 +19,14 @@
 #include "utility.hpp"
 
 namespace ustdex {
-  inline constexpr struct get_stop_token_t {
+  USTDEX_DEVICE constexpr struct get_stop_token_t {
     template <class Env>
-    auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
+    USTDEX_HOST_DEVICE auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
       static_assert(noexcept(e.query(*this)));
       return e.query(*this);
     }
 
-    auto operator()(_ignore) const noexcept -> never_stop_token {
+    USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> never_stop_token {
       return {};
     }
   } get_stop_token{};
@@ -34,26 +34,26 @@ namespace ustdex {
   template <class Tag>
   struct get_completion_scheduler_t {
     template <class Env>
-    auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
+    USTDEX_HOST_DEVICE auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
       static_assert(noexcept(e.query(*this)));
       return e.query(*this);
     }
   };
 
   template <class Tag>
-  inline constexpr get_completion_scheduler_t<Tag> get_completion_scheduler{};
+  USTDEX_DEVICE constexpr get_completion_scheduler_t<Tag> get_completion_scheduler{};
 
-  inline constexpr struct get_scheduler_t {
+  USTDEX_DEVICE constexpr struct get_scheduler_t {
     template <class Env>
-    auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
+    USTDEX_HOST_DEVICE auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
       static_assert(noexcept(e.query(*this)));
       return e.query(*this);
     }
   } get_scheduler{};
 
-  inline constexpr struct get_delegatee_scheduler_t {
+  USTDEX_DEVICE constexpr struct get_delegatee_scheduler_t {
     template <class Env>
-    auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
+    USTDEX_HOST_DEVICE auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
       static_assert(noexcept(e.query(*this)));
       return e.query(*this);
     }
@@ -65,14 +65,14 @@ namespace ustdex {
     weakly_parallel
   };
 
-  inline constexpr struct get_forward_progress_guarantee_t {
+  USTDEX_DEVICE constexpr struct get_forward_progress_guarantee_t {
     template <class Env>
-    auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
+    USTDEX_HOST_DEVICE auto operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
       static_assert(noexcept(e.query(*this)));
       return e.query(*this);
     }
 
-    auto operator()(_ignore) const noexcept -> forward_progress_guarantee {
+    USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> forward_progress_guarantee {
       return forward_progress_guarantee::weakly_parallel;
     }
   } get_forward_progress_guarantee{};

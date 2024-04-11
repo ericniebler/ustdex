@@ -33,9 +33,14 @@ namespace ustdex {
     inline void _destroy(unsigned char *storage) noexcept {
       reinterpret_cast<Ty *>(storage)->~Ty();
     }
+
+    using _destroy_fn_t = void (*)(unsigned char *) noexcept;
+
+    template <class... Ts>
+    USTDEX_DEVICE constexpr _destroy_fn_t _destroy_fns[] = {&_noop, &_destroy<Ts>...};
   } // namespace _detail
 
-  inline constexpr std::size_t _variant_npos = static_cast<std::size_t>(-1);
+  USTDEX_DEVICE constexpr std::size_t _variant_npos = static_cast<std::size_t>(-1);
 
   template <class... Ts>
   struct _variant;
@@ -46,13 +51,9 @@ namespace ustdex {
     std::size_t _index{_variant_npos};
     alignas(Head) alignas(Tail...) unsigned char _storage[_max_size];
 
-    using _destroy_fn_t = void (*)(unsigned char *) noexcept;
-    static constexpr _destroy_fn_t _destroy_fn[] =
-      {&_detail::_noop, &_detail::_destroy<Head>, &_detail::_destroy<Tail>...};
-
     USTDEX_HOST_DEVICE
     void _destroy() noexcept {
-      _destroy_fn[_index + 1](_storage);
+      _detail::_destroy_fns<Head, Tail...>[_index + 1](_storage);
       _index = _variant_npos;
     }
 

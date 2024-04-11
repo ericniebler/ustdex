@@ -17,6 +17,7 @@
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
+#include "meta.hpp"
 #include "tuple.hpp"
 #include "utility.hpp"
 
@@ -24,9 +25,6 @@
 #include <type_traits>
 
 namespace ustdex {
-  template <class Fn, class... As>
-  struct _not_callable_with { };
-
   template <class Fn>
   struct _transform_completion {
     template <class... Ts>
@@ -43,7 +41,10 @@ namespace ustdex {
   };
 
   template <class UponTag, class SetTag>
-  class _upon {
+  struct _upon {
+    #ifndef __CUDACC__
+    private:
+    #endif
     template <class Sndr, class Rcvr, class Fn>
     struct _opstate_t : _immovable {
       using operation_state_concept = operation_state_t;
@@ -51,7 +52,7 @@ namespace ustdex {
       Fn _fn;
       connect_result_t<Sndr, _opstate_t *> _opstate;
 
-      _opstate_t(Sndr &&sndr, Rcvr rcvr, Fn fn)
+      USTDEX_HOST_DEVICE _opstate_t(Sndr &&sndr, Rcvr rcvr, Fn fn)
         : _rcvr{static_cast<Rcvr &&>(rcvr)}
         , _fn{static_cast<Fn &&>(fn)}
         , _opstate{connect(static_cast<Sndr &&>(sndr), this)} {
@@ -74,9 +75,9 @@ namespace ustdex {
               static_cast<Fn &&>(_fn)(static_cast<Ts &&>(ts)...));
           }
         } else
-          try {
+          USTDEX_TRY {
             _set<true>(static_cast<Ts &&>(ts)...);
-          } catch (...) {
+          } USTDEX_CATCH (...) {
             ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
           }
       }
@@ -109,12 +110,12 @@ namespace ustdex {
     };
 
     template <class CvSndr, class Fn, class... Env>
-    using _completions = _impl::_gather_completion_signatures<
+    using _completions = _gather_completion_signatures<
       completion_signatures_of_t<CvSndr, Env...>,
       SetTag,
       _transform_completion<Fn>::template _f,
-      _impl::_default_completions,
-      _impl::_concat_completion_signatures>;
+      _default_completions,
+      _concat_completion_signatures>;
 
     template <class Fn, class Sndr>
     struct _sndr_t {
@@ -167,12 +168,12 @@ namespace ustdex {
     }
   };
 
-  inline constexpr struct then_t : _upon<then_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct then_t : _upon<then_t, set_value_t> {
   } then{};
 
-  inline constexpr struct upon_error_t : _upon<upon_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct upon_error_t : _upon<upon_error_t, set_error_t> {
   } upon_error{};
 
-  inline constexpr struct upon_stopped_t : _upon<upon_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon<upon_stopped_t, set_stopped_t> {
   } upon_stopped{};
 } // namespace ustdex

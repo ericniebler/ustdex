@@ -22,7 +22,7 @@
 namespace ustdex {
   struct empty_env { };
 
-  inline constexpr struct get_env_t {
+  USTDEX_DEVICE constexpr struct get_env_t {
     template <class Ty>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto

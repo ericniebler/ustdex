@@ -18,10 +18,6 @@
 #include "meta.hpp"
 
 namespace ustdex {
-  template <class Ty>
-  using _fnptr = Ty && (*) () noexcept;
-#define DECLVAL(...) _fnptr<__VA_ARGS__>()()
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // __decay_t: An efficient implementation for std::decay
 #if __has_builtin(__decay)
@@ -181,4 +177,11 @@ namespace ustdex {
   template <class Ty, class... As>
   inline constexpr bool _nothrow_constructible =
     _mvalid_q<_nothrow_constructible_, Ty, As...>;
+
+  template <class Ty>
+  using _nothrow_decay_copyable_ = _mif<noexcept(_decay_t<Ty>(DECLVAL(Ty)))>;
+
+  template <class... As>
+  inline constexpr bool _nothrow_decay_copyable =
+    (_mvalid_q<_nothrow_decay_copyable_, As> && ...);
 } // namespace ustdex

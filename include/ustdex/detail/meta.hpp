@@ -20,6 +20,18 @@
 #include <utility>
 
 namespace ustdex {
+  template <class Ty>
+  using _fnptr = Ty && (*) () noexcept;
+
+  template <class Ty>
+  Ty&& _declval() noexcept;
+
+#if __CUDACC__
+#  define DECLVAL(...) _declval<__VA_ARGS__>()
+#else
+#  define DECLVAL(...) _fnptr<__VA_ARGS__>()()
+#endif
+
   template <class...>
   using _mvoid = void;
 
@@ -37,6 +49,9 @@ namespace ustdex {
   using _mtrue = _mvalue<true>;
   using _mfalse = _mvalue<false>;
 
+  template <class... What>
+  struct _mexception;
+
   struct _mexception_base {
     constexpr friend bool _stdex_uncaught_exception(void *) noexcept {
       return true;
@@ -47,15 +62,25 @@ namespace ustdex {
   struct _mexception : _mexception_base {
     template <class...>
     using _f = _mexception;
+
+    template <class Ty>
+    _mexception &operator,(Ty &);
   };
 
   constexpr bool _stdex_uncaught_exception(...) noexcept {
     return false;
   }
 
+  // True if any of the types in Ts... are exceptions; false otherwise.
   template <class... Ts>
-  inline constexpr bool _muncaught_exception =
+  inline constexpr bool _uncaught_mexception =
     _stdex_uncaught_exception(static_cast<_mlist<Ts...> *>(nullptr));
+
+  template <class... Ts>
+  using _mexception_find = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
+
+  template <class Ty>
+  inline constexpr bool _is_mexception = USTDEX_IS_BASE_OF(_mexception_base, Ty);
 
   template <template <class...> class Fn, class... Ts>
   using _minvoke_q = Fn<Ts...>;
@@ -74,6 +99,15 @@ namespace ustdex {
 
   template <class Fn, class... Ts>
   inline constexpr bool _mvalid = _mvalid_<Fn::template _f, _mlist<Ts...>>;
+
+  template <class Tp>
+  inline constexpr auto _v = Tp::value;
+
+  template <auto Value>
+  inline constexpr auto _v<_mvalue<Value>> = Value;
+
+  template <class Tp, Tp Value>
+  inline constexpr auto _v<std::integral_constant<Tp, Value>> = Value;
 
   struct _midentity {
     template <class Ty>
@@ -101,6 +135,9 @@ namespace ustdex {
   template <bool If, class Then = void, class... Else>
   using _mif = typename _mif_<If>::template _f<Then, Else...>;
 
+  template <class If, class Then = void, class... Else>
+  using _mif_t = typename _mif_<_v<If>>::template _f<Then, Else...>;
+
   template <bool>
   struct _mtry_ {
     template <template <class...> class Fn, class... Ts>
@@ -113,19 +150,19 @@ namespace ustdex {
   template <>
   struct _mtry_<true> {
     template <template <class...> class Fn, class... Ts>
-    using _g = _mexception<struct unknown>;
+    using _g = _mexception_find<Ts...>;
 
     template <class Fn, class... Ts>
-    using _f = _mexception<struct unknown>;
+    using _f = _mexception_find<Fn, Ts...>;
   };
 
   template <class Fn, class... Ts>
   using _mtry_invoke =
-    typename _mtry_<_muncaught_exception<Ts...>>::template _f<Fn, Ts...>;
+    typename _mtry_<_uncaught_mexception<Ts...>>::template _f<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Ts>
   using _mtry_invoke_q =
-    typename _mtry_<_muncaught_exception<Ts...>>::template _g<Fn, Ts...>;
+    typename _mtry_<_uncaught_mexception<Ts...>>::template _g<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Default>
   struct _mquote;
@@ -150,7 +187,7 @@ namespace ustdex {
   template <template <class...> class Fn>
   struct _mtry_quote<Fn> {
     template <class... Ts>
-    using _f = typename _mtry_<_muncaught_exception<Ts...>>::template _g<Fn, Ts...>;
+    using _f = typename _mtry_<_uncaught_mexception<Ts...>>::template _g<Fn, Ts...>;
   };
 
   template <template <class...> class Fn, class Default>
@@ -160,15 +197,6 @@ namespace ustdex {
       typename _mif<_mvalid_q<Fn, Ts...>, _mtry_quote<Fn>, _malways<Default>>::template _f<
         Ts...>;
   };
-
-  template <class Tp>
-  inline constexpr auto _v = Tp::value;
-
-  template <auto Value>
-  inline constexpr auto _v<_mvalue<Value>> = Value;
-
-  template <class Tp, Tp Value>
-  inline constexpr auto _v<std::integral_constant<Tp, Value>> = Value;
 
   template <class Fn, class... Ts>
   struct _mbind_front {
@@ -280,4 +308,7 @@ namespace ustdex {
     template <class... Ts>
     using _f = _minvoke<_mset_insert<_mset<>, Ts...>, Fn>;
   };
+
+  template <class Fn, class... As>
+  struct _not_callable_with { };
 } // namespace ustdex

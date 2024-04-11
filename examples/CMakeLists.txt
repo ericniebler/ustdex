@@ -14,3 +14,8 @@
 
 add_executable(scratch scratch.cpp)
 target_link_libraries(scratch PUBLIC ustdex)
+
+if (USTDEX_ENABLE_CUDA)
+  add_executable(cuscratch scratch.cu)
+  target_link_libraries(cuscratch PUBLIC ustdex)
+endif()

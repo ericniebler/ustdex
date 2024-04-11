@@ -24,8 +24,10 @@
 #include "variant.hpp"
 
 namespace ustdex {
-  struct continue_on_t {
+  USTDEX_DEVICE constexpr struct continue_on_t {
+    #ifndef __CUDACC__
    private:
+   #endif
     template <class... As>
     using _set_value_tuple_t = _tuple_for<set_value_t, _decay_t<As>...>;
 
@@ -87,7 +89,7 @@ namespace ustdex {
     template <class CvSndr, class Sch, class Rcvr>
     struct _opstate_t : _immovable {
       using operation_state_concept = operation_state_t;
-      using _result_t = _impl::_transform_completion_signatures<
+      using _result_t = _transform_completion_signatures<
         completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
         _set_value_tuple_t,
         _set_error_tuple_t,

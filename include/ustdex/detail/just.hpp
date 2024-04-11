@@ -23,20 +23,27 @@
 
 namespace ustdex {
   template <class JustTag, class SetTag>
-  class _just {
+  struct _just {
+  #ifndef __CUDACC__
+  private:
+  #endif
     template <class Rcvr, class... Ts>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
       _tuple_for<Ts...> _values;
 
+      struct _complete_fn {
+        opstate_t *_self;
+
+        USTDEX_HOST_DEVICE void operator()(Ts &...ts) const noexcept {
+          SetTag()(static_cast<Rcvr &&>(_self->_rcvr), static_cast<Ts &&>(ts)...);
+        }
+      };
+
       USTDEX_HOST_DEVICE
       void start() & noexcept {
-        _apply(
-          [this](auto &...ts) noexcept {
-            SetTag()(static_cast<Rcvr &&>(_rcvr), static_cast<Ts &&>(ts)...);
-          },
-          _values);
+        _apply(_complete_fn{this}, _values);
       }
     };
 
@@ -54,16 +61,15 @@ namespace ustdex {
       template <class Rcvr>
       USTDEX_HOST_DEVICE
       opstate_t<Rcvr, Ts...>
-        connect(Rcvr rcvr) && noexcept(noexcept(opstate_t<Rcvr, Ts...>{
-          static_cast<Rcvr &&>(rcvr),
-          static_cast<_tuple_for<Ts...> &&>(_values)})) {
+        connect(Rcvr rcvr) && noexcept(_nothrow_decay_copyable<Rcvr, Ts...>) {
         return opstate_t<Rcvr, Ts...>{
           static_cast<Rcvr &&>(rcvr), static_cast<_tuple_for<Ts...> &&>(_values)};
       }
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE
-      opstate_t<Rcvr, Ts...> connect(Rcvr rcvr) const & noexcept {
+      opstate_t<Rcvr, Ts...>
+        connect(Rcvr rcvr) const & noexcept(_nothrow_decay_copyable<Rcvr, Ts const &...>) {
         return opstate_t<Rcvr, Ts...>{static_cast<Rcvr &&>(rcvr), _values};
       }
     };
@@ -77,12 +83,12 @@ namespace ustdex {
     }
   };
 
-  inline constexpr struct just_t : _just<just_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct just_t : _just<just_t, set_value_t> {
   } just{};
 
-  inline constexpr struct just_error_t : _just<just_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct just_error_t : _just<just_error_t, set_error_t> {
   } just_error{};
 
-  inline constexpr struct just_stopped_t : _just<just_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct just_stopped_t : _just<just_stopped_t, set_stopped_t> {
   } just_stopped{};
 } // namespace ustdex

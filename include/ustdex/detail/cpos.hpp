@@ -17,6 +17,7 @@
 
 #include "config.hpp"
 #include "env.hpp"
+#include "meta.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
 
@@ -29,7 +30,25 @@ namespace ustdex {
 
   struct scheduler_t { };
 
-  inline constexpr struct set_value_t {
+  template <class Ty>
+  using _sender_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::sender_concept;
+
+  template <class Ty>
+  using _receiver_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::receiver_concept;
+
+  template <class Ty>
+  using _scheduler_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::scheduler_concept;
+
+  template <class Ty>
+  USTDEX_DEVICE constexpr bool _is_sender = _mvalid_q<_sender_concept, Ty>;
+
+  template <class Ty>
+  USTDEX_DEVICE constexpr bool _is_receiver = _mvalid_q<_receiver_concept, Ty>;
+
+  template <class Ty>
+  USTDEX_DEVICE constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept, Ty>;
+
+  USTDEX_DEVICE constexpr struct set_value_t {
     template <class Rcvr, class... Ts>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -56,7 +75,7 @@ namespace ustdex {
     }
   } set_value{};
 
-  inline constexpr struct set_error_t {
+  USTDEX_DEVICE constexpr struct set_error_t {
     template <class Rcvr, class E>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -80,7 +99,7 @@ namespace ustdex {
     }
   } set_error{};
 
-  inline constexpr struct set_stopped_t {
+  USTDEX_DEVICE constexpr struct set_stopped_t {
     template <class Rcvr>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -104,7 +123,7 @@ namespace ustdex {
     }
   } set_stopped{};
 
-  inline constexpr struct start_t {
+  USTDEX_DEVICE constexpr struct start_t {
     template <class OpState>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -115,7 +134,7 @@ namespace ustdex {
     }
   } start{};
 
-  inline constexpr struct get_completion_signatures_t {
+  USTDEX_DEVICE constexpr struct get_completion_signatures_t {
     template <class Sndr>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -134,7 +153,7 @@ namespace ustdex {
     }
   } get_completion_signatures{};
 
-  inline constexpr struct connect_t {
+  USTDEX_DEVICE constexpr struct connect_t {
     template <class Sndr, class Rcvr>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -145,7 +164,7 @@ namespace ustdex {
     }
   } connect{};
 
-  inline constexpr struct schedule_t {
+  USTDEX_DEVICE constexpr struct schedule_t {
     template <class Sch>
     USTDEX_INLINE USTDEX_HOST_DEVICE
     auto
@@ -165,4 +184,8 @@ namespace ustdex {
 
   template <class Sch>
   using schedule_result_t = decltype(schedule(DECLVAL(Sch)));
+
+  template <class Sndr, class Rcvr>
+  USTDEX_DEVICE constexpr bool _nothrow_connectable =
+    noexcept(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
 } // namespace ustdex
