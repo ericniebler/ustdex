@@ -53,7 +53,7 @@ namespace ustdex {
     /// the second operation state.
     template <class CvSndr, class Fn, class Rcvr>
     using _opstate2_t = _gather_completion_signatures<
-      completion_signatures_of_t<CvSndr, Rcvr>,
+      completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
       SetTag,
       _opstate_fn<Fn, Rcvr>::template _f,
       _empty_tuple,
