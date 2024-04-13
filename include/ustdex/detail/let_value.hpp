@@ -224,9 +224,10 @@ namespace ustdex {
     template <class Fn>
     struct _closure_t {
       Fn _fn;
+
       template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE
-      friend auto operator|(Sndr sndr, _closure_t&& _self) {
+      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+        operator|(Sndr sndr, _closure_t &&_self) {
         return LetTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };

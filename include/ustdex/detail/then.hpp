@@ -32,7 +32,7 @@ namespace ustdex {
 #endif
     template <class Fn, class... Ts>
     using _error_not_callable = //
-      ERROR<//
+      ERROR<                    //
         WHERE(IN_ALGORITHM, UponTag),
         WHAT(FUNCTION_IS_NOT_CALLABLE),
         WITH,
@@ -50,8 +50,7 @@ namespace ustdex {
           set_error_t(std::exception_ptr)>>;
 
       template <class... Ts>
-      using _f =
-        _minvoke<_mtry_quote<_impl, _error_not_callable<Fn, Ts...>>, Ts...>;
+      using _f = _minvoke<_mtry_quote<_impl, _error_not_callable<Fn, Ts...>>, Ts...>;
     };
 
     template <class Sndr, class Rcvr, class Fn>
@@ -172,9 +171,10 @@ namespace ustdex {
     template <class Fn>
     struct _closure_t {
       Fn _fn;
+
       template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE
-      friend auto operator|(Sndr sndr, _closure_t&& _self) {
+      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+        operator|(Sndr sndr, _closure_t &&_self) {
         return UponTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };

@@ -50,9 +50,9 @@ int main() {
 
   auto work = just(1, 2, 3) //
             | then([](int a, int b, int c) {
-                      std::printf("%d %d %d\n", a, b, c);
-                      return a + b + c;
-                    });
+                std::printf("%d %d %d\n", a, b, c);
+                return a + b + c;
+              });
   auto s = start_on(loop.get_scheduler(), std::move(work));
   sync_wait(s);
 
@@ -63,8 +63,8 @@ int main() {
   loop.run();
 
   auto s3 = just(42) | let_value([](int a) {
-    std::puts("here");
-    return just(a + 1);
-  });
+              std::puts("here");
+              return just(a + 1);
+            });
   sync_wait(s3);
 }

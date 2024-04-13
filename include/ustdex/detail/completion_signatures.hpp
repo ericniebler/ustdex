@@ -175,8 +175,7 @@ namespace ustdex {
   auto operator*(_mset<Ts...> &, ERROR<What...> &) -> ERROR<What...> &;
 
   template <class... What, class... Us>
-  auto operator*(ERROR<What...> &, completion_signatures<Us...> &)
-    -> ERROR<What...> &;
+  auto operator*(ERROR<What...> &, completion_signatures<Us...> &) -> ERROR<What...> &;
 
   template <class... Sigs>
   using _concat_completion_signatures = _minvoke<
