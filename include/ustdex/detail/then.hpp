@@ -25,26 +25,35 @@
 #include <type_traits>
 
 namespace ustdex {
-  template <class Fn>
-  struct _transform_completion {
-    template <class... Ts>
-    using _impl = _mif<
-      _nothrow_callable<Fn, Ts...>,
-      completion_signatures<set_value_t(_call_result_t<Fn, Ts...>)>,
-      completion_signatures<
-        set_value_t(_call_result_t<Fn, Ts...>),
-        set_error_t(std::exception_ptr)>>;
-
-    template <class... Ts>
-    using _f =
-      _minvoke<_mtry_quote<_impl, _mexception<_not_callable_with<Fn, Ts...>>>, Ts...>;
-  };
-
   template <class UponTag, class SetTag>
   struct _upon {
 #ifndef __CUDACC__
    private:
 #endif
+    template <class Fn, class... Ts>
+    using _error_not_callable = //
+      ERROR<//
+        WHERE(IN_ALGORITHM, UponTag),
+        WHAT(FUNCTION_IS_NOT_CALLABLE),
+        WITH,
+        FUNCTION(Fn),
+        ARGUMENTS(Ts...)>;
+
+    template <class Fn>
+    struct _transform_completion {
+      template <class... Ts>
+      using _impl = _mif<
+        _nothrow_callable<Fn, Ts...>,
+        completion_signatures<set_value_t(_call_result_t<Fn, Ts...>)>,
+        completion_signatures<
+          set_value_t(_call_result_t<Fn, Ts...>),
+          set_error_t(std::exception_ptr)>>;
+
+      template <class... Ts>
+      using _f =
+        _minvoke<_mtry_quote<_impl, _error_not_callable<Fn, Ts...>>, Ts...>;
+    };
+
     template <class Sndr, class Rcvr, class Fn>
     struct _opstate_t : _immovable {
       using operation_state_concept = operation_state_t;
@@ -166,7 +175,7 @@ namespace ustdex {
       template <class Sndr>
       USTDEX_HOST_DEVICE USTDEX_INLINE
       friend auto operator|(Sndr sndr, _closure_t&& _self) {
-        return _sndr_t<Fn, Sndr>{{}, static_cast<Fn &&>(_self._fn), static_cast<Sndr &&>(sndr)};
+        return UponTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };
 

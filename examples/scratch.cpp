@@ -54,8 +54,7 @@ int main() {
                       return a + b + c;
                     });
   auto s = start_on(loop.get_scheduler(), std::move(work));
-  auto o = connect(s, sink{});
-  start(o);
+  sync_wait(s);
 
   std::optional<std::tuple<int>> x = sync_wait(just(42));
 
@@ -63,20 +62,9 @@ int main() {
   loop.finish();
   loop.run();
 
-  // auto s2 = continue_on(just(42), loop.get_scheduler());
-  // auto o2 = connect(s2, sink{});
-  // start(o2);
-
   auto s3 = just(42) | let_value([](int a) {
     std::puts("here");
     return just(a + 1);
   });
-  auto o3 = connect(s3, sink{});
-  start(o3);
-
-  // _variant<int, std::string, _tuple_for<int, int>> v{};
-  // v.emplace<_tuple_for<int, int>>(1,2);
-  // auto& tup = v.get<2>();
-  // _sexpr t{set_value, 1, just()};
-  // auto [a,b,c] = t;
+  sync_wait(s3);
 }

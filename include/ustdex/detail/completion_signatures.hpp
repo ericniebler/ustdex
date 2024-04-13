@@ -68,7 +68,7 @@ namespace ustdex {
     template <class...>
     class Variant,
     class... More>
-  extern _undefined<Sigs> _gather_completion_signatures_v;
+  extern DIAGNOSTIC<Sigs> _gather_completion_signatures_v;
 
   template <
     class... Sigs,
@@ -127,7 +127,7 @@ namespace ustdex {
     template <class...>
     class Variant,
     class... More>
-  extern _undefined<Sigs> _transform_completion_signatures_v;
+  extern DIAGNOSTIC<Sigs> _transform_completion_signatures_v;
 
   template <
     class... Sigs,
@@ -172,11 +172,11 @@ namespace ustdex {
     -> _mset_insert_ref<_mset<Ts...>, Us...> &;
 
   template <class... Ts, class... What>
-  auto operator*(_mset<Ts...> &, _mexception<What...> &) -> _mexception<What...> &;
+  auto operator*(_mset<Ts...> &, ERROR<What...> &) -> ERROR<What...> &;
 
   template <class... What, class... Us>
-  auto operator*(_mexception<What...> &, completion_signatures<Us...> &)
-    -> _mexception<What...> &;
+  auto operator*(ERROR<What...> &, completion_signatures<Us...> &)
+    -> ERROR<What...> &;
 
   template <class... Sigs>
   using _concat_completion_signatures = _minvoke<

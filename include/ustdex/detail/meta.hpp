@@ -67,38 +67,58 @@ namespace ustdex {
   template <class... Ts>
   using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)> *;
 
-  template <class... What>
-  struct _mexception;
+  // The following must be left undefined
+  template <class...>
+  struct DIAGNOSTIC;
 
-  struct _mexception_base {
-    constexpr friend bool _stdex_uncaught_exception(void *) noexcept {
+  struct WHERE;
+
+  struct IN_ALGORITHM;
+
+  struct WHAT;
+
+  struct WITH;
+
+  struct FUNCTION;
+
+  struct SENDER;
+
+  struct ARGUMENTS;
+
+  struct FUNCTION_IS_NOT_CALLABLE;
+
+  template <class... What>
+  struct ERROR;
+
+  struct _merror_base {
+    constexpr friend bool _ustdex_unhandled_error(void *) noexcept {
       return true;
     }
   };
 
   template <class... What>
-  struct _mexception : _mexception_base {
+  struct ERROR : _merror_base {
     template <class...>
-    using _f = _mexception;
+    using _f = ERROR;
 
     template <class Ty>
-    _mexception &operator,(Ty &);
+    ERROR &operator,(Ty &);
   };
 
-  constexpr bool _stdex_uncaught_exception(...) noexcept {
+  constexpr bool _ustdex_unhandled_error(...) noexcept {
     return false;
   }
 
   // True if any of the types in Ts... are exceptions; false otherwise.
   template <class... Ts>
   inline constexpr bool _uncaught_mexception =
-    _stdex_uncaught_exception(static_cast<_mlist<Ts...> *>(nullptr));
+    _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
 
   template <class... Ts>
   using _mexception_find = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
 
   template <class Ty>
-  inline constexpr bool _is_mexception = USTDEX_IS_BASE_OF(_mexception_base, Ty);
+  inline constexpr bool _is_mexception = USTDEX_IS_BASE_OF(_merror_base, Ty);
 
   template <template <class...> class Fn, class... Ts>
   using _minvoke_q = Fn<Ts...>;
@@ -331,7 +351,4 @@ namespace ustdex {
     template <class... Ts>
     using _f = _mvalue<sizeof...(Ts)>;
   };
-
-  template <class Fn, class... As>
-  struct _not_callable_with { };
 } // namespace ustdex

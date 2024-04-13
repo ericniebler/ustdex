@@ -21,8 +21,7 @@
 #include "variant.hpp"
 
 namespace ustdex {
-  template <class Sndr, class Fn>
-  struct _let_function_must_return_a_sender_ { };
+  struct FUNCTION_MUST_RETURN_A_SENDER;
 
   template <class LetTag, class SetTag>
   struct _let {
@@ -126,23 +125,37 @@ namespace ustdex {
 
     template <class Fn, class... Env>
     struct _completions_fn {
+      using _error_non_sender_return = //
+        ERROR<
+          WHERE(IN_ALGORITHM, LetTag),
+          WHAT(FUNCTION_MUST_RETURN_A_SENDER),
+          WITH,
+          FUNCTION(Fn)>;
+
       template <class Ty>
-      using _ensure_sender = _mif<
-        _is_sender<Ty> || _is_mexception<Ty>,
-        Ty,
-        _mexception<_let_function_must_return_a_sender_<Ty, Fn>>>;
+      using _ensure_sender = //
+        _mif<_is_sender<Ty> || _is_mexception<Ty>, Ty, _error_non_sender_return>;
+
+      template <class... As>
+      using _error_not_callable_with = //
+        ERROR<
+          WHERE(IN_ALGORITHM, LetTag),
+          WHAT(FUNCTION_IS_NOT_CALLABLE),
+          WITH,
+          FUNCTION(Fn),
+          ARGUMENTS(As...)>;
 
       // This computes the result of calling the function with the
       // predecessor sender's results. If the function is not callable with
-      // the results, it returns an _mexception.
+      // the results, it returns an ERROR.
       template <class... As>
       using _call_result = _minvoke<
-        _mtry_quote<_call_result_t, _mexception<_not_callable_with<Fn, As...>>>,
+        _mtry_quote<_call_result_t, _error_not_callable_with<As...>>,
         Fn,
         _decay_t<As> &...>;
 
       // This computes the completion signatures of the `let_*` sender,
-      // or returns an _mexception if it cannot.
+      // or returns an ERROR if it cannot.
       template <class... As>
       using _f = _minvoke<
         _mtry_quote<completion_signatures_of_t>,
@@ -214,7 +227,7 @@ namespace ustdex {
       template <class Sndr>
       USTDEX_HOST_DEVICE USTDEX_INLINE
       friend auto operator|(Sndr sndr, _closure_t&& _self) {
-        return _sndr_t<Sndr, Fn>{{}, static_cast<Fn &&>(_self._fn), static_cast<Sndr &&>(sndr)};
+        return LetTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };
 
