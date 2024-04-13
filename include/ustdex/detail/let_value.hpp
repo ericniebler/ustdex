@@ -28,7 +28,7 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    template <class, class...>
+    template <class...>
     using _empty_tuple = _tuple_for<>;
 
     /// @brief Computes the type of a variant of tuples to hold the results of

@@ -216,7 +216,7 @@ namespace ustdex {
   namespace _detail {
     struct _nil { };
 
-    template <class, class...>
+    template <class...>
     using _to_nil = _nil;
 
     template <class... Ts>
