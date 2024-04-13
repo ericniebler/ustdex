@@ -118,7 +118,7 @@ namespace ustdex {
   using _mexception_find = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
 
   template <class Ty>
-  inline constexpr bool _is_mexception = USTDEX_IS_BASE_OF(_merror_base, Ty);
+  inline constexpr bool _is_error = USTDEX_IS_BASE_OF(_merror_base, Ty);
 
   template <template <class...> class Fn, class... Ts>
   using _minvoke_q = Fn<Ts...>;

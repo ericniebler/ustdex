@@ -134,7 +134,7 @@ namespace ustdex {
 
       template <class Ty>
       using _ensure_sender = //
-        _mif<_is_sender<Ty> || _is_mexception<Ty>, Ty, _error_non_sender_return>;
+        _mif<_is_sender<Ty> || _is_error<Ty>, Ty, _error_non_sender_return>;
 
       template <class... As>
       using _error_not_callable_with = //
