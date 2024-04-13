@@ -55,6 +55,8 @@ int main() {
   auto o = connect(s, sink{});
   start(o);
 
+  std::optional<std::tuple<int>> x = sync_wait(just(42));
+
   std::puts("Hello, world!");
   loop.finish();
   loop.run();

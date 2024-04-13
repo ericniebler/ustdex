@@ -17,7 +17,6 @@
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
-#include "fwd_rcvr.hpp"
 #include "tuple.hpp"
 #include "variant.hpp"
 

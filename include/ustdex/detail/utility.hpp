@@ -28,6 +28,8 @@ namespace ustdex {
   template <class...>
   struct _undefined;
 
+  struct _empty { };
+
   struct _immovable {
     _immovable() = default;
     _immovable(const _immovable &) = delete;

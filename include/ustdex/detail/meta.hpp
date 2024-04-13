@@ -39,6 +39,9 @@ namespace ustdex {
   struct _mlist {
     template <class Fn, class... Us>
     using _f = typename Fn::template _f<Ts..., Us...>;
+
+    template <class... Us, class... Vs>
+    friend _mlist<Us..., Vs...> &operator+(_mlist<Us...> &, _mlist<Vs...> &);
   };
 
   template <auto Val>
@@ -48,6 +51,21 @@ namespace ustdex {
 
   using _mtrue = _mvalue<true>;
   using _mfalse = _mvalue<false>;
+
+  template <class... Bools>
+  using _mand = _mvalue<(Bools::value && ...)>;
+
+  template <class... Bools>
+  using _mor = _mvalue<(Bools::value || ...)>;
+
+  template <std::size_t... Idx>
+  using _mindices = std::index_sequence<Idx...> *;
+
+  template <std::size_t Count>
+  using _mmake_indices = std::make_index_sequence<Count> *;
+
+  template <class... Ts>
+  using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)> *;
 
   template <class... What>
   struct _mexception;
@@ -307,6 +325,11 @@ namespace ustdex {
   struct _munique {
     template <class... Ts>
     using _f = _minvoke<_mset_insert<_mset<>, Ts...>, Fn>;
+  };
+
+  struct _mcount {
+    template <class... Ts>
+    using _f = _mvalue<sizeof...(Ts)>;
   };
 
   template <class Fn, class... As>

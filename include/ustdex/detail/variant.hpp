@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include "meta.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
 
@@ -24,38 +25,30 @@
 
 namespace ustdex {
   namespace _detail {
+    template <class... Ts, std::size_t... Idx>
     USTDEX_HOST_DEVICE
-    inline void _noop(unsigned char *) noexcept {
+    inline void _destroy(_mindices<Idx...>, std::size_t idx, void *pv) noexcept {
+      ((Idx == idx ? static_cast<Ts *>(pv)->~Ts() : void()), ...);
     }
-
-    template <class Ty>
-    USTDEX_HOST_DEVICE
-    inline void _destroy(unsigned char *storage) noexcept {
-      reinterpret_cast<Ty *>(storage)->~Ty();
-    }
-
-    using _destroy_fn_t = void (*)(unsigned char *) noexcept;
-
-    template <class... Ts>
-    USTDEX_DEVICE constexpr _destroy_fn_t _destroy_fns[] = {&_noop, &_destroy<Ts>...};
   } // namespace _detail
 
   USTDEX_DEVICE constexpr std::size_t _variant_npos = static_cast<std::size_t>(-1);
 
   template <class... Ts>
-  struct _variant;
-
-  template <class Head, class... Tail>
-  class _variant<Head, Tail...> : _immovable {
-    static constexpr std::size_t _max_size = _max({sizeof(Head), sizeof(Tail)...});
+  class _variant : _immovable {
+    static constexpr std::size_t _max_size = _max({sizeof(Ts)...});
     std::size_t _index{_variant_npos};
-    alignas(Head) alignas(Tail...) unsigned char _storage[_max_size];
+    alignas(Ts...) unsigned char _storage[_max_size];
 
     USTDEX_HOST_DEVICE
     void _destroy() noexcept {
-      _detail::_destroy_fns<Head, Tail...>[_index + 1](_storage);
-      _index = _variant_npos;
+      if (_index != _variant_npos) {
+        _detail::_destroy<Ts...>(_mmake_indices_for<Ts...>(), _index, _storage);
+      }
     }
+
+    template <std::size_t Idx>
+    using _at = _m_at_c<Idx, Ts...>;
 
    public:
     USTDEX_HOST_DEVICE _variant()
@@ -79,7 +72,7 @@ namespace ustdex {
     template <class Ty, class... As>
     USTDEX_HOST_DEVICE
     Ty &emplace(As &&...as) noexcept(noexcept(Ty{static_cast<As &&>(as)...})) {
-      constexpr std::size_t _new_index = _index_of<Ty, Head, Tail...>();
+      constexpr std::size_t _new_index = _index_of<Ty, Ts...>();
       static_assert(_new_index != _variant_npos, "Type not in variant");
 
       _destroy();
@@ -88,12 +81,24 @@ namespace ustdex {
       return *reinterpret_cast<Ty *>(_storage);
     }
 
+    template <std::size_t Idx, class... As>
+    USTDEX_HOST_DEVICE
+    _at<Idx> &
+      emplace(As &&...as) noexcept(noexcept(_at<Idx>{static_cast<As &&>(as)...})) {
+      static_assert(Idx < sizeof...(Ts), "variant index is too large");
+
+      _destroy();
+      ::new (_storage) _at<Idx>{static_cast<As &&>(as)...};
+      _index = Idx;
+      return *reinterpret_cast<_at<Idx> *>(_storage);
+    }
+
     template <class Fn, class... As>
     USTDEX_HOST_DEVICE
     auto emplace_from(Fn &&fn, As &&...as) noexcept(_nothrow_callable<Fn, As...>)
       -> _call_result_t<Fn, As...> & {
       using _result_t = _call_result_t<Fn, As...>;
-      constexpr std::size_t _new_index = _index_of<_result_t, Head, Tail...>();
+      constexpr std::size_t _new_index = _index_of<_result_t, Ts...>();
       static_assert(_new_index != _variant_npos, "Type not in variant");
 
       _destroy();
@@ -106,16 +111,14 @@ namespace ustdex {
     USTDEX_HOST_DEVICE
     decltype(auto) get() noexcept {
       USTDEX_ASSERT(Idx == _index);
-      using Ty = _m_at_c<Idx, Head, Tail...>;
-      return *reinterpret_cast<Ty *>(_storage);
+      return *reinterpret_cast<_at<Idx> *>(_storage);
     }
 
     template <std::size_t Idx>
     USTDEX_HOST_DEVICE
     decltype(auto) get() const noexcept {
       USTDEX_ASSERT(Idx == _index);
-      using Ty = _m_at_c<Idx, Head, Tail...>;
-      return *reinterpret_cast<const Ty *>(_storage);
+      return *reinterpret_cast<const _at<Idx> *>(_storage);
     }
   };
 } // namespace ustdex

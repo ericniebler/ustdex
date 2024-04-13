@@ -26,7 +26,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else>
   extern _undefined<Sig> _gather_sig;
 
@@ -36,7 +36,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else>
   extern Else<ActualTag, Ts...> _gather_sig<ActualTag(Ts...), WantedTag, Then, Else>;
 
@@ -45,7 +45,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else>
   extern Then<Ts...> _gather_sig<WantedTag(Ts...), WantedTag, Then, Else>;
 
@@ -54,7 +54,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else>
   using _gather_sig_t = decltype(_gather_sig<Sig, WantedTag, Then, Else>);
 
@@ -63,7 +63,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else,
     template <class...>
     class Variant,
@@ -75,7 +75,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else,
     template <class...>
     class Variant,
@@ -94,7 +94,7 @@ namespace ustdex {
     class WantedTag,
     template <class...>
     class Then,
-    template <class, class...>
+    template <class...>
     class Else,
     template <class...>
     class Variant,
@@ -213,4 +213,68 @@ namespace ustdex {
     ValueTransform,
     ErrorTransform,
     StoppedSigs>;
+
+  namespace _detail {
+    struct _nil { };
+
+    template <class, class...>
+    using _to_nil = _nil;
+
+    template <class... Ts>
+    _mlist<Ts...> &operator+(_mlist<Ts...> &, _nil);
+
+    template <class... Ts>
+    using _concat_mlist = //
+      USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(_mlist<> &) + ... + DECLVAL(Ts &))));
+
+    template <template <class...> class Tuple>
+    struct _to_mlist {
+      template <class... Ts>
+      using _f = _mlist<Tuple<Ts...>>;
+    };
+  } // namespace _detail
+
+  template <
+    class Sndr,
+    class Env,
+    template <class...>
+    class Tuple,
+    template <class...>
+    class Variant>
+  using value_types_of_t = //
+    _minvoke<              //
+      _gather_completion_signatures<
+        completion_signatures_of_t<Sndr, Env>,
+        set_value_t,
+        _detail::_to_mlist<Tuple>::template _f,
+        _detail::_to_nil,
+        _detail::_concat_mlist>,
+      _mtry_quote<Variant>>;
+
+  template <
+    class Sndr,
+    class Env,
+    template <class...>
+    class Tuple>
+  using error_types_of_t = //
+    _minvoke<              //
+      _gather_completion_signatures<
+        completion_signatures_of_t<Sndr, Env>,
+        set_error_t,
+        _mlist,
+        _detail::_to_nil,
+        _detail::_concat_mlist>,
+      _mtry_quote<Tuple>>;
+
+
+  template <class Sndr, class Env>
+  USTDEX_DEVICE constexpr bool sends_stopped = //
+    _gather_completion_signatures<
+      completion_signatures_of_t<Sndr, Env>,
+      set_stopped_t,
+      _malways<_mtrue>::_f,
+      _malways<_mfalse>::_f,
+      _mand>::value;
+
+
 } // namespace ustdex

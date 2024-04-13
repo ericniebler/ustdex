@@ -154,7 +154,9 @@ namespace ustdex {
 
     USTDEX_HOST_DEVICE
     auto stop_requested() const noexcept -> bool {
-      return (_state.load(USTDEX_CUDA_NS std::memory_order_acquire) & _stop_requested_flag) != 0;
+      return (_state.load(USTDEX_CUDA_NS std::memory_order_acquire)
+              & _stop_requested_flag)
+          != 0;
     }
 
    private:
@@ -299,7 +301,8 @@ namespace ustdex {
   } // namespace _stok
 
   USTDEX_HOST_DEVICE inline inplace_stop_source::~inplace_stop_source() {
-    USTDEX_ASSERT((_state.load(USTDEX_CUDA_NS std::memory_order_relaxed) & _locked_flag) == 0);
+    USTDEX_ASSERT(
+      (_state.load(USTDEX_CUDA_NS std::memory_order_relaxed) & _locked_flag) == 0);
     USTDEX_ASSERT(_callbacks == nullptr);
   }
 
@@ -433,7 +436,8 @@ namespace ustdex {
         // Concurrently executing on another thread.
         // Wait until the other thread finishes executing the callback.
         _stok::_spin_wait _spin;
-        while (!_callbk->_callback_completed.load(USTDEX_CUDA_NS std::memory_order_acquire)) {
+        while (
+          !_callbk->_callback_completed.load(USTDEX_CUDA_NS std::memory_order_acquire)) {
           _spin._wait();
         }
       }
