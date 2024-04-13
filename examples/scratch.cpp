@@ -48,10 +48,12 @@ void print() {
 int main() {
   run_loop loop;
 
-  auto s = start_on(loop.get_scheduler(), then(just(1, 2, 3), [](int a, int b, int c) {
+  auto work = just(1, 2, 3) //
+            | then([](int a, int b, int c) {
                       std::printf("%d %d %d\n", a, b, c);
                       return a + b + c;
-                    }));
+                    });
+  auto s = start_on(loop.get_scheduler(), std::move(work));
   auto o = connect(s, sink{});
   start(o);
 
@@ -65,7 +67,7 @@ int main() {
   // auto o2 = connect(s2, sink{});
   // start(o2);
 
-  auto s3 = let_value(just(42), [](int a) {
+  auto s3 = just(42) | let_value([](int a) {
     std::puts("here");
     return just(a + 1);
   });

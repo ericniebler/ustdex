@@ -208,12 +208,29 @@ namespace ustdex {
       }
     };
 
+    template <class Fn>
+    struct _closure_t {
+      Fn _fn;
+      template <class Sndr>
+      USTDEX_HOST_DEVICE USTDEX_INLINE
+      friend auto operator|(Sndr sndr, _closure_t&& _self) {
+        return _sndr_t<Sndr, Fn>{{}, static_cast<Fn &&>(_self._fn), static_cast<Sndr &&>(sndr)};
+      }
+    };
+
    public:
     template <class Sndr, class Fn>
     USTDEX_HOST_DEVICE
     _sndr_t<Sndr, Fn>
       operator()(Sndr sndr, Fn fn) const {
       return _sndr_t<Sndr, Fn>{{}, static_cast<Fn &&>(fn), static_cast<Sndr &&>(sndr)};
+    }
+
+    template <class Fn>
+    USTDEX_INLINE USTDEX_HOST_DEVICE
+    auto
+      operator()(Fn fn) const noexcept {
+      return _closure_t<Fn>{static_cast<Fn &&>(fn)};
     }
   };
 
