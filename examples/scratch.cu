@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "ustdex/detail/sexpr.hpp"
-#include "ustdex/detail/variant.hpp"
 #include "ustdex/ustdex.hpp"
 
 #include <cstdio>

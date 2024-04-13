@@ -19,7 +19,6 @@
 #include "utility.hpp"
 
 #include <atomic>
-#include <concepts>
 #include <cstdint>
 #include <thread>
 #include <type_traits>

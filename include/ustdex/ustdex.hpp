@@ -15,8 +15,6 @@
  */
 #pragma once
 
-#include <type_traits>
-
 #include "detail/config.hpp"
 #include "detail/continue_on.hpp"
 #include "detail/cpos.hpp"
