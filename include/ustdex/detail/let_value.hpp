@@ -34,11 +34,11 @@ namespace ustdex {
     template <_disposition_t, class Void = void>
     extern _undefined<Void> _let_tag;
     template <class Void>
-    extern let_value_t _let_tag<_value, Void>;
+    extern _fn_t<let_value_t> *_let_tag<_value, Void>;
     template <class Void>
-    extern let_error_t _let_tag<_error, Void>;
+    extern _fn_t<let_error_t> *_let_tag<_error, Void>;
     template <class Void>
-    extern let_stopped_t _let_tag<_stopped, Void>;
+    extern _fn_t<let_stopped_t> *_let_tag<_stopped, Void>;
   } // namespace _detail
 
   template <_disposition_t Disposition>
@@ -46,7 +46,7 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    using LetTag = decltype(_detail::_let_tag<Disposition>);
+    using LetTag = decltype(_detail::_let_tag<Disposition>());
     using SetTag = decltype(_detail::_set_tag<Disposition>);
 
     template <class...>

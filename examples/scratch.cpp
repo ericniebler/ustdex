@@ -65,4 +65,6 @@ int main() {
               return just(a + 1);
             });
   sync_wait(s3);
+
+  auto [sch] = sync_wait(read_env(get_scheduler)).value();
 }

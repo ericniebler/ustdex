@@ -184,4 +184,16 @@ namespace ustdex {
   template <class... As>
   inline constexpr bool _nothrow_decay_copyable =
     (_mvalid_q<_nothrow_decay_copyable_, As> && ...);
+
+  template <class Ty>
+  using _nothrow_movable_ = _mif<noexcept(Ty(DECLVAL(Ty &&)))>;
+
+  template <class... As>
+  inline constexpr bool _nothrow_movable = (_mvalid_q<_nothrow_movable_, As> && ...);
+
+  template <class Ty>
+  using _nothrow_copyable_ = _mif<noexcept(Ty(DECLVAL(const Ty &)))>;
+
+  template <class... As>
+  inline constexpr bool _nothrow_copyable = (_mvalid_q<_nothrow_copyable_, As> && ...);
 } // namespace ustdex

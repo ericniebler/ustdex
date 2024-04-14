@@ -21,7 +21,7 @@
 
 namespace ustdex {
   template <class Ty>
-  using _fnptr = Ty && (*) () noexcept;
+  using _declfn = Ty &&(*) () noexcept;
 
   template <class Ty>
   Ty &&_declval() noexcept;
@@ -29,8 +29,14 @@ namespace ustdex {
 #if __CUDACC__
 #  define DECLVAL(...) _declval<__VA_ARGS__>()
 #else
-#  define DECLVAL(...) _fnptr<__VA_ARGS__>()()
+#  define DECLVAL(...) _declfn<__VA_ARGS__>()()
 #endif
+
+  template <class Ret, class... Args>
+  using _fn_t = Ret(Args...);
+
+  template <class Ret, class... Args>
+  using _nothrow_fn_t = Ret(Args...) noexcept;
 
   template <class...>
   using _mvoid = void;
@@ -82,6 +88,10 @@ namespace ustdex {
   struct WITH_SENDER;
 
   struct WITH_ARGUMENTS;
+
+  struct WITH_QUERY;
+
+  struct WITH_ENVIRONMENT;
 
   struct FUNCTION_IS_NOT_CALLABLE;
 

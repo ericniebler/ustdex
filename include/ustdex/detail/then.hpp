@@ -35,11 +35,11 @@ namespace ustdex {
     template <_disposition_t, class Void = void>
     extern _undefined<Void> _upon_tag;
     template <class Void>
-    extern then_t _upon_tag<_value, Void>;
+    extern _fn_t<then_t> *_upon_tag<_value, Void>;
     template <class Void>
-    extern upon_error_t _upon_tag<_error, Void>;
+    extern _fn_t<upon_error_t> *_upon_tag<_error, Void>;
     template <class Void>
-    extern upon_stopped_t _upon_tag<_stopped, Void>;
+    extern _fn_t<upon_stopped_t> *_upon_tag<_stopped, Void>;
   } // namespace _detail
 
   template <_disposition_t Disposition>
@@ -47,7 +47,7 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    using UponTag = decltype(_detail::_upon_tag<Disposition>);
+    using UponTag = decltype(_detail::_upon_tag<Disposition>());
     using SetTag = decltype(_detail::_set_tag<Disposition>);
 
     template <class Fn, class... Ts>
