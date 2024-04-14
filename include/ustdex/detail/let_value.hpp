@@ -21,13 +21,34 @@
 #include "variant.hpp"
 
 namespace ustdex {
+  // Declare types to use for diagnostics:
   struct FUNCTION_MUST_RETURN_A_SENDER;
 
-  template <class LetTag, class SetTag>
+  // Forward-declate the let_* algorithm tag types:
+  struct let_value_t;
+  struct let_error_t;
+  struct let_stopped_t;
+
+  // Map from a disposition to the corresponding tag types:
+  namespace _detail {
+    template <_disposition_t, class Void = void>
+    extern _undefined<Void> _let_tag;
+    template <class Void>
+    extern let_value_t _let_tag<_value, Void>;
+    template <class Void>
+    extern let_error_t _let_tag<_error, Void>;
+    template <class Void>
+    extern let_stopped_t _let_tag<_stopped, Void>;
+  } // namespace _detail
+
+  template <_disposition_t Disposition>
   struct _let {
 #ifndef __CUDACC__
    private:
 #endif
+    using LetTag = decltype(_detail::_let_tag<Disposition>);
+    using SetTag = decltype(_detail::_set_tag<Disposition>);
+
     template <class...>
     using _empty_tuple = _tuple_for<>;
 
@@ -129,8 +150,7 @@ namespace ustdex {
         ERROR<
           WHERE(IN_ALGORITHM, LetTag),
           WHAT(FUNCTION_MUST_RETURN_A_SENDER),
-          WITH,
-          FUNCTION(Fn)>;
+          WITH_FUNCTION(Fn)>;
 
       template <class Ty>
       using _ensure_sender = //
@@ -141,9 +161,8 @@ namespace ustdex {
         ERROR<
           WHERE(IN_ALGORITHM, LetTag),
           WHAT(FUNCTION_IS_NOT_CALLABLE),
-          WITH,
-          FUNCTION(Fn),
-          ARGUMENTS(As...)>;
+          WITH_FUNCTION(Fn),
+          WITH_ARGUMENTS(As...)>;
 
       // This computes the result of calling the function with the
       // predecessor sender's results. If the function is not callable with
@@ -248,12 +267,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct let_value_t : _let<let_value_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct let_value_t : _let<_value> {
   } let_value{};
 
-  USTDEX_DEVICE constexpr struct let_error_t : _let<let_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct let_error_t : _let<_error> {
   } let_error{};
 
-  USTDEX_DEVICE constexpr struct let_stopped_t : _let<let_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct let_stopped_t : _let<_stopped> {
   } let_stopped{};
 } // namespace ustdex

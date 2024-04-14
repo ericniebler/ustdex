@@ -179,15 +179,7 @@ namespace ustdex {
     };
 
     template <class Sch>
-    struct _closure_t {
-      Sch _sch;
-
-      template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
-        operator|(Sndr sndr, _closure_t &&_self) {
-        return _sndr_t<Sndr, Sch>{{}, _self._sch, static_cast<Sndr &&>(sndr)};
-      }
-    };
+    struct _closure_t;
 
    public:
     template <class Sndr, class Sch>
@@ -198,9 +190,24 @@ namespace ustdex {
     }
 
     template <class Sch>
-    USTDEX_HOST_DEVICE USTDEX_INLINE auto
-      operator()(Sch sch) const noexcept {
-      return _closure_t<Sch>{sch};
-    }
+    USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch>
+      operator()(Sch sch) const noexcept;
   } continue_on{};
+
+  template <class Sch>
+  struct continue_on_t::_closure_t {
+    Sch _sch;
+
+    template <class Sndr>
+    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+      operator|(Sndr sndr, _closure_t &&_self) {
+      return _sndr_t<Sndr, Sch>{{}, _self._sch, static_cast<Sndr &&>(sndr)};
+    }
+  };
+
+  template <class Sch>
+  USTDEX_HOST_DEVICE USTDEX_INLINE continue_on_t::_closure_t<Sch>
+    continue_on_t::operator()(Sch sch) const noexcept {
+    return _closure_t<Sch>{sch};
+  }
 } // namespace ustdex

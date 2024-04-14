@@ -188,4 +188,22 @@ namespace ustdex {
   template <class Sndr, class Rcvr>
   USTDEX_DEVICE constexpr bool _nothrow_connectable =
     noexcept(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
+
+  // handy enumerations for keeping type names readable
+  enum _disposition_t {
+    _value,
+    _error,
+    _stopped
+  };
+
+  namespace _detail {
+    template <_disposition_t, class Void = void>
+    extern _undefined<Void> _set_tag;
+    template <class Void>
+    extern set_value_t _set_tag<_value, Void>;
+    template <class Void>
+    extern set_error_t _set_tag<_error, Void>;
+    template <class Void>
+    extern set_stopped_t _set_tag<_stopped, Void>;
+  } // namespace _detail
 } // namespace ustdex

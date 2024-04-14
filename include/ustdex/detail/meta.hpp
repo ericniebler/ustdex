@@ -77,13 +77,11 @@ namespace ustdex {
 
   struct WHAT;
 
-  struct WITH;
+  struct WITH_FUNCTION;
 
-  struct FUNCTION;
+  struct WITH_SENDER;
 
-  struct SENDER;
-
-  struct ARGUMENTS;
+  struct WITH_ARGUMENTS;
 
   struct FUNCTION_IS_NOT_CALLABLE;
 
@@ -109,13 +107,13 @@ namespace ustdex {
     return false;
   }
 
-  // True if any of the types in Ts... are exceptions; false otherwise.
+  // True if any of the types in Ts... are errors; false otherwise.
   template <class... Ts>
-  inline constexpr bool _uncaught_mexception =
+  inline constexpr bool _contains_error =
     _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
 
   template <class... Ts>
-  using _mexception_find = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
+  using _find_error = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
 
   template <class Ty>
   inline constexpr bool _is_error = USTDEX_IS_BASE_OF(_merror_base, Ty);
@@ -188,19 +186,19 @@ namespace ustdex {
   template <>
   struct _mtry_<true> {
     template <template <class...> class Fn, class... Ts>
-    using _g = _mexception_find<Ts...>;
+    using _g = _find_error<Ts...>;
 
     template <class Fn, class... Ts>
-    using _f = _mexception_find<Fn, Ts...>;
+    using _f = _find_error<Fn, Ts...>;
   };
 
   template <class Fn, class... Ts>
   using _mtry_invoke =
-    typename _mtry_<_uncaught_mexception<Ts...>>::template _f<Fn, Ts...>;
+    typename _mtry_<_contains_error<Ts...>>::template _f<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Ts>
   using _mtry_invoke_q =
-    typename _mtry_<_uncaught_mexception<Ts...>>::template _g<Fn, Ts...>;
+    typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Default>
   struct _mquote;
@@ -225,7 +223,7 @@ namespace ustdex {
   template <template <class...> class Fn>
   struct _mtry_quote<Fn> {
     template <class... Ts>
-    using _f = typename _mtry_<_uncaught_mexception<Ts...>>::template _g<Fn, Ts...>;
+    using _f = typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
   };
 
   template <template <class...> class Fn, class Default>

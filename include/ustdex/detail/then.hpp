@@ -25,19 +25,38 @@
 #include <type_traits>
 
 namespace ustdex {
-  template <class UponTag, class SetTag>
+  // Forward-declate the let_* algorithm tag types:
+  struct then_t;
+  struct upon_error_t;
+  struct upon_stopped_t;
+
+  // Map from a disposition to the corresponding tag types:
+  namespace _detail {
+    template <_disposition_t, class Void = void>
+    extern _undefined<Void> _upon_tag;
+    template <class Void>
+    extern then_t _upon_tag<_value, Void>;
+    template <class Void>
+    extern upon_error_t _upon_tag<_error, Void>;
+    template <class Void>
+    extern upon_stopped_t _upon_tag<_stopped, Void>;
+  } // namespace _detail
+
+  template <_disposition_t Disposition>
   struct _upon {
 #ifndef __CUDACC__
    private:
 #endif
+    using UponTag = decltype(_detail::_upon_tag<Disposition>);
+    using SetTag = decltype(_detail::_set_tag<Disposition>);
+
     template <class Fn, class... Ts>
     using _error_not_callable = //
       ERROR<                    //
         WHERE(IN_ALGORITHM, UponTag),
         WHAT(FUNCTION_IS_NOT_CALLABLE),
-        WITH,
-        FUNCTION(Fn),
-        ARGUMENTS(Ts...)>;
+        WITH_FUNCTION(Fn),
+        WITH_ARGUMENTS(Ts...)>;
 
     template <class Fn>
     struct _transform_completion {
@@ -195,12 +214,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct then_t : _upon<then_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct then_t : _upon<_value> {
   } then{};
 
-  USTDEX_DEVICE constexpr struct upon_error_t : _upon<upon_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct upon_error_t : _upon<_error> {
   } upon_error{};
 
-  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon<upon_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon<_stopped> {
   } upon_stopped{};
 } // namespace ustdex
