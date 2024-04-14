@@ -109,15 +109,20 @@ namespace ustdex {
       USTDEX_HOST_DEVICE
       void _complete(Tag, As &&...as) noexcept {
         if constexpr (USTDEX_IS_SAME(Tag, SetTag)) {
-          // Store the results so the lvalue refs we pass to the function
-          // will be valid for the duration of the async op.
-          auto &tupl =
-            _result.template emplace<_decayed_tuple<As...>>(static_cast<As &&>(as)...);
-          // Call the function with the results and connect the resulting
-          // sender, storing the operation state in _opstate2.
-          auto &nextop = _opstate2.emplace_from(
-            ustdex::connect, _apply(static_cast<Fn &&>(_fn), tupl), &_rcvr);
-          ustdex::start(nextop);
+          USTDEX_TRY {
+            // Store the results so the lvalue refs we pass to the function
+            // will be valid for the duration of the async op.
+            auto &tupl =
+              _result.template emplace<_decayed_tuple<As...>>(static_cast<As &&>(as)...);
+            // Call the function with the results and connect the resulting
+            // sender, storing the operation state in _opstate2.
+            auto &nextop = _opstate2.emplace_from(
+              ustdex::connect, _apply(static_cast<Fn &&>(_fn), tupl), &_rcvr);
+            ustdex::start(nextop);
+          }
+          USTDEX_CATCH(...) {
+            ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+          }
         } else {
           // Forward the completion to the receiver unchanged.
           Tag()(static_cast<Rcvr &&>(_rcvr), static_cast<As &&>(as)...);
@@ -173,11 +178,13 @@ namespace ustdex {
         Fn,
         _decay_t<As> &...>;
 
-      // This computes the completion signatures of the `let_*` sender,
-      // or returns an ERROR if it cannot.
+      // This computes the completion signatures of sender returned by the
+      // function when called with the given arguments. It return an ERROR if
+      // the function is not callable with the arguments or if the function
+      // returns a non-sender.
       template <class... As>
-      using _f = _minvoke<
-        _mtry_quote<completion_signatures_of_t>,
+      using _f = _mtry_invoke_q<
+        completion_signatures_of_t,
         _ensure_sender<_call_result<As...>>,
         Env...>;
     };
@@ -190,7 +197,7 @@ namespace ustdex {
       SetTag,
       _completions_fn<Fn, Env...>::template _f,
       _default_completions,
-      _concat_completion_signatures>;
+      _mbind_front_q<_concat_completion_signatures, _eptr_completion>::_f>;
 
     /// @brief The `let_(value|error|stopped)` sender.
     /// @tparam Sndr The predecessor sender.

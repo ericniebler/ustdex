@@ -23,11 +23,13 @@
 #  define USTDEX_HOST_DEVICE __host__ __device__
 #  define USTDEX_TRY
 #  define USTDEX_CATCH(...) if constexpr (false)
+#  define USTDEX_THROW(...) void(0)
 #else
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE
-#  define USTDEX_TRY   try
-#  define USTDEX_CATCH catch
+#  define USTDEX_TRY        try
+#  define USTDEX_CATCH      catch
+#  define USTDEX_THROW(...) throw __VA_ARGS__
 #endif
 
 #if __has_attribute(__nodebug__)

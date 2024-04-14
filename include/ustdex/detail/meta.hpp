@@ -193,12 +193,10 @@ namespace ustdex {
   };
 
   template <class Fn, class... Ts>
-  using _mtry_invoke =
-    typename _mtry_<_contains_error<Ts...>>::template _f<Fn, Ts...>;
+  using _mtry_invoke = typename _mtry_<_contains_error<Ts...>>::template _f<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Ts>
-  using _mtry_invoke_q =
-    typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
+  using _mtry_invoke_q = typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
 
   template <template <class...> class Fn, class... Default>
   struct _mquote;

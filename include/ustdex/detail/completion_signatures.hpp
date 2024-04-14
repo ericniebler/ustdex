@@ -17,6 +17,8 @@
 
 #include "cpos.hpp"
 
+#include <exception>
+
 namespace ustdex {
   template <class... Ts>
   struct completion_signatures { };
@@ -214,13 +216,15 @@ namespace ustdex {
     StoppedSigs>;
 
   namespace _detail {
-    struct _nil { };
+    struct _nil {
+      template <class... Ts>
+      friend _mlist<Ts...> &operator+(_mlist<Ts...> &, _nil) {
+        USTDEX_THROW();
+      }
+    };
 
     template <class...>
     using _to_nil = _nil;
-
-    template <class... Ts>
-    _mlist<Ts...> &operator+(_mlist<Ts...> &, _nil);
 
     template <class... Ts>
     using _concat_mlist = //
@@ -265,7 +269,6 @@ namespace ustdex {
         _detail::_concat_mlist>,
       _mtry_quote<Tuple>>;
 
-
   template <class Sndr, class Env>
   USTDEX_DEVICE constexpr bool sends_stopped = //
     _gather_completion_signatures<
@@ -275,5 +278,8 @@ namespace ustdex {
       _malways<_mfalse>::_f,
       _mand>::value;
 
+  using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;
 
+  template <bool NoExcept>
+  using _eptr_completion_if = _mif<NoExcept, completion_signatures<>, _eptr_completion>;
 } // namespace ustdex
