@@ -102,14 +102,12 @@ namespace ustdex {
         , _opstate1(ustdex::connect(static_cast<CvSndr &&>(sndr), this)) {
       }
 
-      USTDEX_HOST_DEVICE
-      void start() noexcept {
+      USTDEX_HOST_DEVICE void start() noexcept {
         ustdex::start(_opstate1);
       }
 
       template <class Tag, class... As>
-      USTDEX_HOST_DEVICE
-      void _complete(Tag, As &&...as) noexcept {
+      USTDEX_HOST_DEVICE void _complete(Tag, As &&...as) noexcept {
         if constexpr (USTDEX_IS_SAME(Tag, SetTag)) {
           USTDEX_TRY {
             // Store the results so the lvalue refs we pass to the function
@@ -147,8 +145,7 @@ namespace ustdex {
         _complete(set_stopped_t());
       }
 
-      USTDEX_HOST_DEVICE
-      auto get_env() const noexcept {
+      USTDEX_HOST_DEVICE auto get_env() const noexcept {
         return ustdex::get_env(_rcvr);
       }
     };
@@ -223,8 +220,7 @@ namespace ustdex {
         -> _completions<const Sndr &, Fn, Env...>;
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      auto connect(Rcvr &&rcvr) && noexcept(
+      USTDEX_HOST_DEVICE auto connect(Rcvr &&rcvr) && noexcept(
         _nothrow_constructible<_opstate_t<Sndr, Fn, Rcvr>, Sndr, Fn, Rcvr>)
         -> _opstate_t<Sndr, Fn, Rcvr> {
         return _opstate_t<Sndr, Fn, Rcvr>(
@@ -234,8 +230,7 @@ namespace ustdex {
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      auto connect(Rcvr &&rcvr) const & noexcept( //
+      USTDEX_HOST_DEVICE auto connect(Rcvr &&rcvr) const & noexcept( //
         _nothrow_constructible<
           _opstate_t<const Sndr &, Fn, Rcvr>,
           const Sndr &,
@@ -245,8 +240,7 @@ namespace ustdex {
         return _opstate_t<const Sndr &, Fn, Rcvr>(_sndr, _fn, static_cast<Rcvr &&>(rcvr));
       }
 
-      USTDEX_HOST_DEVICE
-      decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
         return ustdex::get_env(_sndr);
       }
     };
@@ -256,24 +250,19 @@ namespace ustdex {
       Fn _fn;
 
       template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
-        operator|(Sndr sndr, _closure_t &&_self) {
+      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
         return LetTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };
 
    public:
     template <class Sndr, class Fn>
-    USTDEX_HOST_DEVICE
-    _sndr_t<Sndr, Fn>
-      operator()(Sndr sndr, Fn fn) const {
+    USTDEX_HOST_DEVICE _sndr_t<Sndr, Fn> operator()(Sndr sndr, Fn fn) const {
       return _sndr_t<Sndr, Fn>{{}, static_cast<Fn &&>(fn), static_cast<Sndr &&>(sndr)};
     }
 
     template <class Fn>
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    auto
-      operator()(Fn fn) const noexcept {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Fn fn) const noexcept {
       return _closure_t<Fn>{static_cast<Fn &&>(fn)};
     }
   };

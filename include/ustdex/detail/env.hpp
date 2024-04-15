@@ -25,24 +25,20 @@ namespace ustdex {
 
   USTDEX_DEVICE constexpr struct get_env_t {
     template <class Ty>
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    auto
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(const Ty &ty) const noexcept -> decltype(ty.get_env()) {
       static_assert(noexcept(ty.get_env()));
       return ty.get_env();
     }
 
     template <class Ty>
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    auto
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(const Ty *ty) const noexcept -> decltype(ty->get_env()) {
       static_assert(noexcept(ty->get_env()));
       return ty->get_env();
     }
 
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    empty_env
-      operator()(_ignore) const noexcept {
+    USTDEX_INLINE USTDEX_HOST_DEVICE empty_env operator()(_ignore) const noexcept {
       return {};
     }
   } get_env{};

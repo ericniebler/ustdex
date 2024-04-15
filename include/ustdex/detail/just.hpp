@@ -57,15 +57,12 @@ namespace ustdex {
       struct _complete_fn {
         opstate_t *_self;
 
-        USTDEX_HOST_DEVICE
-        void
-          operator()(Ts &...ts) const noexcept {
+        USTDEX_HOST_DEVICE void operator()(Ts &...ts) const noexcept {
           SetTag()(static_cast<Rcvr &&>(_self->_rcvr), static_cast<Ts &&>(ts)...);
         }
       };
 
-      USTDEX_HOST_DEVICE
-      void start() & noexcept {
+      USTDEX_HOST_DEVICE void start() & noexcept {
         _apply(_complete_fn{this}, _values);
       }
     };
@@ -82,16 +79,14 @@ namespace ustdex {
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      opstate_t<Rcvr, Ts...>
+      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...>
         connect(Rcvr rcvr) && noexcept(_nothrow_decay_copyable<Rcvr, Ts...>) {
         return opstate_t<Rcvr, Ts...>{
           static_cast<Rcvr &&>(rcvr), static_cast<_tuple_for<Ts...> &&>(_values)};
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      opstate_t<Rcvr, Ts...>
+      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...>
         connect(Rcvr rcvr) const & noexcept(_nothrow_decay_copyable<Rcvr, Ts const &...>) {
         return opstate_t<Rcvr, Ts...>{static_cast<Rcvr &&>(rcvr), _values};
       }
@@ -99,9 +94,7 @@ namespace ustdex {
 
    public:
     template <class... Ts>
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    auto
-      operator()(Ts... ts) const noexcept {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Ts... ts) const noexcept {
       return sndr_t<Ts...>{{}, {static_cast<Ts &&>(ts)...}};
     }
   };

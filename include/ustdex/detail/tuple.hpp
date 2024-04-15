@@ -35,8 +35,8 @@ namespace ustdex {
     using _nothrow = _mvalue<_nothrow_callable<Fn, _copy_cvref_t<Tup, Ts>...>>;
 
     template <class Fn, class Tup>
-    USTDEX_INLINE USTDEX_HOST_DEVICE
-    constexpr friend auto _apply(Fn &&fn, Tup &&tup) noexcept(_v<_nothrow<Fn, Tup>>)
+    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr friend auto
+      _apply(Fn &&fn, Tup &&tup) noexcept(_v<_nothrow<Fn, Tup>>)
       //noexcept(DECLVAL(Fn)(DECLVAL(_copy_cvref_t<Tup, Ts>)...)))
       -> decltype(DECLVAL(Fn)(DECLVAL(_copy_cvref_t<Tup, Ts>)...)) {
       return static_cast<Fn &&>(fn)(
@@ -51,20 +51,17 @@ namespace ustdex {
   using _tuple_for = _tuple<std::index_sequence_for<Ts...>, Ts...>;
 
   template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE
-  constexpr Ty &&_get(_box<Ty, Idx> &&_self) noexcept {
+  USTDEX_HOST_DEVICE constexpr Ty &&_get(_box<Ty, Idx> &&_self) noexcept {
     return static_cast<Ty &&>(_self._value);
   }
 
   template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE
-  constexpr Ty &_get(_box<Ty, Idx> &_self) noexcept {
+  USTDEX_HOST_DEVICE constexpr Ty &_get(_box<Ty, Idx> &_self) noexcept {
     return _self._value;
   }
 
   template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE
-  constexpr const Ty &_get(const _box<Ty, Idx> &_self) noexcept {
+  USTDEX_HOST_DEVICE constexpr const Ty &_get(const _box<Ty, Idx> &_self) noexcept {
     return _self._value;
   }
 

@@ -49,8 +49,7 @@ namespace ustdex {
 
   namespace _stok {
     struct _inplace_stop_callback_base {
-      USTDEX_HOST_DEVICE
-      void _execute() noexcept {
+      USTDEX_HOST_DEVICE void _execute() noexcept {
         this->_execute_fn(this);
       }
 
@@ -64,8 +63,7 @@ namespace ustdex {
         , _execute_fn(_execute) {
       }
 
-      USTDEX_HOST_DEVICE
-      void _register_callback() noexcept;
+      USTDEX_HOST_DEVICE void _register_callback() noexcept;
 
       friend inplace_stop_source;
 
@@ -80,8 +78,7 @@ namespace ustdex {
     struct _spin_wait {
       _spin_wait() noexcept = default;
 
-      USTDEX_HOST_DEVICE
-      void _wait() noexcept {
+      USTDEX_HOST_DEVICE void _wait() noexcept {
         if (_count++ < _yield_threshold) {
           // TODO: _mm_pause();
         } else {
@@ -112,24 +109,20 @@ namespace ustdex {
     template <class>
     using callback_type = _callback_type;
 
-    USTDEX_HOST_DEVICE
-    static constexpr auto stop_requested() noexcept -> bool {
+    USTDEX_HOST_DEVICE static constexpr auto stop_requested() noexcept -> bool {
       return false;
     }
 
-    USTDEX_HOST_DEVICE
-    static constexpr auto stop_possible() noexcept -> bool {
+    USTDEX_HOST_DEVICE static constexpr auto stop_possible() noexcept -> bool {
       return false;
     }
 
-    USTDEX_HOST_DEVICE
-    friend constexpr bool
+    USTDEX_HOST_DEVICE friend constexpr bool
       operator==(const never_stop_token &, const never_stop_token &) noexcept {
       return true;
     }
 
-    USTDEX_HOST_DEVICE
-    friend constexpr bool
+    USTDEX_HOST_DEVICE friend constexpr bool
       operator!=(const never_stop_token &, const never_stop_token &) noexcept {
       return false;
     }
@@ -145,14 +138,11 @@ namespace ustdex {
     USTDEX_HOST_DEVICE ~inplace_stop_source();
     inplace_stop_source(inplace_stop_source &&) = delete;
 
-    USTDEX_HOST_DEVICE
-    auto get_token() const noexcept -> inplace_stop_token;
+    USTDEX_HOST_DEVICE auto get_token() const noexcept -> inplace_stop_token;
 
-    USTDEX_HOST_DEVICE
-    auto request_stop() noexcept -> bool;
+    USTDEX_HOST_DEVICE auto request_stop() noexcept -> bool;
 
-    USTDEX_HOST_DEVICE
-    auto stop_requested() const noexcept -> bool {
+    USTDEX_HOST_DEVICE auto stop_requested() const noexcept -> bool {
       return (_state.load(USTDEX_CUDA_NS std::memory_order_acquire)
               & _stop_requested_flag)
           != 0;
@@ -164,18 +154,16 @@ namespace ustdex {
     template <class>
     friend class inplace_stop_callback;
 
-    USTDEX_HOST_DEVICE
-    auto _lock() const noexcept -> uint8_t;
+    USTDEX_HOST_DEVICE auto _lock() const noexcept -> uint8_t;
     USTDEX_HOST_DEVICE void _unlock(uint8_t) const noexcept;
 
-    USTDEX_HOST_DEVICE
-    auto _try_lock_unless_stop_requested(bool) const noexcept -> bool;
+    USTDEX_HOST_DEVICE auto _try_lock_unless_stop_requested(bool) const noexcept -> bool;
 
-    USTDEX_HOST_DEVICE
-    auto _try_add_callback(_stok::_inplace_stop_callback_base *) const noexcept -> bool;
+    USTDEX_HOST_DEVICE auto
+      _try_add_callback(_stok::_inplace_stop_callback_base *) const noexcept -> bool;
 
-    USTDEX_HOST_DEVICE
-    void _remove_callback(_stok::_inplace_stop_callback_base *) const noexcept;
+    USTDEX_HOST_DEVICE void
+      _remove_callback(_stok::_inplace_stop_callback_base *) const noexcept;
 
     static constexpr uint8_t _stop_requested_flag = 1;
     static constexpr uint8_t _locked_flag = 2;
@@ -204,8 +192,7 @@ namespace ustdex {
     auto operator=(const inplace_stop_token &_other) noexcept
       -> inplace_stop_token & = default;
 
-    USTDEX_HOST_DEVICE
-    auto
+    USTDEX_HOST_DEVICE auto
       operator=(inplace_stop_token &&_other) noexcept -> inplace_stop_token & {
       _source = std::exchange(_other._source, nullptr);
       return *this;
@@ -221,19 +208,16 @@ namespace ustdex {
       return _source != nullptr;
     }
 
-    USTDEX_HOST_DEVICE
-    void swap(inplace_stop_token &_other) noexcept {
+    USTDEX_HOST_DEVICE void swap(inplace_stop_token &_other) noexcept {
       std::swap(_source, _other._source);
     }
 
-    USTDEX_HOST_DEVICE
-    friend bool
+    USTDEX_HOST_DEVICE friend bool
       operator==(const inplace_stop_token &_a, const inplace_stop_token &_b) noexcept {
       return _a._source == _b._source;
     }
 
-    USTDEX_HOST_DEVICE
-    friend bool
+    USTDEX_HOST_DEVICE friend bool
       operator!=(const inplace_stop_token &_a, const inplace_stop_token &_b) noexcept {
       return _a._source != _b._source;
     }
@@ -251,8 +235,8 @@ namespace ustdex {
     const inplace_stop_source *_source;
   };
 
-  USTDEX_HOST_DEVICE
-  inline auto inplace_stop_source::get_token() const noexcept -> inplace_stop_token {
+  USTDEX_HOST_DEVICE inline auto
+    inplace_stop_source::get_token() const noexcept -> inplace_stop_token {
     return inplace_stop_token{this};
   }
 
@@ -277,8 +261,8 @@ namespace ustdex {
     }
 
    private:
-    USTDEX_HOST_DEVICE
-    static void _execute_impl(_stok::_inplace_stop_callback_base *cb) noexcept {
+    USTDEX_HOST_DEVICE static void
+      _execute_impl(_stok::_inplace_stop_callback_base *cb) noexcept {
       std::move(static_cast<inplace_stop_callback *>(cb)->_fun)();
     }
 
@@ -286,8 +270,8 @@ namespace ustdex {
   };
 
   namespace _stok {
-    USTDEX_HOST_DEVICE
-    inline void _inplace_stop_callback_base::_register_callback() noexcept {
+    USTDEX_HOST_DEVICE inline void
+      _inplace_stop_callback_base::_register_callback() noexcept {
       if (_source != nullptr) {
         if (!_source->_try_add_callback(this)) {
           _source = nullptr;
@@ -305,8 +289,7 @@ namespace ustdex {
     USTDEX_ASSERT(_callbacks == nullptr);
   }
 
-  USTDEX_HOST_DEVICE
-  inline auto inplace_stop_source::request_stop() noexcept -> bool {
+  USTDEX_HOST_DEVICE inline auto inplace_stop_source::request_stop() noexcept -> bool {
     if (!_try_lock_unless_stop_requested(true))
       return true;
 
@@ -339,8 +322,7 @@ namespace ustdex {
     return false;
   }
 
-  USTDEX_HOST_DEVICE
-  inline auto inplace_stop_source::_lock() const noexcept -> uint8_t {
+  USTDEX_HOST_DEVICE inline auto inplace_stop_source::_lock() const noexcept -> uint8_t {
     _stok::_spin_wait _spin;
     auto _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
     do {
@@ -357,13 +339,12 @@ namespace ustdex {
     return _old_state;
   }
 
-  USTDEX_HOST_DEVICE
-  inline void inplace_stop_source::_unlock(uint8_t _old_state) const noexcept {
+  USTDEX_HOST_DEVICE inline void
+    inplace_stop_source::_unlock(uint8_t _old_state) const noexcept {
     (void) _state.store(_old_state, USTDEX_CUDA_NS std::memory_order_release);
   }
 
-  USTDEX_HOST_DEVICE
-  inline auto inplace_stop_source::_try_lock_unless_stop_requested(
+  USTDEX_HOST_DEVICE inline auto inplace_stop_source::_try_lock_unless_stop_requested(
     bool _set_stop_requested) const noexcept -> bool {
     _stok::_spin_wait _spin;
     auto _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
@@ -389,8 +370,7 @@ namespace ustdex {
     return true;
   }
 
-  USTDEX_HOST_DEVICE
-  inline auto inplace_stop_source::_try_add_callback(
+  USTDEX_HOST_DEVICE inline auto inplace_stop_source::_try_add_callback(
     _stok::_inplace_stop_callback_base *_callbk) const noexcept -> bool {
     if (!_try_lock_unless_stop_requested(false)) {
       return false;
@@ -408,8 +388,7 @@ namespace ustdex {
     return true;
   }
 
-  USTDEX_HOST_DEVICE
-  inline void inplace_stop_source::_remove_callback(
+  USTDEX_HOST_DEVICE inline void inplace_stop_source::_remove_callback(
     _stok::_inplace_stop_callback_base *_callbk) const noexcept {
     auto _old_state = _lock();
 

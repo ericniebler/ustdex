@@ -84,7 +84,6 @@ LambdaBodyIndentation: Signature
 LineEnding: LF
 Macros: [
   'USTDEX_INLINE=inline',
-  # 'USTDEX_HOST_DEVICE=[[TDEX_HOST_DEVI]]',
   'USTDEX_TRY=try',
   'USTDEX_CATCH=catch',
 ]

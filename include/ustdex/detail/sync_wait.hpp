@@ -39,13 +39,11 @@ namespace ustdex {
     struct _env_t {
       run_loop* _loop;
 
-      USTDEX_HOST_DEVICE
-      auto query(get_scheduler_t) const noexcept {
+      USTDEX_HOST_DEVICE auto query(get_scheduler_t) const noexcept {
         return _loop->get_scheduler();
       }
 
-      USTDEX_HOST_DEVICE
-      auto query(get_delegatee_scheduler_t) const noexcept {
+      USTDEX_HOST_DEVICE auto query(get_delegatee_scheduler_t) const noexcept {
         return _loop->get_scheduler();
       }
     };
@@ -65,8 +63,7 @@ namespace ustdex {
       _state_t* _state;
 
       template <class... As>
-      USTDEX_HOST_DEVICE
-      void set_value(As&&... _as) noexcept {
+      USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
         USTDEX_TRY {
           _values->emplace(static_cast<As&&>(_as)...);
         }
@@ -77,8 +74,7 @@ namespace ustdex {
       }
 
       template <class Error>
-      USTDEX_HOST_DEVICE
-      void set_error(Error _err) noexcept {
+      USTDEX_HOST_DEVICE void set_error(Error _err) noexcept {
         if constexpr (USTDEX_IS_SAME(Error, std::exception_ptr))
           _state->_eptr = static_cast<Error&&>(_err);
         else if constexpr (USTDEX_IS_SAME(Error, std::error_code))
@@ -88,8 +84,7 @@ namespace ustdex {
         _state->_loop.finish();
       }
 
-      USTDEX_HOST_DEVICE
-      void set_stopped() noexcept {
+      USTDEX_HOST_DEVICE void set_stopped() noexcept {
         _state->_loop.finish();
       }
 

@@ -53,8 +53,7 @@ namespace ustdex {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
 
-      USTDEX_HOST_DEVICE
-      void start() noexcept {
+      USTDEX_HOST_DEVICE void start() noexcept {
         // If the query invocation is noexcept, call it directly. Otherwise,
         // wrap it in a try-catch block and forward the exception to the
         // receiver.
@@ -98,8 +97,7 @@ namespace ustdex {
       Env>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE
-    auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
+    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
       -> opstate_t<Query, Rcvr> {
       return opstate_t<Query, Rcvr>{{}, static_cast<Rcvr &&>(rcvr)};
     }

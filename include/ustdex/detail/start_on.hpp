@@ -46,25 +46,21 @@ namespace ustdex {
       };
 
       template <class... As>
-      USTDEX_HOST_DEVICE
-      void set_value(As &&...as) noexcept {
+      USTDEX_HOST_DEVICE void set_value(As &&...as) noexcept {
         ustdex::set_value(static_cast<Rcvr &&>(_pair->second), static_cast<As &&>(as)...);
       }
 
       template <class Error>
-      USTDEX_HOST_DEVICE
-      void set_error(Error &&error) noexcept {
+      USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
         ustdex::set_error(
           static_cast<Rcvr &&>(_pair->second), static_cast<Error &&>(error));
       }
 
-      USTDEX_HOST_DEVICE
-      void set_stopped() noexcept {
+      USTDEX_HOST_DEVICE void set_stopped() noexcept {
         ustdex::set_stopped(static_cast<Rcvr &&>(_pair->second));
       }
 
-      USTDEX_HOST_DEVICE
-      _env_t get_env() const noexcept {
+      USTDEX_HOST_DEVICE _env_t get_env() const noexcept {
         return {_pair};
       }
     };
@@ -82,30 +78,25 @@ namespace ustdex {
         , _opstate2{connect(static_cast<Sndr &&>(sndr), _rcvr_t<Sch, Rcvr>{&_pair})} {
       }
 
-      USTDEX_HOST_DEVICE
-      void start() noexcept {
+      USTDEX_HOST_DEVICE void start() noexcept {
         ustdex::start(_opstate1);
       }
 
-      USTDEX_HOST_DEVICE
-      void set_value() noexcept {
+      USTDEX_HOST_DEVICE void set_value() noexcept {
         ustdex::start(_opstate2);
       }
 
       template <class Error>
-      USTDEX_HOST_DEVICE
-      void set_error(Error &&error) noexcept {
+      USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
         ustdex::set_error(
           static_cast<Rcvr &&>(_pair.second), static_cast<Error &&>(error));
       }
 
-      USTDEX_HOST_DEVICE
-      void set_stopped() noexcept {
+      USTDEX_HOST_DEVICE void set_stopped() noexcept {
         ustdex::set_stopped(static_cast<Rcvr &&>(_pair.second));
       }
 
-      USTDEX_HOST_DEVICE
-      decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
         return ustdex::get_env(_pair.second);
       }
     };
@@ -137,30 +128,26 @@ namespace ustdex {
         const Env &...) const & -> completion_signatures_of_t<const Sndr &, Env...>;
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
+      USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
         return _opstate_t<Sch, Sndr, Rcvr>{
           _sch, static_cast<Rcvr &&>(rcvr), static_cast<Sndr &&>(_sndr)};
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE
-      _opstate_t<Sch, const Sndr &, Rcvr> connect(Rcvr rcvr) const & noexcept {
+      USTDEX_HOST_DEVICE _opstate_t<Sch, const Sndr &, Rcvr>
+        connect(Rcvr rcvr) const & noexcept {
         return _opstate_t<Sch, const Sndr &, Rcvr>{
           _sch, static_cast<Rcvr &&>(rcvr), _sndr};
       }
 
-      USTDEX_HOST_DEVICE
-      decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
         return ustdex::get_env(_sndr);
       }
     };
 
    public:
     template <class Sch, class Sndr>
-    USTDEX_HOST_DEVICE
-    _sndr_t<Sch, Sndr>
-      operator()(Sch sch, Sndr sndr) const noexcept {
+    USTDEX_HOST_DEVICE _sndr_t<Sch, Sndr> operator()(Sch sch, Sndr sndr) const noexcept {
       return _sndr_t<Sch, Sndr>{{}, sch, sndr};
     }
   } start_on{};

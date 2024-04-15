@@ -26,8 +26,8 @@
 namespace ustdex {
   namespace _detail {
     template <class... Ts, std::size_t... Idx>
-    USTDEX_HOST_DEVICE
-    inline void _destroy(_mindices<Idx...>, std::size_t idx, void *pv) noexcept {
+    USTDEX_HOST_DEVICE inline void
+      _destroy(_mindices<Idx...>, std::size_t idx, void *pv) noexcept {
       ((Idx == idx ? static_cast<Ts *>(pv)->~Ts() : void()), ...);
     }
   } // namespace _detail
@@ -40,8 +40,7 @@ namespace ustdex {
     std::size_t _index{_variant_npos};
     alignas(Ts...) unsigned char _storage[_max_size];
 
-    USTDEX_HOST_DEVICE
-    void _destroy() noexcept {
+    USTDEX_HOST_DEVICE void _destroy() noexcept {
       if (_index != _variant_npos) {
         _detail::_destroy<Ts...>(_mmake_indices_for<Ts...>(), _index, _storage);
       }
@@ -58,19 +57,17 @@ namespace ustdex {
       _destroy();
     }
 
-    USTDEX_HOST_DEVICE
-    void *_get_ptr() noexcept {
+    USTDEX_HOST_DEVICE void *_get_ptr() noexcept {
       return _storage;
     }
 
-    USTDEX_HOST_DEVICE
-    std::size_t index() const noexcept {
+    USTDEX_HOST_DEVICE std::size_t index() const noexcept {
       return _index;
     }
 
     template <class Ty, class... As>
-    USTDEX_HOST_DEVICE
-    Ty &emplace(As &&...as) noexcept(_nothrow_constructible<Ty, As...>) {
+    USTDEX_HOST_DEVICE Ty &
+      emplace(As &&...as) noexcept(_nothrow_constructible<Ty, As...>) {
       constexpr std::size_t _new_index = _index_of<Ty, Ts...>();
       static_assert(_new_index != _variant_npos, "Type not in variant");
 
@@ -81,8 +78,8 @@ namespace ustdex {
     }
 
     template <std::size_t Idx, class... As>
-    USTDEX_HOST_DEVICE
-    _at<Idx> &emplace(As &&...as) noexcept(_nothrow_constructible<_at<Idx>, As...>) {
+    USTDEX_HOST_DEVICE _at<Idx> &
+      emplace(As &&...as) noexcept(_nothrow_constructible<_at<Idx>, As...>) {
       static_assert(Idx < sizeof...(Ts), "variant index is too large");
 
       _destroy();
@@ -92,9 +89,9 @@ namespace ustdex {
     }
 
     template <class Fn, class... As>
-    USTDEX_HOST_DEVICE
-    auto emplace_from(Fn &&fn, As &&...as) noexcept(_nothrow_callable<Fn, As...>)
-      -> _call_result_t<Fn, As...> & {
+    USTDEX_HOST_DEVICE auto
+      emplace_from(Fn &&fn, As &&...as) noexcept(_nothrow_callable<Fn, As...>)
+        -> _call_result_t<Fn, As...> & {
       using _result_t = _call_result_t<Fn, As...>;
       constexpr std::size_t _new_index = _index_of<_result_t, Ts...>();
       static_assert(_new_index != _variant_npos, "Type not in variant");
@@ -106,15 +103,13 @@ namespace ustdex {
     }
 
     template <std::size_t Idx>
-    USTDEX_HOST_DEVICE
-    decltype(auto) get() noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get() noexcept {
       USTDEX_ASSERT(Idx == _index);
       return *reinterpret_cast<_at<Idx> *>(_storage);
     }
 
     template <std::size_t Idx>
-    USTDEX_HOST_DEVICE
-    decltype(auto) get() const noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get() const noexcept {
       USTDEX_ASSERT(Idx == _index);
       return *reinterpret_cast<const _at<Idx> *>(_storage);
     }

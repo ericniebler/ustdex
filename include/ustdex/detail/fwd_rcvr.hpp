@@ -22,8 +22,7 @@
 namespace ustdex {
   template <class Rcvr>
   struct _fwd_rcvr : Rcvr {
-    USTDEX_HOST_DEVICE
-    decltype(auto) get_env() const noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
       // TODO: only forward the "forwarding" queries:
       return ustdex::get_env(static_cast<Rcvr const &>(*this));
     }
@@ -48,8 +47,7 @@ namespace ustdex {
       ustdex::set_stopped(_rcvr);
     }
 
-    USTDEX_HOST_DEVICE
-    decltype(auto) get_env() const noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
       // TODO: only forward the "forwarding" queries:
       return ustdex::get_env(_rcvr);
     }
