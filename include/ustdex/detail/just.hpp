@@ -73,21 +73,19 @@ namespace ustdex {
       [[no_unique_address]] JustTag _tag;
       _tuple_for<Ts...> _values;
 
-      auto get_completion_signatures(_ignore = {}) const noexcept
-        -> completion_signatures<SetTag(Ts...)> {
-        return {};
-      }
+      auto get_completion_signatures(_ignore = {}) const
+        -> completion_signatures<SetTag(Ts...)>;
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...>
-        connect(Rcvr rcvr) && noexcept(_nothrow_decay_copyable<Rcvr, Ts...>) {
+      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...> connect(Rcvr rcvr) && //
+        noexcept(_nothrow_decay_copyable<Rcvr, Ts...>) {
         return opstate_t<Rcvr, Ts...>{
           static_cast<Rcvr &&>(rcvr), static_cast<_tuple_for<Ts...> &&>(_values)};
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...>
-        connect(Rcvr rcvr) const & noexcept(_nothrow_decay_copyable<Rcvr, Ts const &...>) {
+      USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...> connect(Rcvr rcvr) const & //
+        noexcept(_nothrow_decay_copyable<Rcvr, Ts const &...>) {
         return opstate_t<Rcvr, Ts...>{static_cast<Rcvr &&>(rcvr), _values};
       }
     };

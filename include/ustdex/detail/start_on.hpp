@@ -120,12 +120,12 @@ namespace ustdex {
           _eat_value_completions_t>>;
 
       template <class... Env>
-      auto get_completion_signatures(
-        const Env &...) && -> completion_signatures_of_t<Sndr, Env...>;
+      auto get_completion_signatures(const Env &...) && //
+        -> completion_signatures_of_t<Sndr, Env...>;
 
       template <class... Env>
-      auto get_completion_signatures(
-        const Env &...) const & -> completion_signatures_of_t<const Sndr &, Env...>;
+      auto get_completion_signatures(const Env &...) const & //
+        -> completion_signatures_of_t<const Sndr &, Env...>;
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {

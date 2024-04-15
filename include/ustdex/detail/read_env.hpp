@@ -91,10 +91,11 @@ namespace ustdex {
     [[no_unique_address]] Query _query;
 
     template <class Env>
-    auto get_completion_signatures(const Env &) const -> _minvoke<
-      _mif<_callable<Query, Env>, _completions_fn, _error_env_lacks_query<Query, Env>>,
-      Query,
-      Env>;
+    auto get_completion_signatures(const Env &) const //
+      -> _minvoke<
+        _mif<_callable<Query, Env>, _completions_fn, _error_env_lacks_query<Query, Env>>,
+        Query,
+        Env>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)

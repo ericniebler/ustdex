@@ -92,10 +92,11 @@ namespace ustdex {
         using sender_concept = sender_t;
 
         template <class... Env>
-        auto get_completion_signatures(const Env &...) const -> completion_signatures<
-          set_value_t(),
-          set_error_t(std::exception_ptr),
-          set_stopped_t()>;
+        auto get_completion_signatures(const Env &...) const //
+          -> completion_signatures<
+            set_value_t(),
+            set_error_t(std::exception_ptr),
+            set_stopped_t()>;
 
         template <class Rcvr>
         USTDEX_HOST_DEVICE auto connect(Rcvr _rcvr) const noexcept -> _operation<Rcvr> {
