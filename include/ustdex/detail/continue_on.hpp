@@ -24,7 +24,7 @@
 #include "variant.hpp"
 
 namespace ustdex {
-  USTDEX_DEVICE constexpr struct continue_on_t {
+  struct continue_on_t {
 #ifndef __CUDACC__
    private:
 #endif
@@ -137,6 +137,32 @@ namespace ustdex {
       }
     };
 
+    template <class... Ts>
+    using _set_value_completion = completion_signatures<set_value_t(_decay_t<Ts>...)>;
+
+    template <class Error>
+    using _set_error_completion = completion_signatures<set_error_t(_decay_t<Error>)>;
+
+    // The scheduler contributes error and stopped completions.
+    // This causes its set_value_t() completion to be ignored.
+    template <class Sch, class... Env>
+    using _scheduler_completions = //
+      transform_completion_signatures<
+        completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
+        completion_signatures<>,
+        _malways<completion_signatures<>>::_f>;
+
+    // The continue_on completions are the scheduler's error
+    // and stopped completions, plus the sender's completions
+    // with all the result data types decayed.
+    template <class CvSndr, class Sch, class... Env>
+    using _completions = //
+      transform_completion_signatures<
+        completion_signatures_of_t<CvSndr, Env...>,
+        _scheduler_completions<Sch, Env...>,
+        _set_value_completion,
+        _set_error_completion>;
+
     template <class Sndr, class Sch, class Tag = continue_on_t>
     struct _sndr_t {
       using sender_concept = sender_t;
@@ -159,6 +185,14 @@ namespace ustdex {
           return ustdex::get_env(_sndr->_sndr).query(Query{});
         }
       };
+
+      template <class... Env>
+      auto get_completion_signatures(const Env &...) && //
+        -> _completions<Sndr, Sch, Env...>;
+
+      template <class... Env>
+      auto get_completion_signatures(const Env &...) const & //
+        -> _completions<const Sndr &, Sch, Env...>;
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE
@@ -192,7 +226,9 @@ namespace ustdex {
     template <class Sch>
     USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch>
       operator()(Sch sch) const noexcept;
-  } continue_on{};
+  };
+
+  USTDEX_DEVICE constexpr continue_on_t continue_on{};
 
   template <class Sch>
   struct continue_on_t::_closure_t {

@@ -17,6 +17,7 @@
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
+#include "rcvr_ref.hpp"
 #include "tuple.hpp"
 #include "variant.hpp"
 
@@ -65,7 +66,8 @@ namespace ustdex {
     template <class Fn, class Rcvr>
     struct _opstate_fn {
       template <class... As>
-      using _f = connect_result_t<_call_result_t<Fn, _decay_t<As> &...>, Rcvr *>;
+      using _f =
+        connect_result_t<_call_result_t<Fn, _decay_t<As> &...>, _rcvr_ref_t<Rcvr &>>;
     };
 
     /// @brief Computes the type of a variant of operation states to hold
@@ -117,7 +119,9 @@ namespace ustdex {
             // Call the function with the results and connect the resulting
             // sender, storing the operation state in _opstate2.
             auto &nextop = _opstate2.emplace_from(
-              ustdex::connect, _apply(static_cast<Fn &&>(_fn), tupl), &_rcvr);
+              ustdex::connect,
+              _apply(static_cast<Fn &&>(_fn), tupl),
+              ustdex::_rcvr_ref(_rcvr));
             ustdex::start(nextop);
           }
           USTDEX_CATCH(...) {

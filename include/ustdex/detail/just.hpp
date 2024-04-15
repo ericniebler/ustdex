@@ -22,11 +22,32 @@
 #include "utility.hpp"
 
 namespace ustdex {
-  template <class JustTag, class SetTag>
+  // Forward declarations of the just* tag types:
+  struct just_t;
+  struct just_error_t;
+  struct just_stopped_t;
+
+  // Map from a disposition to the corresponding tag types:
+  namespace _detail {
+    template <_disposition_t, class Void = void>
+    extern _undefined<Void> _just_tag;
+    template <class Void>
+    extern _fn_t<just_t> *_just_tag<_value, Void>;
+    template <class Void>
+    extern _fn_t<just_error_t> *_just_tag<_error, Void>;
+    template <class Void>
+    extern _fn_t<just_stopped_t> *_just_tag<_stopped, Void>;
+  } // namespace _detail
+
+  template <_disposition_t Disposition>
   struct _just {
 #ifndef __CUDACC__
    private:
 #endif
+
+    using JustTag = decltype(_detail::_just_tag<Disposition>());
+    using SetTag = decltype(_detail::_set_tag<Disposition>());
+
     template <class Rcvr, class... Ts>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
@@ -85,12 +106,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct just_t : _just<just_t, set_value_t> {
+  USTDEX_DEVICE constexpr struct just_t : _just<_value> {
   } just{};
 
-  USTDEX_DEVICE constexpr struct just_error_t : _just<just_error_t, set_error_t> {
+  USTDEX_DEVICE constexpr struct just_error_t : _just<_error> {
   } just_error{};
 
-  USTDEX_DEVICE constexpr struct just_stopped_t : _just<just_stopped_t, set_stopped_t> {
+  USTDEX_DEVICE constexpr struct just_stopped_t : _just<_stopped> {
   } just_stopped{};
 } // namespace ustdex

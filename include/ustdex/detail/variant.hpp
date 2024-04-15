@@ -82,8 +82,7 @@ namespace ustdex {
 
     template <std::size_t Idx, class... As>
     USTDEX_HOST_DEVICE
-    _at<Idx> &
-      emplace(As &&...as) noexcept(_nothrow_constructible<_at<Idx>, As...>) {
+    _at<Idx> &emplace(As &&...as) noexcept(_nothrow_constructible<_at<Idx>, As...>) {
       static_assert(Idx < sizeof...(Ts), "variant index is too large");
 
       _destroy();
