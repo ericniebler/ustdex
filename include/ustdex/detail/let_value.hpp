@@ -247,6 +247,7 @@ namespace ustdex {
 
     template <class Fn>
     struct _closure_t {
+      using LetTag = decltype(_detail::_let_tag<Disposition>());
       Fn _fn;
 
       template <class Sndr>

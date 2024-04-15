@@ -217,7 +217,7 @@ namespace ustdex {
 
     template <class Sndr>
     USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
-      return _sndr_t<Sndr, Sch>{{}, _self._sch, static_cast<Sndr &&>(sndr)};
+      return continue_on(static_cast<Sndr &&>(sndr), static_cast<Sch &&>(_self._sch));
     }
   };
 

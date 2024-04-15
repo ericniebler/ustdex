@@ -183,6 +183,7 @@ namespace ustdex {
 
     template <class Fn>
     struct _closure_t {
+      using UponTag = decltype(_detail::_upon_tag<Disposition>());
       Fn _fn;
 
       template <class Sndr>
