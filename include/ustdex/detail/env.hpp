@@ -16,6 +16,7 @@
 #pragma once
 
 #include "meta.hpp"
+#include "queries.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
 
@@ -47,10 +48,7 @@ namespace ustdex {
   } get_env{};
 
   template <class Ty, class Query>
-  using _query_result_t = decltype(DECLVAL(Ty).query(Query()));
-
-  template <class Ty, class Query>
-  inline constexpr bool _queryable = _mvalid_q<_query_result_t, Ty, Query>;
+  inline constexpr bool _queryable = _mvalid_q<_query_result_t, Query, Ty>;
 
   template <class Ty, class Query>
   using _nothrow_queryable_ = _mif<noexcept(DECLVAL(Ty).query(Query()))>;

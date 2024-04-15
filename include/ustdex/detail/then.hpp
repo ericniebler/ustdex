@@ -48,7 +48,7 @@ namespace ustdex {
    private:
 #endif
     using UponTag = decltype(_detail::_upon_tag<Disposition>());
-    using SetTag = decltype(_detail::_set_tag<Disposition>);
+    using SetTag = decltype(_detail::_set_tag<Disposition>());
 
     template <class Fn, class... Ts>
     using _error_not_callable = //

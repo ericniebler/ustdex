@@ -200,10 +200,10 @@ namespace ustdex {
     template <_disposition_t, class Void = void>
     extern _undefined<Void> _set_tag;
     template <class Void>
-    extern set_value_t _set_tag<_value, Void>;
+    extern _fn_t<set_value_t> *_set_tag<_value, Void>;
     template <class Void>
-    extern set_error_t _set_tag<_error, Void>;
+    extern _fn_t<set_error_t> *_set_tag<_error, Void>;
     template <class Void>
-    extern set_stopped_t _set_tag<_stopped, Void>;
+    extern _fn_t<set_stopped_t> *_set_tag<_stopped, Void>;
   } // namespace _detail
 } // namespace ustdex

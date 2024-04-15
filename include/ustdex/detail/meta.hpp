@@ -21,7 +21,7 @@
 
 namespace ustdex {
   template <class Ty>
-  using _declfn = Ty &&(*) () noexcept;
+  using _declfn = Ty && (*) () noexcept;
 
   template <class Ty>
   Ty &&_declval() noexcept;

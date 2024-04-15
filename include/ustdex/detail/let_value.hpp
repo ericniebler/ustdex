@@ -47,7 +47,7 @@ namespace ustdex {
    private:
 #endif
     using LetTag = decltype(_detail::_let_tag<Disposition>());
-    using SetTag = decltype(_detail::_set_tag<Disposition>);
+    using SetTag = decltype(_detail::_set_tag<Disposition>());
 
     template <class...>
     using _empty_tuple = _tuple_for<>;

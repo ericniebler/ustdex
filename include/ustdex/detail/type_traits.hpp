@@ -46,10 +46,12 @@ namespace ustdex {
     using _f = decltype(_g(DECLVAL(Ty)));
   };
 
-  struct _decay_abominable {
-    template <class Ty>
-    using _f = Ty;
-  };
+  // I don't care to support abominable function types,
+  // but if that's needed, this is the way to do it:
+  // struct _decay_abominable {
+  //   template <class Ty>
+  //   using _f = Ty;
+  // };
 
   struct _decay_void {
     template <class Ty>
@@ -71,23 +73,23 @@ namespace ustdex {
   template <class Ty, class... Us>
   extern _decay_default _mdecay<Ty (&)(Us...) noexcept>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const noexcept>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const noexcept>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const &>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const &>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const & noexcept>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const & noexcept>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const &&>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const &&>;
 
-  template <class Ty, class... Us>
-  extern _decay_abominable _mdecay<Ty(Us...) const && noexcept>;
+  // template <class Ty, class... Us>
+  // extern _decay_abominable _mdecay<Ty(Us...) const && noexcept>;
 
   template <class Ty>
   extern _decay_default _mdecay<Ty[]>;

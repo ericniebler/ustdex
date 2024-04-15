@@ -40,7 +40,7 @@ namespace ustdex {
         }
 
         template <class Query>
-        auto query(Query) const noexcept -> _query_result_t<env_of_t<Rcvr>, Query> {
+        auto query(Query) const noexcept -> _query_result_t<Query, env_of_t<Rcvr>> {
           return _pair->second.query(Query{});
         }
       };

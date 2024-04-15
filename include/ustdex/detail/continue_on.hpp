@@ -155,7 +155,7 @@ namespace ustdex {
 
         template <class Query>
         USTDEX_HOST_DEVICE
-        auto query(Query) const -> _query_result_t<env_of_t<Sndr>, Query> {
+        auto query(Query) const -> _query_result_t<Query, env_of_t<Sndr>> {
           return ustdex::get_env(_sndr->_sndr).query(Query{});
         }
       };

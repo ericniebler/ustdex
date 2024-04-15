@@ -16,16 +16,38 @@
 #pragma once
 
 #include "stop_token.hpp"
+#include "type_traits.hpp"
 #include "utility.hpp"
 
+#include <memory>
+
 namespace ustdex {
+  template <class Query, class Ty>
+  using _query_result_t = decltype(DECLVAL(Ty).query(Query()));
+
+  USTDEX_DEVICE constexpr struct get_allocator_t {
+    template <class Env>
+    USTDEX_HOST_DEVICE
+    auto
+      operator()(const Env &env) const noexcept -> decltype(env.query(*this)) {
+      static_assert(noexcept(env.query(*this)));
+      return env.query(*this);
+    }
+
+    USTDEX_HOST_DEVICE
+    auto
+      operator()(_ignore) const noexcept -> std::allocator<void> {
+      return {};
+    }
+  } get_allocator{};
+
   USTDEX_DEVICE constexpr struct get_stop_token_t {
     template <class Env>
     USTDEX_HOST_DEVICE
     auto
-      operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
-      static_assert(noexcept(e.query(*this)));
-      return e.query(*this);
+      operator()(const Env &env) const noexcept -> decltype(env.query(*this)) {
+      static_assert(noexcept(env.query(*this)));
+      return env.query(*this);
     }
 
     USTDEX_HOST_DEVICE
@@ -40,9 +62,9 @@ namespace ustdex {
     template <class Env>
     USTDEX_HOST_DEVICE
     auto
-      operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
-      static_assert(noexcept(e.query(*this)));
-      return e.query(*this);
+      operator()(const Env &env) const noexcept -> decltype(env.query(*this)) {
+      static_assert(noexcept(env.query(*this)));
+      return env.query(*this);
     }
   };
 
@@ -53,9 +75,9 @@ namespace ustdex {
     template <class Env>
     USTDEX_HOST_DEVICE
     auto
-      operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
-      static_assert(noexcept(e.query(*this)));
-      return e.query(*this);
+      operator()(const Env &env) const noexcept -> decltype(env.query(*this)) {
+      static_assert(noexcept(env.query(*this)));
+      return env.query(*this);
     }
   } get_scheduler{};
 
@@ -63,9 +85,9 @@ namespace ustdex {
     template <class Env>
     USTDEX_HOST_DEVICE
     auto
-      operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
-      static_assert(noexcept(e.query(*this)));
-      return e.query(*this);
+      operator()(const Env &env) const noexcept -> decltype(env.query(*this)) {
+      static_assert(noexcept(env.query(*this)));
+      return env.query(*this);
     }
   } get_delegatee_scheduler{};
 
@@ -76,12 +98,12 @@ namespace ustdex {
   };
 
   USTDEX_DEVICE constexpr struct get_forward_progress_guarantee_t {
-    template <class Env>
+    template <class Sch>
     USTDEX_HOST_DEVICE
     auto
-      operator()(const Env &e) const noexcept -> decltype(e.query(*this)) {
-      static_assert(noexcept(e.query(*this)));
-      return e.query(*this);
+      operator()(const Sch &sch) const noexcept -> decltype(sch.query(*this)) {
+      static_assert(noexcept(sch.query(*this)));
+      return sch.query(*this);
     }
 
     USTDEX_HOST_DEVICE
@@ -90,5 +112,18 @@ namespace ustdex {
       return forward_progress_guarantee::weakly_parallel;
     }
   } get_forward_progress_guarantee{};
+
+  USTDEX_DEVICE constexpr struct get_domain_t {
+    template <class Sch>
+    USTDEX_HOST_DEVICE
+    constexpr auto
+      operator()(const Sch &sch) const noexcept -> decltype(sch.query(*this)) {
+      static_assert(noexcept(sch.query(*this)));
+      return sch.query(*this);
+    }
+  } get_domain{};
+
+  template <class Sch>
+  using domain_of_t = _call_result_t<get_domain_t, Sch>;
 
 } // namespace ustdex

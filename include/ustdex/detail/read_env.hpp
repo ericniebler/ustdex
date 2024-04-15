@@ -82,8 +82,7 @@ namespace ustdex {
     /// invokes the query with the receiver's environment and forwards the result
     /// to the receiver's `set_value` member.
     template <class Query>
-    USTDEX_HOST_DEVICE USTDEX_INLINE
-    constexpr sndr_t<Query> operator()(Query) const noexcept;
+    USTDEX_HOST_DEVICE USTDEX_INLINE constexpr sndr_t<Query> operator()(Query) const noexcept;
   };
 
   template <class Query>
@@ -107,8 +106,8 @@ namespace ustdex {
   };
 
   template <class Query>
-  USTDEX_HOST_DEVICE USTDEX_INLINE
-  constexpr read_env_t::sndr_t<Query> read_env_t::operator()(Query query) const noexcept {
+  USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::sndr_t<Query>
+    read_env_t::operator()(Query query) const noexcept {
     return sndr_t<Query>{{}, query};
   }
 

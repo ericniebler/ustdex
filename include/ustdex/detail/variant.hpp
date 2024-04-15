@@ -51,8 +51,7 @@ namespace ustdex {
     using _at = _m_at_c<Idx, Ts...>;
 
    public:
-    USTDEX_HOST_DEVICE _variant()
-      : _index(_variant_npos) {
+    USTDEX_HOST_DEVICE _variant() noexcept {
     }
 
     USTDEX_HOST_DEVICE ~_variant() {
@@ -71,7 +70,7 @@ namespace ustdex {
 
     template <class Ty, class... As>
     USTDEX_HOST_DEVICE
-    Ty &emplace(As &&...as) noexcept(noexcept(Ty{static_cast<As &&>(as)...})) {
+    Ty &emplace(As &&...as) noexcept(_nothrow_constructible<Ty, As...>) {
       constexpr std::size_t _new_index = _index_of<Ty, Ts...>();
       static_assert(_new_index != _variant_npos, "Type not in variant");
 
@@ -84,7 +83,7 @@ namespace ustdex {
     template <std::size_t Idx, class... As>
     USTDEX_HOST_DEVICE
     _at<Idx> &
-      emplace(As &&...as) noexcept(noexcept(_at<Idx>{static_cast<As &&>(as)...})) {
+      emplace(As &&...as) noexcept(_nothrow_constructible<_at<Idx>, As...>) {
       static_assert(Idx < sizeof...(Ts), "variant index is too large");
 
       _destroy();
