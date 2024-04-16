@@ -31,22 +31,22 @@ namespace ustdex {
   struct scheduler_t { };
 
   template <class Ty>
-  using _sender_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::sender_concept;
+  using _sender_concept_t = typename USTDEX_REMOVE_REFERENCE(Ty)::sender_concept;
 
   template <class Ty>
-  using _receiver_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::receiver_concept;
+  using _receiver_concept_t = typename USTDEX_REMOVE_REFERENCE(Ty)::receiver_concept;
 
   template <class Ty>
-  using _scheduler_concept = typename USTDEX_REMOVE_REFERENCE(Ty)::scheduler_concept;
+  using _scheduler_concept_t = typename USTDEX_REMOVE_REFERENCE(Ty)::scheduler_concept;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_sender = _mvalid_q<_sender_concept, Ty>;
+  USTDEX_DEVICE constexpr bool _is_sender = _mvalid_q<_sender_concept_t, Ty>;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_receiver = _mvalid_q<_receiver_concept, Ty>;
+  USTDEX_DEVICE constexpr bool _is_receiver = _mvalid_q<_receiver_concept_t, Ty>;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept, Ty>;
+  USTDEX_DEVICE constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept_t, Ty>;
 
   USTDEX_DEVICE constexpr struct set_value_t {
     template <class Rcvr, class... Ts>

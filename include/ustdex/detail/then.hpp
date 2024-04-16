@@ -42,8 +42,43 @@ namespace ustdex {
     extern _fn_t<upon_stopped_t> *_upon_tag<_stopped, Void>;
   } // namespace _detail
 
+  namespace _upon {
+    template <bool IsVoid, bool Nothrow>
+    struct _completion_fn { // non-void, potentially throwing case
+      template <class Result>
+      using _f =
+        completion_signatures<set_value_t(Result), set_error_t(std::exception_ptr)>;
+    };
+
+    template <>
+    struct _completion_fn<true, false> { // void, potentially throwing case
+      template <class>
+      using _f = completion_signatures<set_value_t(), set_error_t(std::exception_ptr)>;
+    };
+
+    template <>
+    struct _completion_fn<false, true> { // non-void, non-throwing case
+      template <class Result>
+      using _f = completion_signatures<set_value_t(Result)>;
+    };
+
+    template <>
+    struct _completion_fn<true, true> { // void, non-throwing case
+      template <class>
+      using _f = completion_signatures<set_value_t()>;
+    };
+
+    template <class Result, bool Nothrow>
+    using _completion_ =
+      _minvoke1<_completion_fn<USTDEX_IS_SAME(Result, void), Nothrow>, Result>;
+
+    template <class Fn, class... Ts>
+    using _completion =
+      _completion_<_call_result_t<Fn, Ts...>, _nothrow_callable<Fn, Ts...>>;
+  }
+
   template <_disposition_t Disposition>
-  struct _upon {
+  struct _upon_t {
 #ifndef __CUDACC__
    private:
 #endif
@@ -61,15 +96,8 @@ namespace ustdex {
     template <class Fn>
     struct _transform_completion {
       template <class... Ts>
-      using _impl = _mif<
-        _nothrow_callable<Fn, Ts...>,
-        completion_signatures<set_value_t(_call_result_t<Fn, Ts...>)>,
-        completion_signatures<
-          set_value_t(_call_result_t<Fn, Ts...>),
-          set_error_t(std::exception_ptr)>>;
-
-      template <class... Ts>
-      using _f = _minvoke<_mtry_quote<_impl, _error_not_callable<Fn, Ts...>>, Ts...>;
+      using _f =
+        _minvoke<_mtry_quote<_upon::_completion, _error_not_callable<Fn, Ts...>>, Fn, Ts...>;
     };
 
     template <class Sndr, class Rcvr, class Fn>
@@ -204,12 +232,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct then_t : _upon<_value> {
+  USTDEX_DEVICE constexpr struct then_t : _upon_t<_value> {
   } then{};
 
-  USTDEX_DEVICE constexpr struct upon_error_t : _upon<_error> {
+  USTDEX_DEVICE constexpr struct upon_error_t : _upon_t<_error> {
   } upon_error{};
 
-  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon<_stopped> {
+  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon_t<_stopped> {
   } upon_stopped{};
 } // namespace ustdex

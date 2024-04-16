@@ -68,12 +68,12 @@ namespace ustdex {
     };
 
     template <class... Ts>
-    struct sndr_t {
+    struct _sndr_t {
       using sender_concept = sender_t;
       [[no_unique_address]] JustTag _tag;
       _tuple_for<Ts...> _values;
 
-      auto get_completion_signatures(_ignore = {}) const
+      auto get_completion_signatures(_ignore_t = {}) const
         -> completion_signatures<SetTag(Ts...)>;
 
       template <class Rcvr>
@@ -93,7 +93,7 @@ namespace ustdex {
    public:
     template <class... Ts>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Ts... ts) const noexcept {
-      return sndr_t<Ts...>{{}, {static_cast<Ts &&>(ts)...}};
+      return _sndr_t<Ts...>{{}, {static_cast<Ts &&>(ts)...}};
     }
   };
 

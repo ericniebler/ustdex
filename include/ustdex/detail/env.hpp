@@ -38,7 +38,7 @@ namespace ustdex {
       return ty->get_env();
     }
 
-    USTDEX_INLINE USTDEX_HOST_DEVICE empty_env operator()(_ignore) const noexcept {
+    USTDEX_INLINE USTDEX_HOST_DEVICE empty_env operator()(_ignore_t) const noexcept {
       return {};
     }
   } get_env{};

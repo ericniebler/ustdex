@@ -33,7 +33,7 @@ namespace ustdex {
       return env.query(*this);
     }
 
-    USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> std::allocator<void> {
+    USTDEX_HOST_DEVICE auto operator()(_ignore_t) const noexcept -> std::allocator<void> {
       return {};
     }
   } get_allocator{};
@@ -46,7 +46,7 @@ namespace ustdex {
       return env.query(*this);
     }
 
-    USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> never_stop_token {
+    USTDEX_HOST_DEVICE auto operator()(_ignore_t) const noexcept -> never_stop_token {
       return {};
     }
   } get_stop_token{};
@@ -97,7 +97,7 @@ namespace ustdex {
     }
 
     USTDEX_HOST_DEVICE auto
-      operator()(_ignore) const noexcept -> forward_progress_guarantee {
+      operator()(_ignore_t) const noexcept -> forward_progress_guarantee {
       return forward_progress_guarantee::weakly_parallel;
     }
   } get_forward_progress_guarantee{};

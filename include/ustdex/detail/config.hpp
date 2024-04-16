@@ -18,6 +18,53 @@
 #include <cassert>
 #include <type_traits>
 
+// Compiler detections:
+#if defined(__NVCC__)
+#  define USTDEX_NVCC() 1
+#elif defined(__NVCOMPILER)
+#  define USTDEX_NVHPC() 1
+#elif defined(__EDG__)
+#  define USTDEX_EDG() 1
+#elif defined(__clang__)
+#  define USTDEX_CLANG() 1
+#  if defined(_MSC_VER)
+#    define USTDEX_CLANG_CL() 1
+#  endif
+#  if defined(__apple_build_version__)
+#    define USTDEX_APPLE_CLANG() 1
+#  endif
+#elif defined(__GNUC__)
+#  define USTDEX_GCC() 1
+#elif defined(_MSC_VER)
+#  define USTDEX_MSVC() 1
+#endif
+
+#ifndef USTDEX_NVCC
+#  define USTDEX_NVCC() 0
+#endif
+#ifndef USTDEX_NVHPC
+#  define USTDEX_NVHPC() 0
+#endif
+#ifndef USTDEX_EDG
+#  define USTDEX_EDG() 0
+#endif
+#ifndef USTDEX_CLANG
+#  define USTDEX_CLANG() 0
+#endif
+#ifndef USTDEX_CLANG_CL
+#  define USTDEX_CLANG_CL() 0
+#endif
+#ifndef USTDEX_APPLE_CLANG
+#  define USTDEX_APPLE_CLANG() 0
+#endif
+#ifndef USTDEX_GCC
+#  define USTDEX_GCC() 0
+#endif
+#ifndef USTDEX_MSVC
+#  define USTDEX_MSVC() 0
+#endif
+
+
 #ifdef __CUDACC__
 #  define USTDEX_DEVICE      __device__
 #  define USTDEX_HOST_DEVICE __host__ __device__

@@ -20,15 +20,17 @@
 #include <initializer_list>
 
 namespace ustdex {
-  struct _ignore {
+  struct _ignore_t {
     template <class... As>
-    constexpr _ignore(As &&...) noexcept {};
+    constexpr _ignore_t(As &&...) noexcept {};
   };
 
   template <class...>
   struct _undefined;
 
   struct _empty { };
+
+  struct [[deprecated]] _deprecated { };
 
   struct _immovable {
     _immovable() = default;

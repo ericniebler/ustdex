@@ -74,18 +74,18 @@ namespace ustdex {
     };
 
     template <class Query>
-    struct sndr_t;
+    struct _sndr_t;
 
    public:
     /// @brief Returns a sender that, when connected to a receiver and started,
     /// invokes the query with the receiver's environment and forwards the result
     /// to the receiver's `set_value` member.
     template <class Query>
-    USTDEX_HOST_DEVICE USTDEX_INLINE constexpr sndr_t<Query> operator()(Query) const noexcept;
+    USTDEX_HOST_DEVICE USTDEX_INLINE constexpr _sndr_t<Query> operator()(Query) const noexcept;
   };
 
   template <class Query>
-  struct read_env_t::sndr_t {
+  struct read_env_t::_sndr_t {
     using sender_concept = sender_t;
     [[no_unique_address]] read_env_t _tag;
     [[no_unique_address]] Query _query;
@@ -105,9 +105,9 @@ namespace ustdex {
   };
 
   template <class Query>
-  USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::sndr_t<Query>
+  USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::_sndr_t<Query>
     read_env_t::operator()(Query query) const noexcept {
-    return sndr_t<Query>{{}, query};
+    return _sndr_t<Query>{{}, query};
   }
 
   USTDEX_DEVICE constexpr read_env_t read_env{};

@@ -101,9 +101,6 @@ namespace ustdex {
       }
     };
 
-    template <class...>
-    using _eat_value_completions_t = completion_signatures<>;
-
     template <class Sch, class Sndr, class Tag = start_on_t>
     struct _sndr_t {
       using sender_concept = sender_t;
@@ -117,7 +114,7 @@ namespace ustdex {
         transform_completion_signatures<
           completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
           completion_signatures<>,
-          _eat_value_completions_t>>;
+          _malways<completion_signatures<>>::_f>>;
 
       template <class... Env>
       auto get_completion_signatures(const Env &...) && //

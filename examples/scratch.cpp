@@ -44,21 +44,17 @@ void print() {
 }
 
 int main() {
-  run_loop loop;
+  thread_context ctx;
+  auto sch = ctx.get_scheduler();
 
   auto work = just(1, 2, 3) //
             | then([](int a, int b, int c) {
                 std::printf("%d %d %d\n", a, b, c);
                 return a + b + c;
               });
-  auto s = start_on(loop.get_scheduler(), std::move(work));
-  sync_wait(s);
-
-  std::optional<std::tuple<int>> x = sync_wait(just(42));
-
+  auto s = start_on(sch, std::move(work));
   std::puts("Hello, world!");
-  loop.finish();
-  loop.run();
+  sync_wait(s);
 
   auto s3 = just(42) | let_value([](int a) {
               std::puts("here");
@@ -66,5 +62,5 @@ int main() {
             });
   sync_wait(s3);
 
-  auto [sch] = sync_wait(read_env(get_scheduler)).value();
+  auto [sch2] = sync_wait(read_env(get_scheduler)).value();
 }

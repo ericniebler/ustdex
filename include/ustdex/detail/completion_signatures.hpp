@@ -171,7 +171,7 @@ namespace ustdex {
 
   template <class... Ts, class... Us>
   auto operator*(_mset<Ts...> &, completion_signatures<Us...> &)
-    -> _mset_insert_ref<_mset<Ts...>, Us...> &;
+    -> _mset_insert<_mset<Ts...>, Us...> &;
 
   template <class... Ts, class... What>
   auto operator*(_mset<Ts...> &, ERROR<What...> &) -> ERROR<What...> &;
@@ -180,9 +180,10 @@ namespace ustdex {
   auto operator*(ERROR<What...> &, completion_signatures<Us...> &) -> ERROR<What...> &;
 
   template <class... Sigs>
-  using _concat_completion_signatures = _minvoke<
-    USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(_mset<> &) * ... * DECLVAL(Sigs &)))),
-    _mquote<completion_signatures>>;
+  using _concat_completion_signatures = //
+    _mapply_q<
+      completion_signatures,
+      decltype(+(DECLVAL(_mset<> &) * ... * DECLVAL(Sigs &)))>;
 
   template <class Tag, class... Ts>
   using _default_completions = completion_signatures<Tag(Ts...)>;
@@ -193,13 +194,14 @@ namespace ustdex {
     template <class...> class ValueTransform = _set_value_transform_t,
     template <class> class ErrorTransform = _set_error_transform_t,
     class StoppedSigs = completion_signatures<set_stopped_t()>>
-  using transform_completion_signatures = _transform_completion_signatures<
-    Sigs,
-    ValueTransform,
-    ErrorTransform,
-    StoppedSigs,
-    _concat_completion_signatures,
-    MoreSigs>;
+  using transform_completion_signatures = //
+    _transform_completion_signatures<
+      Sigs,
+      ValueTransform,
+      ErrorTransform,
+      StoppedSigs,
+      _concat_completion_signatures,
+      MoreSigs>;
 
   template <
     class Sndr,
@@ -208,34 +210,29 @@ namespace ustdex {
     template <class...> class ValueTransform = _set_value_transform_t,
     template <class> class ErrorTransform = _set_error_transform_t,
     class StoppedSigs = completion_signatures<set_stopped_t()>>
-  using transform_completion_signatures_of = transform_completion_signatures<
-    completion_signatures_of_t<Sndr, Env>,
-    MoreSigs,
-    ValueTransform,
-    ErrorTransform,
-    StoppedSigs>;
+  using transform_completion_signatures_of = //
+    transform_completion_signatures<
+      completion_signatures_of_t<Sndr, Env>,
+      MoreSigs,
+      ValueTransform,
+      ErrorTransform,
+      StoppedSigs>;
 
-  namespace _detail {
-    struct _nil {
-      template <class... Ts>
-      friend _mlist<Ts...> &operator+(_mlist<Ts...> &, _nil) {
-        USTDEX_THROW();
-      }
-    };
-
+  template <
+    class Sigs,
     template <class...>
-    using _to_nil = _nil;
-
-    template <class... Ts>
-    using _concat_mlist = //
-      USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(_mlist<> &) + ... + DECLVAL(Ts &))));
-
-    template <template <class...> class Tuple>
-    struct _to_mlist {
-      template <class... Ts>
-      using _f = _mlist<Tuple<Ts...>>;
-    };
-  } // namespace _detail
+    class Tuple,
+    template <class...>
+    class Variant>
+  using _value_types = //
+    _mapply<           //
+      _mtry_quote<Variant>,
+      _gather_completion_signatures<
+        Sigs,
+        set_value_t,
+        _mcompose_q<_mlist, Tuple>::template _f,
+        _malways<_mlist<>>::_f,
+        _mconcat>>;
 
   template <
     class Sndr,
@@ -244,39 +241,33 @@ namespace ustdex {
     class Tuple,
     template <class...>
     class Variant>
-  using value_types_of_t = //
-    _minvoke<              //
-      _gather_completion_signatures<
-        completion_signatures_of_t<Sndr, Env>,
-        set_value_t,
-        _detail::_to_mlist<Tuple>::template _f,
-        _detail::_to_nil,
-        _detail::_concat_mlist>,
-      _mtry_quote<Variant>>;
+  using value_types_of_t =
+    _value_types<completion_signatures_of_t<Sndr, Env>, Tuple, Variant>;
 
   template <
-    class Sndr,
-    class Env,
+    class Sigs,
     template <class...>
     class Tuple>
-  using error_types_of_t = //
-    _minvoke<              //
-      _gather_completion_signatures<
-        completion_signatures_of_t<Sndr, Env>,
-        set_error_t,
-        _mlist,
-        _detail::_to_nil,
-        _detail::_concat_mlist>,
-      _mtry_quote<Tuple>>;
+  using _error_types = //
+    _mapply<           //
+      _mtry_quote<Tuple>,
+      _gather_completion_signatures<Sigs, set_error_t, _mlist, _malways<_mlist<>>::_f, _mconcat>>;
 
-  template <class Sndr, class Env>
-  USTDEX_DEVICE constexpr bool sends_stopped = //
+  template <class Sndr, class Env, template <class...> class Tuple>
+  using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Tuple>;
+
+  template <class Sigs>
+  USTDEX_DEVICE constexpr bool _sends_stopped = //
     _gather_completion_signatures<
-      completion_signatures_of_t<Sndr, Env>,
+      Sigs,
       set_stopped_t,
       _malways<_mtrue>::_f,
       _malways<_mfalse>::_f,
       _mand>::value;
+
+  template <class Sndr, class Env>
+  USTDEX_DEVICE constexpr bool sends_stopped = //
+    _sends_stopped<completion_signatures_of_t<Sndr, Env>>;
 
   using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;
 

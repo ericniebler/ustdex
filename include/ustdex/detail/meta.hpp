@@ -41,14 +41,22 @@ namespace ustdex {
   template <class...>
   using _mvoid = void;
 
-  template <class... Ts>
-  struct _mlist {
-    template <class Fn, class... Us>
-    using _f = typename Fn::template _f<Ts..., Us...>;
-
-    template <class... Us, class... Vs>
-    friend _mlist<Us..., Vs...> &operator+(_mlist<Us...> &, _mlist<Vs...> &);
+  template <class Ty>
+  struct _mtype {
+    using type = Ty;
   };
+
+  template <class... Ts>
+  struct _mlist;
+
+  template <class... Ts>
+  _mlist<Ts...> operator+(_mlist<Ts...> &);
+
+  template <class... Ts, class... Us>
+  _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist<Us...> &);
+
+  template <class... Lists>
+  using _mconcat = decltype(+(DECLVAL(_mlist<> &) + ... + DECLVAL(Lists &)));
 
   template <auto Val>
   struct _mvalue {
@@ -64,6 +72,16 @@ namespace ustdex {
   template <class... Bools>
   using _mor = _mvalue<(Bools::value || ...)>;
 
+#if USTDEX_NVCC()
+  template <std::size_t... Idx>
+  using _mindices = std::index_sequence<Idx...>;
+
+  template <std::size_t Count>
+  using _mmake_indices = std::make_index_sequence<Count>;
+
+  template <class... Ts>
+  using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)>;
+#else
   template <std::size_t... Idx>
   using _mindices = std::index_sequence<Idx...> *;
 
@@ -72,6 +90,7 @@ namespace ustdex {
 
   template <class... Ts>
   using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)> *;
+#endif
 
   // The following must be left undefined
   template <class...>
@@ -95,8 +114,7 @@ namespace ustdex {
 
   struct FUNCTION_IS_NOT_CALLABLE;
 
-  template <class... What>
-  struct ERROR;
+  struct UNKNOWN;
 
   struct _merror_base {
     constexpr friend bool _ustdex_unhandled_error(void *) noexcept {
@@ -108,6 +126,8 @@ namespace ustdex {
   struct ERROR : _merror_base {
     template <class...>
     using _f = ERROR;
+
+    ERROR operator+();
 
     template <class Ty>
     ERROR &operator,(Ty &);
@@ -123,7 +143,7 @@ namespace ustdex {
     _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
 
   template <class... Ts>
-  using _find_error = USTDEX_REMOVE_REFERENCE(decltype((DECLVAL(Ts &), ...)));
+  using _find_error = decltype(+(DECLVAL(Ts &), ..., DECLVAL(ERROR<UNKNOWN> &)));
 
   template <class Ty>
   inline constexpr bool _is_error = USTDEX_IS_BASE_OF(_merror_base, Ty);
@@ -132,7 +152,22 @@ namespace ustdex {
   using _minvoke_q = Fn<Ts...>;
 
   template <class Fn, class... Ts>
-  using _minvoke = _minvoke_q<Fn::template _f, Ts...>;
+  using _minvoke = typename Fn::template _f<Ts...>;
+
+  template <class Fn, class Ty>
+  using _minvoke1 = typename Fn::template _f<Ty>;
+
+  template <class Fn, template <class...> class C, class... Ts>
+  _minvoke<Fn, Ts...> _apply_fn(C<Ts...> &);
+
+  template <template <class...> class Fn, template <class...> class C, class... Ts>
+  Fn<Ts...> _apply_fn_q(C<Ts...> &);
+
+  template <class Fn, class List>
+  using _mapply = decltype(ustdex::_apply_fn<Fn>(DECLVAL(List &)));
+
+  template <template <class...> class Fn, class List>
+  using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(DECLVAL(List &)));
 
   template <template <class...> class Fn, class List, class Enable = void>
   inline constexpr bool _mvalid_ = false;
@@ -316,41 +351,48 @@ namespace ustdex {
   using _m_at_c = _minvoke<_mget<Np>, Ts...>;
 #endif
 
+  template <template <class...> class Second, template <class...> class First>
+  struct _mcompose_q {
+    template <class... Ts>
+    using _f = Second<First<Ts...>>;
+  };
+
+  namespace _set {
+    template <class Set, class Ty>
+    inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mtype<Ty>, Set);
+
+    template <class... Ts>
+    struct _inherit { };
+
+    template <class Ty, class... Ts>
+    struct _inherit<Ty, Ts...>
+      : _mtype<Ty>
+      , _inherit<Ts...> { };
+
+    template <class... Set>
+    auto operator+(_inherit<Set...> &) -> _inherit<Set...>;
+
+    template <class... Set, class Ty>
+    auto operator%(_inherit<Set...> &, _mtype<Ty> &) //
+      -> _mif<                                       //
+        _mset_contains<_inherit<Set...>, Ty>,
+        _inherit<Set...>,
+        _inherit<Ty, Set...>> &;
+  } // namespace _set
+
   template <class... Ts>
-  struct _mset;
-
-  template <>
-  struct _mset<> {
-    template <class Fn, class... Us>
-    using _f = _minvoke<Fn, Us...>;
-  };
-
-  template <class Ty, class... Ts>
-  struct _mset<Ty, Ts...>
-    : _mlist<Ty>
-    , _mset<Ts...> {
-    template <class Fn, class... Us>
-    using _f = _minvoke<Fn, Ty, Ts..., Us...>;
-  };
-
-  template <class Set, class Ty>
-  inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mlist<Ty>, Set);
-
-  template <class... Set, class Ty>
-  auto operator+(_mset<Set...> &, _mlist<Ty> &)
-    -> _mif<_mset_contains<_mset<Set...>, Ty>, _mset<Set...>, _mset<Ty, Set...>> &;
+  using _mset = _set::_inherit<Ts...>;
 
   template <class Set, class... Ts>
-  using _mset_insert_ref =
-    decltype((std::declval<Set &>() + ... + std::declval<_mlist<Ts> &>()));
+  using _mset_insert = decltype(+(DECLVAL(Set &) % ... % DECLVAL(_mtype<Ts> &)));
 
-  template <class Set, class... Ts>
-  using _mset_insert = USTDEX_REMOVE_REFERENCE(_mset_insert_ref<Set, Ts...>);
+  template <class... Ts>
+  using _mmake_set = _mset_insert<_set::_inherit<>, Ts...>;
 
   template <class Fn>
   struct _munique {
     template <class... Ts>
-    using _f = _minvoke<_mset_insert<_mset<>, Ts...>, Fn>;
+    using _f = _minvoke<_mmake_set<Ts...>, Fn>;
   };
 
   struct _mcount {

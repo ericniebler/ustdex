@@ -23,7 +23,7 @@
 namespace ustdex {
   struct _sexpr_defaults {
     static inline constexpr auto _get_attrs = //
-      [](_ignore, const auto &..._child) noexcept -> decltype(auto) {
+      [](_ignore_t, const auto &..._child) noexcept -> decltype(auto) {
       if constexpr (sizeof...(_child) == 1) {
         return ustdex::get_env(_child...); // BUGBUG: should be only the forwarding queries
       } else {

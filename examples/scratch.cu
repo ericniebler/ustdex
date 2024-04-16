@@ -31,7 +31,8 @@ struct sink {
     std::printf("%d\n", a);
   }
 
-  USTDEX_HOST_DEVICE void set_error(std::exception_ptr) noexcept {
+  USTDEX_HOST_DEVICE void set_error(std::exception_ptr eptr) noexcept {
+    std::puts("Error");
   }
 
   USTDEX_HOST_DEVICE void set_stopped() noexcept {
@@ -54,7 +55,7 @@ struct _inline_scheduler {
   struct _sndr_t {
     using sender_concept = sender_t;
 
-    auto get_completion_signatures(_ignore = {}) const
+    auto get_completion_signatures(_ignore_t = {}) const
       -> completion_signatures<set_value_t()>;
 
     template <class Rcvr>
@@ -88,20 +89,10 @@ USTDEX_HOST_DEVICE void _main() {
   auto o = connect(s, sink{});
   start(o);
 
-  // // auto s2 = continue_on(just(42), loop.get_scheduler());
-  // // auto o2 = connect(s2, sink{});
-  // // start(o2);
-
   constexpr auto just_plus_one = [](int a) { return just(a + 1); };
   auto s3 = let_value(just(42), just_plus_one);
   auto o3 = connect(s3, sink{});
   start(o3);
-
-  // _variant<int, std::string, _tuple_for<int, int>> v{};
-  // v.emplace<_tuple_for<int, int>>(1,2);
-  // auto& tup = v.get<2>();
-  // _sexpr t{set_value, 1, just()};
-  // auto [a,b,c] = t;
 }
 
 int main() {
