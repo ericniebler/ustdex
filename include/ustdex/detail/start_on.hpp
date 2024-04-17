@@ -99,51 +99,58 @@ namespace ustdex {
       }
     };
 
-    template <class Sch, class Sndr, class Tag = start_on_t>
-    struct _sndr_t {
-      using sender_concept = sender_t;
-      [[no_unique_address]] Tag _tag;
-      Sch _sch;
-      Sndr _sndr;
-
-      template <class CvSndr, class... Env>
-      using _completions = transform_completion_signatures<
-        completion_signatures_of_t<CvSndr, Env...>,
-        transform_completion_signatures<
-          completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
-          completion_signatures<>,
-          _malways<completion_signatures<>>::_f>>;
-
-      template <class... Env>
-      auto get_completion_signatures(const Env &...) && //
-        -> completion_signatures_of_t<Sndr, Env...>;
-
-      template <class... Env>
-      auto get_completion_signatures(const Env &...) const & //
-        -> completion_signatures_of_t<const Sndr &, Env...>;
-
-      template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
-        return _opstate_t<Sch, Sndr, Rcvr>{
-          _sch, static_cast<Rcvr &&>(rcvr), static_cast<Sndr &&>(_sndr)};
-      }
-
-      template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<Sch, const Sndr &, Rcvr>
-        connect(Rcvr rcvr) const & noexcept {
-        return _opstate_t<Sch, const Sndr &, Rcvr>{
-          _sch, static_cast<Rcvr &&>(rcvr), _sndr};
-      }
-
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
-        return ustdex::get_env(_sndr);
-      }
-    };
+    template <class Sch, class Sndr>
+    struct _sndr_t;
 
    public:
     template <class Sch, class Sndr>
-    USTDEX_HOST_DEVICE _sndr_t<Sch, Sndr> operator()(Sch sch, Sndr sndr) const noexcept {
-      return _sndr_t<Sch, Sndr>{{}, sch, sndr};
-    }
+    USTDEX_HOST_DEVICE auto operator()(Sch sch, Sndr sndr) const noexcept //
+      -> _sndr_t<Sch, Sndr>;
   } start_on{};
+
+  template <class Sch, class Sndr>
+  struct start_on_t::_sndr_t {
+    using sender_concept = sender_t;
+    [[no_unique_address]] start_on_t _tag;
+    Sch _sch;
+    Sndr _sndr;
+
+    template <class CvSndr, class... Env>
+    using _completions = transform_completion_signatures<
+      completion_signatures_of_t<CvSndr, Env...>,
+      transform_completion_signatures<
+        completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
+        completion_signatures<>,
+        _malways<completion_signatures<>>::_f>>;
+
+    template <class... Env>
+    auto get_completion_signatures(const Env &...) && //
+      -> completion_signatures_of_t<Sndr, Env...>;
+
+    template <class... Env>
+    auto get_completion_signatures(const Env &...) const & //
+      -> completion_signatures_of_t<const Sndr &, Env...>;
+
+    template <class Rcvr>
+    USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
+      return _opstate_t<Sch, Sndr, Rcvr>{
+        _sch, static_cast<Rcvr &&>(rcvr), static_cast<Sndr &&>(_sndr)};
+    }
+
+    template <class Rcvr>
+    USTDEX_HOST_DEVICE _opstate_t<Sch, const Sndr &, Rcvr>
+      connect(Rcvr rcvr) const & noexcept {
+      return _opstate_t<Sch, const Sndr &, Rcvr>{_sch, static_cast<Rcvr &&>(rcvr), _sndr};
+    }
+
+    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+      return ustdex::get_env(_sndr);
+    }
+  };
+
+  template <class Sch, class Sndr>
+  USTDEX_HOST_DEVICE auto start_on_t::operator()(Sch sch, Sndr sndr) const noexcept
+    -> start_on_t::_sndr_t<Sch, Sndr> {
+    return _sndr_t<Sch, Sndr>{{}, sch, sndr};
+  }
 } // namespace ustdex
