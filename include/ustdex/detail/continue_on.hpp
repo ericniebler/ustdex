@@ -57,7 +57,7 @@ namespace ustdex {
         _complete = +[](void *ptr) noexcept {
           auto &self = *static_cast<_rcvr_t *>(ptr);
           auto &tupl = *static_cast<_tupl_t *>(self._result._get_ptr());
-          tupl.apply(self);
+          tupl.apply(self, tupl);
         };
       }
 

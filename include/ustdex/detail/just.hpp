@@ -63,7 +63,7 @@ namespace ustdex {
       };
 
       USTDEX_HOST_DEVICE void start() & noexcept {
-        _values.apply(_complete_fn{this});
+        _values.apply(_complete_fn{this}, _values);
       }
     };
 

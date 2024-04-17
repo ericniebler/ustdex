@@ -93,6 +93,14 @@ USTDEX_HOST_DEVICE void _main() {
   auto s3 = let_value(just(42), just_plus_one);
   auto o3 = connect(s3, sink{});
   start(o3);
+
+  auto s4 = just(42) | then([](int){}) | upon_error([](auto){ /*return 42;*/ });
+  auto s5 = when_all(std::move(s4), just(42, 42), just(+""));
+  using S5 = decltype(s5);
+  s5.get_completion_signatures();
+  // auto o5 = connect(std::move(s5), sink{});
+  // using X = completion_signatures_of_t<decltype(s5)>;
+  // print<X>();
 }
 
 int main() {

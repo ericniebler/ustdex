@@ -31,12 +31,24 @@ namespace ustdex {
 
   template <std::size_t... Idx, class... Ts>
   struct _tupl<std::index_sequence<Idx...>, Ts...> : _box<Idx, Ts>... {
-    template <class Fn, class... Us>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto apply(Fn &&fn, Us &&...us) & //
-      noexcept(_nothrow_callable<Fn, Us..., Ts &...>)
-        -> _call_result_t<Fn, Us..., Ts &...> {
+    template <class Fn, class Self, class... Us>
+    USTDEX_INLINE USTDEX_HOST_DEVICE static auto apply(Fn &&fn, Self &&self, Us &&...us) //
+      noexcept(_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>...>)
+        -> _call_result_t<Fn, Us..., _copy_cvref_t<Self, Ts>...> {
       return static_cast<Fn &&>(fn)(
-        static_cast<Us &&>(us)..., this->_box<Idx, Ts>::_value...);
+        static_cast<Us &&>(us)...,
+        static_cast<_copy_cvref_t<Self, Ts> &&>(self._box<Idx, Ts>::_value)...);
+    }
+
+    template <class Fn, class Self, class... Us>
+    USTDEX_INLINE USTDEX_HOST_DEVICE static auto for_each(Fn &&fn, Self &&self, Us &&...us) //
+      noexcept((_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>> && ...))
+        -> _mif<(_callable<Fn, Us..., _copy_cvref_t<Self, Ts>> && ...)> {
+      return (
+        static_cast<Fn &&>(fn)(
+          static_cast<Us &&>(us)...,
+          static_cast<_copy_cvref_t<Self, Ts> &&>(self._box<Idx, Ts>::_value)),
+        ...);
     }
   };
 
@@ -46,6 +58,10 @@ namespace ustdex {
 
   template <class... Ts>
   using _tuple = _tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
+
+  template <class Fn, class Tupl, class... Us>
+  using _apply_result_t =
+    decltype(DECLVAL(Tupl).apply(DECLVAL(Fn), DECLVAL(Tupl), DECLVAL(Us)...));
 
   template <class First, class Second>
   struct _pair {

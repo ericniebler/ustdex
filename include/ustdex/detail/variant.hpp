@@ -104,23 +104,30 @@ namespace ustdex {
       return *reinterpret_cast<_result_t *>(_storage);
     }
 
-    template <class Fn, class... As>
-    USTDEX_HOST_DEVICE void visit(Fn &&fn, As &&...as) & //
-      noexcept((_nothrow_callable<Fn, As..., Ts &> && ...)) {
-      USTDEX_ASSERT(_index != _variant_npos);
-      ((Idx == _index ? static_cast<Fn &&>(fn)(static_cast<As &&>(as)..., get<Idx>())
-                      : void()),
+    template <class Fn, class Self, class... As>
+    USTDEX_HOST_DEVICE static void visit(Fn &&fn, Self &&self, As &&...as) //
+      noexcept((_nothrow_callable<Fn, As..., _copy_cvref_t<Self, Ts>> && ...)) {
+      USTDEX_ASSERT(self._index != _variant_npos);
+      ((Idx == self._index ? static_cast<Fn &&>(fn)(
+          static_cast<As &&>(as)..., static_cast<Self &&>(self).template get<Idx>())
+                           : void()),
        ...);
     }
 
     template <std::size_t Ny>
-    USTDEX_HOST_DEVICE decltype(auto) get() noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get() && noexcept {
+      USTDEX_ASSERT(Ny == _index);
+      return static_cast<_at<Ny> &&>(*reinterpret_cast<_at<Ny> *>(_storage));
+    }
+
+    template <std::size_t Ny>
+    USTDEX_HOST_DEVICE decltype(auto) get() & noexcept {
       USTDEX_ASSERT(Ny == _index);
       return *reinterpret_cast<_at<Ny> *>(_storage);
     }
 
     template <std::size_t Ny>
-    USTDEX_HOST_DEVICE decltype(auto) get() const noexcept {
+    USTDEX_HOST_DEVICE decltype(auto) get() const & noexcept {
       USTDEX_ASSERT(Ny == _index);
       return *reinterpret_cast<const _at<Ny> *>(_storage);
     }

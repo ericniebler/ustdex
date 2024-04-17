@@ -28,7 +28,4 @@
 #include "detail/sync_wait.hpp"
 #include "detail/then.hpp"
 #include "detail/thread_context.hpp"
-
-namespace ustdex {
-  //
-} // namespace ustdex
+#include "detail/when_all.hpp"
