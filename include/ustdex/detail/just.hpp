@@ -52,7 +52,7 @@ namespace ustdex {
     struct opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
-      _tuple_for<Ts...> _values;
+      _tuple<Ts...> _values;
 
       struct _complete_fn {
         opstate_t *_self;
@@ -63,7 +63,7 @@ namespace ustdex {
       };
 
       USTDEX_HOST_DEVICE void start() & noexcept {
-        _apply(_complete_fn{this}, _values);
+        _values.apply(_complete_fn{this});
       }
     };
 
@@ -71,7 +71,7 @@ namespace ustdex {
     struct _sndr_t {
       using sender_concept = sender_t;
       [[no_unique_address]] JustTag _tag;
-      _tuple_for<Ts...> _values;
+      _tuple<Ts...> _values;
 
       auto get_completion_signatures(_ignore_t = {}) const
         -> completion_signatures<SetTag(Ts...)>;
@@ -80,7 +80,7 @@ namespace ustdex {
       USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...> connect(Rcvr rcvr) && //
         noexcept(_nothrow_decay_copyable<Rcvr, Ts...>) {
         return opstate_t<Rcvr, Ts...>{
-          static_cast<Rcvr &&>(rcvr), static_cast<_tuple_for<Ts...> &&>(_values)};
+          static_cast<Rcvr &&>(rcvr), static_cast<_tuple<Ts...> &&>(_values)};
       }
 
       template <class Rcvr>

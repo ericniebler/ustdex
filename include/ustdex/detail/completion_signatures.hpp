@@ -225,14 +225,12 @@ namespace ustdex {
     template <class...>
     class Variant>
   using _value_types = //
-    _mapply<           //
-      _mtry_quote<Variant>,
-      _gather_completion_signatures<
-        Sigs,
-        set_value_t,
-        _mcompose_q<_mlist, Tuple>::template _f,
-        _malways<_mlist<>>::_f,
-        _mconcat>>;
+    _gather_completion_signatures<
+      Sigs,
+      set_value_t,
+      _mcompose_q<_mlist_ref, Tuple>::template _f,
+      _malways<_mlist_ref<>>::_f,
+      _mconcat_into<_mtry_quote<Variant>>::template _f>;
 
   template <
     class Sndr,
@@ -247,14 +245,17 @@ namespace ustdex {
   template <
     class Sigs,
     template <class...>
-    class Tuple>
+    class Variant>
   using _error_types = //
-    _mapply<           //
-      _mtry_quote<Tuple>,
-      _gather_completion_signatures<Sigs, set_error_t, _mlist, _malways<_mlist<>>::_f, _mconcat>>;
+    _gather_completion_signatures<
+      Sigs,
+      set_error_t,
+      _mlist_ref,
+      _malways<_mlist_ref<>>::_f,
+      _mconcat_into<_mtry_quote<Variant>>::template _f>;
 
-  template <class Sndr, class Env, template <class...> class Tuple>
-  using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Tuple>;
+  template <class Sndr, class Env, template <class...> class Variant>
+  using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Variant>;
 
   template <class Sigs>
   USTDEX_DEVICE constexpr bool _sends_stopped = //

@@ -40,7 +40,7 @@ namespace ustdex {
 
   template <class... Ts>
   inline constexpr auto _desc_v = [] {
-    return _tuple_for<Ts...>{};
+    return _tuple<Ts...>{};
   };
 
   template <class Tag, class Data, class... Children>

@@ -15,62 +15,44 @@
  */
 #pragma once
 
-#include <utility>
-
 #include "config.hpp"
 #include "type_traits.hpp"
 
+#include <utility>
+
 namespace ustdex {
-  template <class Ty, std::size_t Idx>
+  template <std::size_t Idx, class Ty>
   struct _box {
     [[no_unique_address]] Ty _value;
   };
 
   template <class Idx, class... Ts>
-  struct _tuple;
+  struct _tupl;
 
   template <std::size_t... Idx, class... Ts>
-  struct _tuple<std::index_sequence<Idx...>, Ts...> : _box<Ts, Idx>... {
-    template <class Fn, class Tup>
-    using _nothrow = _mvalue<_nothrow_callable<Fn, _copy_cvref_t<Tup, Ts>...>>;
-
-    template <class Fn, class Tup>
-    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr friend auto
-      _apply(Fn &&fn, Tup &&tup) noexcept(_v<_nothrow<Fn, Tup>>)
-      //noexcept(DECLVAL(Fn)(DECLVAL(_copy_cvref_t<Tup, Ts>)...)))
-      -> decltype(DECLVAL(Fn)(DECLVAL(_copy_cvref_t<Tup, Ts>)...)) {
+  struct _tupl<std::index_sequence<Idx...>, Ts...> : _box<Idx, Ts>... {
+    template <class Fn, class... Us>
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto apply(Fn &&fn, Us &&...us) & //
+      noexcept(_nothrow_callable<Fn, Us..., Ts &...>)
+        -> _call_result_t<Fn, Us..., Ts &...> {
       return static_cast<Fn &&>(fn)(
-        static_cast<_copy_cvref_t<Tup, _box<Ts, Idx>> &&>(tup)._value...);
+        static_cast<Us &&>(us)..., this->_box<Idx, Ts>::_value...);
     }
   };
 
   template <class... Ts>
-  USTDEX_HOST_DEVICE _tuple(Ts...) -> _tuple<std::index_sequence_for<Ts...>, Ts...>;
+  USTDEX_HOST_DEVICE _tupl(Ts...) //
+    ->_tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
   template <class... Ts>
-  using _tuple_for = _tuple<std::index_sequence_for<Ts...>, Ts...>;
-
-  template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE constexpr Ty &&_get(_box<Ty, Idx> &&_self) noexcept {
-    return static_cast<Ty &&>(_self._value);
-  }
-
-  template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE constexpr Ty &_get(_box<Ty, Idx> &_self) noexcept {
-    return _self._value;
-  }
-
-  template <std::size_t Idx, class Ty>
-  USTDEX_HOST_DEVICE constexpr const Ty &_get(const _box<Ty, Idx> &_self) noexcept {
-    return _self._value;
-  }
+  using _tuple = _tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
   template <class First, class Second>
-  struct pair {
+  struct _pair {
     First first;
     Second second;
   };
 
   template <class... Ts>
-  using _decayed_tuple = _tuple_for<_decay_t<Ts>...>;
+  using _decayed_tuple = _tuple<_decay_t<Ts>...>;
 } // namespace ustdex

@@ -50,10 +50,22 @@ namespace ustdex {
   struct _mlist;
 
   template <class... Ts>
+  struct _mlist2;
+
+  template <class... Ts>
+  using _mlist_ref = _mlist<Ts...> &;
+
+  template <class... Ts>
+  using _mlist2_ref = _mlist2<Ts...> &;
+
+  template <class... Ts>
   _mlist<Ts...> operator+(_mlist<Ts...> &);
 
   template <class... Ts, class... Us>
   _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist<Us...> &);
+
+  template <class... Ts, class... Us>
+  _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist2<Us...> &);
 
   template <class... Lists>
   using _mconcat = decltype(+(DECLVAL(_mlist<> &) + ... + DECLVAL(Lists &)));
@@ -131,6 +143,9 @@ namespace ustdex {
 
     template <class Ty>
     ERROR &operator,(Ty &);
+
+    template <class... With>
+    ERROR<What..., With...> &with(ERROR<With...> &);
   };
 
   constexpr bool _ustdex_unhandled_error(...) noexcept {
@@ -146,7 +161,13 @@ namespace ustdex {
   using _find_error = decltype(+(DECLVAL(Ts &), ..., DECLVAL(ERROR<UNKNOWN> &)));
 
   template <class Ty>
-  inline constexpr bool _is_error = USTDEX_IS_BASE_OF(_merror_base, Ty);
+  inline constexpr bool _is_error = false;
+
+  template <class... What>
+  inline constexpr bool _is_error<ERROR<What...>> = true;
+
+  template <class... What>
+  inline constexpr bool _is_error<ERROR<What...> &> = true;
 
   template <template <class...> class Fn, class... Ts>
   using _minvoke_q = Fn<Ts...>;
@@ -168,6 +189,18 @@ namespace ustdex {
 
   template <template <class...> class Fn, class List>
   using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(DECLVAL(List &)));
+
+  template <class Fn>
+  struct _mconcat_into {
+    template <class... Lists>
+    using _f = _mapply<Fn, _mconcat<Lists...>>;
+  };
+
+  template <template <class...> class Fn>
+  struct _mconcat_into_q {
+    template <class... Lists>
+    using _f = _mapply_q<Fn, _mconcat<Lists...>>;
+  };
 
   template <template <class...> class Fn, class List, class Enable = void>
   inline constexpr bool _mvalid_ = false;
@@ -218,6 +251,22 @@ namespace ustdex {
 
   template <class If, class Then = void, class... Else>
   using _mif_t = typename _mif_<_v<If>>::template _f<Then, Else...>;
+
+  template <bool Error>
+  struct _midentity_or_error_with_ {
+    template <class Ty, class... With>
+    using _f = Ty;
+  };
+
+  template <>
+  struct _midentity_or_error_with_<true> {
+    template <class Ty, class... With>
+    using _f = decltype(DECLVAL(Ty &).with(DECLVAL(ERROR<With...> &)));
+  };
+
+  template <class Ty, class... With>
+  using _midentity_or_error_with =
+    _minvoke<_midentity_or_error_with_<_is_error<Ty>>, Ty, With...>;
 
   template <bool>
   struct _mtry_ {
@@ -398,5 +447,11 @@ namespace ustdex {
   struct _mcount {
     template <class... Ts>
     using _f = _mvalue<sizeof...(Ts)>;
+  };
+
+  template <class Ty>
+  struct _msingle_or {
+    template <class Uy = Ty>
+    using _f = Uy;
   };
 } // namespace ustdex

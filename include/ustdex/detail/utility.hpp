@@ -32,6 +32,8 @@ namespace ustdex {
 
   struct [[deprecated]] _deprecated { };
 
+  struct _nil { };
+
   struct _immovable {
     _immovable() = default;
     _immovable(const _immovable &) = delete;

@@ -421,4 +421,15 @@ namespace ustdex {
       }
     }
   }
+
+  struct _on_stop_request {
+    inplace_stop_source &_source;
+
+    USTDEX_HOST_DEVICE void operator()() const noexcept {
+      _source.request_stop();
+    }
+  };
+
+  template <class Token, class Callback>
+  using stop_callback_for_t = typename Token::template callback_type<Callback>;
 } // namespace ustdex

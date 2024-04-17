@@ -51,7 +51,7 @@ namespace ustdex {
     using SetTag = decltype(_detail::_set_tag<Disposition>());
 
     template <class...>
-    using _empty_tuple = _tuple_for<>;
+    using _empty_tuple = _tuple<>;
 
     /// @brief Computes the type of a variant of tuples to hold the results of
     /// the predecessor sender.
@@ -118,7 +118,7 @@ namespace ustdex {
             // sender, storing the operation state in _opstate2.
             auto &nextop = _opstate2.emplace_from(
               ustdex::connect,
-              _apply(static_cast<Fn &&>(_fn), tupl),
+              tupl.apply(static_cast<Fn &&>(_fn)),
               ustdex::_rcvr_ref(_rcvr));
             ustdex::start(nextop);
           }

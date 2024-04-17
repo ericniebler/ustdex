@@ -29,12 +29,12 @@ namespace ustdex {
    private:
 #endif
     template <class... As>
-    using _set_value_tuple_t = _tuple_for<set_value_t, _decay_t<As>...>;
+    using _set_value_tuple_t = _tuple<set_value_t, _decay_t<As>...>;
 
     template <class Error>
-    using _set_error_tuple_t = _tuple_for<set_error_t, _decay_t<Error>>;
+    using _set_error_tuple_t = _tuple<set_error_t, _decay_t<Error>>;
 
-    using _set_stopped_tuple_t = _tuple_for<set_stopped_t>;
+    using _set_stopped_tuple_t = _tuple<set_stopped_t>;
 
     using _complete_fn = void (*)(void *) noexcept;
 
@@ -52,12 +52,12 @@ namespace ustdex {
 
       template <class Tag, class... As>
       USTDEX_HOST_DEVICE void _set_result(Tag, As &&...as) noexcept {
-        using _tupl_t = _tuple_for<Tag, _decay_t<As>...>;
+        using _tupl_t = _tuple<Tag, _decay_t<As>...>;
         _result.template emplace<_tupl_t>(Tag(), static_cast<As &&>(as)...);
         _complete = +[](void *ptr) noexcept {
           auto &self = *static_cast<_rcvr_t *>(ptr);
           auto &tupl = *static_cast<_tupl_t *>(self._result._get_ptr());
-          _apply(self, tupl);
+          tupl.apply(self);
         };
       }
 
