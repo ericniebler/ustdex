@@ -87,8 +87,8 @@ namespace ustdex {
   template <class Query>
   struct read_env_t::_sndr_t {
     using sender_concept = sender_t;
-    [[no_unique_address]] read_env_t _tag;
-    [[no_unique_address]] Query _query;
+    USTDEX_NO_UNIQUE_ADDRESS read_env_t _tag;
+    USTDEX_NO_UNIQUE_ADDRESS Query _query;
 
     template <class Env>
     auto get_completion_signatures(const Env &) const //

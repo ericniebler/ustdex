@@ -34,3 +34,6 @@
 # Build directories
 _build/
 build/
+
+# IDE files
+.vscode/

@@ -36,8 +36,8 @@ namespace ustdex {
     _task *_next = this;
 
     union {
-      void (*_execute_fn)(_task *) noexcept;
       _task *_tail;
+      void (*_execute_fn)(_task *) noexcept;
     };
 
     USTDEX_HOST_DEVICE void _execute() noexcept {
@@ -48,7 +48,7 @@ namespace ustdex {
   template <class Rcvr>
   struct _operation : _task {
     run_loop *_loop;
-    [[no_unique_address]] Rcvr _rcvr;
+    USTDEX_NO_UNIQUE_ADDRESS Rcvr _rcvr;
 
     USTDEX_HOST_DEVICE static void _execute_impl(_task *_p) noexcept {
       auto &_rcvr = static_cast<_operation *>(_p)->_rcvr;
@@ -65,13 +65,14 @@ namespace ustdex {
     }
 
     USTDEX_HOST_DEVICE explicit _operation(_task *_tail) noexcept
-      : _task{._tail = _tail} {
+      : _task{{}, this, _tail} {
     }
 
     USTDEX_HOST_DEVICE _operation(_task *_next, run_loop *_loop, Rcvr _rcvr)
-      : _task{{}, _next, {&_execute_impl}}
+      : _task{{}, _next}
       , _loop{_loop}
       , _rcvr{static_cast<Rcvr &&>(_rcvr)} {
+      _execute_fn = &_execute_impl;
     }
 
     USTDEX_HOST_DEVICE void start() & noexcept;
@@ -173,7 +174,7 @@ namespace ustdex {
 
     std::mutex _mutex;
     std::condition_variable _cv;
-    _task _head{._tail = &_head};
+    _task _head{{}, &_head, &_head};
     bool _stop = false;
   };
 

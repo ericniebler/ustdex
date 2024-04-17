@@ -154,7 +154,7 @@ namespace ustdex {
     template <class Sndr, class Sch, class Tag = continue_on_t>
     struct _sndr_t {
       using sender_concept = sender_t;
-      [[no_unique_address]] Tag _tag;
+      USTDEX_NO_UNIQUE_ADDRESS Tag _tag;
       Sch _sch;
       Sndr _sndr;
 

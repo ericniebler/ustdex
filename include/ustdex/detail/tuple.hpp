@@ -23,7 +23,7 @@
 namespace ustdex {
   template <std::size_t Idx, class Ty>
   struct _box {
-    [[no_unique_address]] Ty _value;
+    USTDEX_NO_UNIQUE_ADDRESS Ty _value;
   };
 
   template <class Idx, class... Ts>

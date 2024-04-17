@@ -111,7 +111,7 @@ namespace ustdex {
   template <class Sch, class Sndr>
   struct start_on_t::_sndr_t {
     using sender_concept = sender_t;
-    [[no_unique_address]] start_on_t _tag;
+    USTDEX_NO_UNIQUE_ADDRESS start_on_t _tag;
     Sch _sch;
     Sndr _sndr;
 

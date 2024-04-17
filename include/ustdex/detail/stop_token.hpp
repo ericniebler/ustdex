@@ -266,7 +266,7 @@ namespace ustdex {
       std::move(static_cast<inplace_stop_callback *>(cb)->_fun)();
     }
 
-    [[no_unique_address]] _Fun _fun;
+    USTDEX_NO_UNIQUE_ADDRESS _Fun _fun;
   };
 
   namespace _stok {

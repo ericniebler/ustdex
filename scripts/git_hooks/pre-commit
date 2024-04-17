@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Relative path to your custom script within your project folder
+custom_script_path="./scripts/format.sh"
+
+echo "pre-commit hook: Running ${custom_script_path}"
+
+# Run the custom script
+if [ -f "$custom_script_path" ]; then
+  # Navigate to the project root directory before running the script
+  project_root="$(git rev-parse --show-toplevel)"
+  cd "$project_root" || exit
+
+  # Run the custom script
+  sh "$custom_script_path"
+
+  # Check the exit status of the script
+  if [ $? -ne 0 ]; then
+    echo "Formatting script made changes. Re-stage modified files"
+    exit 1
+  fi
+else
+  echo "${custom_script_path} not found. Commit aborted."
+  exit 1
+fi

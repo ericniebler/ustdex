@@ -70,7 +70,7 @@ namespace ustdex {
     template <class... Ts>
     struct _sndr_t {
       using sender_concept = sender_t;
-      [[no_unique_address]] JustTag _tag;
+      USTDEX_NO_UNIQUE_ADDRESS JustTag _tag;
       _tuple<Ts...> _values;
 
       auto get_completion_signatures(_ignore_t = {}) const
