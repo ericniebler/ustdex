@@ -50,22 +50,13 @@ namespace ustdex {
   struct _mlist;
 
   template <class... Ts>
-  struct _mlist2;
-
-  template <class... Ts>
   using _mlist_ref = _mlist<Ts...> &;
-
-  template <class... Ts>
-  using _mlist2_ref = _mlist2<Ts...> &;
 
   template <class... Ts>
   _mlist<Ts...> operator+(_mlist<Ts...> &);
 
   template <class... Ts, class... Us>
   _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist<Us...> &);
-
-  template <class... Ts, class... Us>
-  _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist2<Us...> &);
 
   template <class... Lists>
   using _mconcat = decltype(+(DECLVAL(_mlist<> &) + ... + DECLVAL(Lists &)));
@@ -152,14 +143,6 @@ namespace ustdex {
     return false;
   }
 
-  // True if any of the types in Ts... are errors; false otherwise.
-  template <class... Ts>
-  inline constexpr bool _contains_error =
-    _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
-
-  template <class... Ts>
-  using _find_error = decltype(+(DECLVAL(Ts &), ..., DECLVAL(ERROR<UNKNOWN> &)));
-
   template <class Ty>
   inline constexpr bool _is_error = false;
 
@@ -168,6 +151,18 @@ namespace ustdex {
 
   template <class... What>
   inline constexpr bool _is_error<ERROR<What...> &> = true;
+
+  // True if any of the types in Ts... are errors; false otherwise.
+  template <class... Ts>
+  inline constexpr bool _contains_error =
+  #if USTDEX_MSVC()
+    (_is_error<Ts> ||...);
+  #else
+    _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
+  #endif
+
+  template <class... Ts>
+  using _find_error = decltype(+(DECLVAL(Ts &), ..., DECLVAL(ERROR<UNKNOWN> &)));
 
   template <template <class...> class Fn, class... Ts>
   using _minvoke_q = Fn<Ts...>;
@@ -350,7 +345,7 @@ namespace ustdex {
     using _f = _minvoke_q<Fn, Us..., Ts...>;
   };
 
-#if __has_builtin(__type_pack_element)
+#if USTDEX_HAS_BUILTIN(__type_pack_element)
   template <bool>
   struct _m_at_ {
     template <class Np, class... Ts>

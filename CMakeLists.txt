@@ -15,6 +15,9 @@
 cmake_minimum_required(VERSION 3.26)
 project(ustdex VERSION 0.0.1 LANGUAGES CXX)
 
+# Integrate with LLVM/clang tooling
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 # Ensure that we link with the threading library
@@ -63,9 +66,35 @@ target_link_libraries(ustdex INTERFACE Threads::Threads)
 target_compile_features(ustdex INTERFACE cxx_std_17)
 target_include_directories(ustdex INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# download CPM.cmake
+file(
+  DOWNLOAD
+  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.39.0/CPM.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+  EXPECTED_HASH SHA256=66639bcac9dd2907b2918de466783554c1334446b9874e90d38e3778d404c2ef
+)
+include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+
 if (USTDEX_ENABLE_CUDA)
-  target_compile_features(ustdex INTERFACE cuda_std_20)
+  target_compile_features(ustdex INTERFACE cuda_std_17)
 endif()
+
+option(USTDEX_BUILD_DOCS "Build ustdex documentation" OFF)
+if (USTDEX_BUILD_DOCS)
+  add_subdirectory(docs)
+endif()
+
+option(USTDEX_BUILD_EXAMPLES "Build ustdex examples" ON)
+if (USTDEX_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+if (BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
+
+##############################################
+# Installation
 
 # Don't require building everything when installing
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
@@ -81,9 +110,3 @@ install(
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/include/ustdex_version_config.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-option(USTDEX_BUILD_DOCS "Build ustdex documentation" OFF)
-if (USTDEX_BUILD_DOCS)
-  add_subdirectory(docs)
-endif()
-add_subdirectory(examples)

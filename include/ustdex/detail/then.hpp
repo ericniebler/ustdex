@@ -173,7 +173,7 @@ namespace ustdex {
     template <class Fn, class Sndr>
     struct _sndr_t {
       using sender_concept = sender_t;
-      [[no_unique_address]] UponTag _tag;
+      USTDEX_NO_UNIQUE_ADDRESS UponTag _tag;
       Fn _fn;
       Sndr _sndr;
 

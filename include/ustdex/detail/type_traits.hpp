@@ -15,12 +15,13 @@
  */
 #pragma once
 
+#include "config.hpp"
 #include "meta.hpp"
 
 namespace ustdex {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // __decay_t: An efficient implementation for std::decay
-#if __has_builtin(__decay)
+#if USTDEX_HAS_BUILTIN(__decay)
 
   template <class Ty>
   using _decay_t = __decay(Ty);
