@@ -1,5 +1,7 @@
 # µstdex
 
+[![Build and test all platforms](https://github.com/ericniebler/ustdex/actions/workflows/main.yml/badge.svg)](https://github.com/ericniebler/ustdex/actions/workflows/main.yml)
+
 This project is intended to be a small, lightweight `std::execution`[^1]
 work-alike that targets C++17. It optimizes for compile-times and diagnostics
 above performance and conformance.
