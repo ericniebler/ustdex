@@ -37,3 +37,6 @@ build/
 
 # IDE files
 .vscode/
+
+# CMake files
+CMakeUserPresets.json
