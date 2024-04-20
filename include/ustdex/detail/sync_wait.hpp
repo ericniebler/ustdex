@@ -120,7 +120,7 @@ namespace ustdex {
     /// @throws error otherwise
     // clang-format on
     template <class Sndr>
-    /*std::optional<_values_of<Sndr>>*/ auto operator()(Sndr&& sndr) const {
+    std::optional<_values_of<Sndr>> operator()(Sndr&& sndr) const {
       using values_t = _values_of<Sndr>;
       std::optional<values_t> result;
       _state_t state{};
