@@ -20,7 +20,13 @@ CPMAddPackage("gh:catchorg/Catch2@3.5.4")
 # Discover the Catch2 test built by the application
 include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
 
-add_executable(just_test test_just.cpp)
-target_link_libraries(just_test ustdex Catch2::Catch2WithMain)
+# Find all test files with "test_" prefix
+file(GLOB TEST_FILES test_*.cpp)
 
-add_test(just_test just_test)
+# Add each test file as a test
+foreach(TEST_FILE ${TEST_FILES})
+  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+  add_executable(${TEST_NAME} ${TEST_FILE})
+  target_link_libraries(${TEST_NAME} ustdex Catch2::Catch2WithMain)
+  add_test(${TEST_NAME} ${TEST_NAME})
+endforeach()

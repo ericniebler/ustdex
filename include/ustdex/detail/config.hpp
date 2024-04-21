@@ -209,3 +209,10 @@ namespace ustdex {
 #else
 #  define USTDEX_NO_UNIQUE_ADDRESS
 #endif
+
+// GCC struggles with guaranteed copy elision
+#if USTDEX_GCC()
+#  define USTDEX_IMMOVABLE(XP) XP(XP&&)
+#else
+#  define USTDEX_IMMOVABLE(XP) XP(XP&&) = delete
+#endif

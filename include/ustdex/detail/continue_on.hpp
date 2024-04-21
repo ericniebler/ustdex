@@ -80,7 +80,7 @@ namespace ustdex {
     };
 
     template <class CvSndr, class Sch, class Rcvr>
-    struct _opstate_t : _immovable {
+    struct _opstate_t {
       using operation_state_concept = operation_state_t;
       using _result_t = _transform_completion_signatures<
         completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
@@ -98,6 +98,8 @@ namespace ustdex {
         , _opstate1{ustdex::connect(static_cast<CvSndr &&>(sndr), this)}
         , _opstate2{ustdex::connect(schedule(sch), &_rcvr)} {
       }
+
+      USTDEX_IMMOVABLE(_opstate_t);
 
       USTDEX_HOST_DEVICE void start() noexcept {
         ustdex::start(_opstate1);
@@ -151,65 +153,19 @@ namespace ustdex {
         _set_value_completion,
         _set_error_completion>;
 
-    template <class Sndr, class Sch, class Tag = continue_on_t>
-    struct _sndr_t {
-      using sender_concept = sender_t;
-      USTDEX_NO_UNIQUE_ADDRESS Tag _tag;
-      Sch _sch;
-      Sndr _sndr;
-
-      struct _attrs_t {
-        _sndr_t *_sndr;
-
-        template <class SetTag>
-        USTDEX_HOST_DEVICE auto query(get_completion_scheduler_t<SetTag>) const noexcept {
-          return _sndr->_sch;
-        }
-
-        template <class Query>
-        USTDEX_HOST_DEVICE auto
-          query(Query) const -> _query_result_t<Query, env_of_t<Sndr>> {
-          return ustdex::get_env(_sndr->_sndr).query(Query{});
-        }
-      };
-
-      template <class... Env>
-      auto get_completion_signatures(const Env &...) && //
-        -> _completions<Sndr, Sch, Env...>;
-
-      template <class... Env>
-      auto get_completion_signatures(const Env &...) const & //
-        -> _completions<const Sndr &, Sch, Env...>;
-
-      template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<Sndr, Sch, Rcvr> connect(Rcvr rcvr) && {
-        return {static_cast<Sndr &&>(_sndr), _sch, static_cast<Rcvr &&>(rcvr)};
-      }
-
-      template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<const Sndr &, Sch, Rcvr> connect(Rcvr rcvr) const & {
-        return {_sndr, _sch, static_cast<Rcvr &&>(rcvr)};
-      }
-
-      USTDEX_HOST_DEVICE _attrs_t get_env() const noexcept {
-        return _attrs_t{this};
-      }
-    };
+    template <class Sndr, class Sch>
+    struct _sndr_t;
 
     template <class Sch>
     struct _closure_t;
 
    public:
     template <class Sndr, class Sch>
-    USTDEX_HOST_DEVICE auto operator()(Sndr sndr, Sch sch) const noexcept {
-      return _sndr_t<Sndr, Sch>{{}, sch, static_cast<Sndr &&>(sndr)};
-    }
+    USTDEX_HOST_DEVICE _sndr_t<Sndr, Sch> operator()(Sndr sndr, Sch sch) const noexcept;
 
     template <class Sch>
     USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch> operator()(Sch sch) const noexcept;
   };
-
-  USTDEX_DEVICE constexpr continue_on_t continue_on{};
 
   template <class Sch>
   struct continue_on_t::_closure_t {
@@ -217,13 +173,65 @@ namespace ustdex {
 
     template <class Sndr>
     USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
-      return continue_on(static_cast<Sndr &&>(sndr), static_cast<Sch &&>(_self._sch));
+      return continue_on_t()(static_cast<Sndr &&>(sndr), static_cast<Sch &&>(_self._sch));
     }
   };
+
+  template <class Sndr, class Sch>
+  struct continue_on_t::_sndr_t {
+    using sender_concept = sender_t;
+    USTDEX_NO_UNIQUE_ADDRESS continue_on_t _tag;
+    Sch _sch;
+    Sndr _sndr;
+
+    struct _attrs_t {
+      _sndr_t *_sndr;
+
+      template <class SetTag>
+      USTDEX_HOST_DEVICE auto query(get_completion_scheduler_t<SetTag>) const noexcept {
+        return _sndr->_sch;
+      }
+
+      template <class Query>
+      USTDEX_HOST_DEVICE auto
+        query(Query) const -> _query_result_t<Query, env_of_t<Sndr>> {
+        return ustdex::get_env(_sndr->_sndr).query(Query{});
+      }
+    };
+
+    template <class... Env>
+    auto get_completion_signatures(const Env &...) && -> _completions<Sndr, Sch, Env...>;
+
+    template <class... Env>
+    auto get_completion_signatures(const Env &...) const & //
+      -> _completions<const Sndr &, Sch, Env...>;
+
+    template <class Rcvr>
+    USTDEX_HOST_DEVICE _opstate_t<Sndr, Sch, Rcvr> connect(Rcvr rcvr) && {
+      return {static_cast<Sndr &&>(_sndr), _sch, static_cast<Rcvr &&>(rcvr)};
+    }
+
+    template <class Rcvr>
+    USTDEX_HOST_DEVICE _opstate_t<const Sndr &, Sch, Rcvr> connect(Rcvr rcvr) const & {
+      return {_sndr, _sch, static_cast<Rcvr &&>(rcvr)};
+    }
+
+    USTDEX_HOST_DEVICE _attrs_t get_env() const noexcept {
+      return _attrs_t{this};
+    }
+  };
+
+  template <class Sndr, class Sch>
+  USTDEX_HOST_DEVICE auto continue_on_t::operator()(Sndr sndr, Sch sch) const noexcept
+    -> continue_on_t::_sndr_t<Sndr, Sch> {
+    return _sndr_t<Sndr, Sch>{{}, sch, static_cast<Sndr &&>(sndr)};
+  }
 
   template <class Sch>
   USTDEX_HOST_DEVICE USTDEX_INLINE continue_on_t::_closure_t<Sch>
     continue_on_t::operator()(Sch sch) const noexcept {
     return _closure_t<Sch>{sch};
   }
+
+  USTDEX_DEVICE constexpr continue_on_t continue_on{};
 } // namespace ustdex

@@ -101,7 +101,7 @@ namespace ustdex {
     };
 
     template <class Sndr, class Rcvr, class Fn>
-    struct _opstate_t : _immovable {
+    struct _opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
       Fn _fn;
@@ -112,6 +112,8 @@ namespace ustdex {
         , _fn{static_cast<Fn &&>(fn)}
         , _opstate{connect(static_cast<Sndr &&>(sndr), this)} {
       }
+
+      USTDEX_IMMOVABLE(_opstate_t);
 
       USTDEX_HOST_DEVICE void start() & noexcept {
         ustdex::start(_opstate);

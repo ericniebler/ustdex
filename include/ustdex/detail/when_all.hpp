@@ -21,8 +21,10 @@
 #include "cpos.hpp"
 #include "lazy.hpp"
 #include "stop_token.hpp"
+#include "tuple.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
+#include "variant.hpp"
 
 #include <atomic>
 
@@ -293,6 +295,8 @@ namespace ustdex {
     using _collect_outer = //
       _reduce_completions_t<decltype((DECLVAL(_outer_fold_init &) & ... & DECLVAL(Sigs)))>;
 
+    // TODO: The Env argument to completion_signatures_of_t should be a
+    // forwarding env that updates the stop token.
     template <class Sndr, class... Env>
     using _inner_completions_ = //
       _mapply_q<_collect_inner, completion_signatures_of_t<Sndr, Env...>>;
@@ -316,6 +320,50 @@ namespace ustdex {
     template <class Rcvr, class Values, class Errors, class StopToken>
     struct _data_t {
       using stop_callback_t = stop_callback_for_t<StopToken, _on_stop_request>;
+
+      template <std::size_t Offset, std::size_t... Idx, class... Ts>
+      USTDEX_HOST_DEVICE void _set_value(_mindices<Idx...>, Ts &&...ts) noexcept {
+        if constexpr (!USTDEX_IS_SAME(Values, _nil)) {
+          if constexpr (_nothrow_decay_copyable<Ts...>) {
+            (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
+          } else {
+            try {
+              (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
+            } catch (...) {
+              _set_error(std::current_exception());
+            }
+          }
+        }
+      }
+
+      template <class Error>
+      USTDEX_HOST_DEVICE void _set_error(Error &&_err) noexcept {
+        // TODO: Use weaker memory orders
+        if (_error != _state.exchange(_error)) {
+          _stop_source.request_stop();
+          // We won the race, free to write the error into the operation state
+          // without worry.
+          if constexpr (_nothrow_decay_copyable<Error>) {
+            _errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
+          } else {
+            try {
+              _errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
+            } catch (...) {
+              _errors.template emplace<std::exception_ptr>(std::current_exception());
+            }
+          }
+        }
+      }
+
+      USTDEX_HOST_DEVICE void _set_stopped() noexcept {
+        _state_t expected = _started;
+        // Transition to the "stopped" state if and only if we're in the
+        // "started" state. (If this fails, it's because we're in an
+        // error state, which trumps cancellation.)
+        if (_state.compare_exchange_strong(expected, _stopped)) {
+          _stop_source.request_stop();
+        }
+      }
 
       void _arrive() noexcept {
         if (0 == --_count) {
@@ -374,8 +422,8 @@ namespace ustdex {
       }
 
       template <class Tag>
-      USTDEX_HOST_DEVICE auto
-        query(Tag) const noexcept -> _query_result_t<Tag, env_of_t<Rcvr>> {
+      USTDEX_HOST_DEVICE auto query(Tag) const noexcept //
+        -> _query_result_t<Tag, env_of_t<Rcvr>> {
         return ustdex::get_env(_data->_rcvr).query(Tag());
       }
     };
@@ -387,64 +435,21 @@ namespace ustdex {
       using _data_t = _when_all::_data_t<Rcvr, Values, Errors, StopToken>;
       _data_t *_data;
 
-      template <class Error>
-      USTDEX_HOST_DEVICE void _set_error(Error &&_err) noexcept {
-        // TODO: Use weaker memory orders
-        if (_error != _data->_state.exchange(_error)) {
-          _data->_stop_source.request_stop();
-          // We won the race, free to write the error into the operation state
-          // without worry.
-          if constexpr (_nothrow_decay_copyable<Error>) {
-            _data->_errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
-          } else {
-            try {
-              _data->_errors.template emplace<_decay_t<Error>>(
-                static_cast<Error &&>(_err));
-            } catch (...) {
-              _data->_errors.template emplace<std::exception_ptr>(
-                std::current_exception());
-            }
-          }
-        }
-      }
-
-      template <std::size_t... Idx, class... Ts>
-      USTDEX_HOST_DEVICE void _set_value(_mindices<Idx...>, Ts &&...ts) noexcept {
-        if constexpr (!USTDEX_IS_SAME(Values, _nil)) {
-          if constexpr (_nothrow_decay_copyable<Ts...>) {
-            (_data->_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
-          } else {
-            try {
-              (_data->_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)),
-               ...);
-            } catch (...) {
-              _set_error(std::current_exception());
-            }
-          }
-        }
-      }
-
       template <class... Ts>
       USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(Ts &&...ts) noexcept {
         constexpr auto idx = _mmake_indices<sizeof...(Ts)>();
-        this->_set_value(idx, static_cast<Ts &&>(ts)...);
+        _data->template _set_value<Offset>(idx, static_cast<Ts &&>(ts)...);
         _data->_arrive();
       }
 
       template <class Error>
       USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
-        this->_set_error(static_cast<Error &&>(error));
+        _data->_set_error(static_cast<Error &&>(error));
         _data->_arrive();
       }
 
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        _state_t expected = _started;
-        // Transition to the "stopped" state if and only if we're in the
-        // "started" state. (If this fails, it's because we're in an
-        // error state, which trumps cancellation.)
-        if (_data->_state.compare_exchange_strong(expected, _stopped)) {
-          _data->_stop_source.request_stop();
-        }
+        _data->_set_stopped();
         _data->_arrive();
       }
 
@@ -463,18 +468,25 @@ namespace ustdex {
         _moffsets<Offsets...> *,
         _mindices<Idx...> y,
         CvSndrs &&...sndrs) const {
-        // The offsets are used to determine which elements in the values
-        // tuple each receiver is responsible for setting.
-        constexpr std::size_t offsets[] = {Offsets...};
-        return _tupl{ustdex::connect(
-          static_cast<CvSndrs &&>(sndrs), _rcvr_t<Data, offsets[Idx]>{data})...};
+        if constexpr (0 != sizeof...(Offsets)) {
+          // The offsets are used to determine which elements in the values
+          // tuple each receiver is responsible for setting.
+          constexpr std::size_t offsets[] = {Offsets...};
+          return _tupl{ustdex::connect(
+            static_cast<CvSndrs &&>(sndrs), _rcvr_t<Data, offsets[Idx]>{data})...};
+        } else {
+          // When there are no offsets, the when_all sender has no value
+          // completions. All child senders can be connected to receivers
+          // of the same type.
+          return _tupl{
+            ustdex::connect(static_cast<CvSndrs &&>(sndrs), _rcvr_t<Data, 0>{data})...};
+        }
       }
     };
 
     /// The operation state for when_all
     template <class CvFn, std::size_t... Idx, class... Sndrs, class Rcvr>
-    struct _opstate_t<CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>, Rcvr>
-      : _immovable {
+    struct _opstate_t<CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>, Rcvr> {
       using operation_state_concept = operation_state_t;
       using _sndrs_t = _minvoke<CvFn, _tuple<Sndrs...>>;
       using _env_t = env_of_t<Rcvr>;
@@ -507,11 +519,7 @@ namespace ustdex {
             _indices_t())} {
       }
 
-#if USTDEX_GCC()
-      // GCC needs this declaration here, but it won't ever use it so it
-      // doesn't cause a linker error.
-      _opstate_t(_opstate_t &&);
-#endif
+      USTDEX_IMMOVABLE(_opstate_t);
 
       /// Start all the sub-operations.
       USTDEX_HOST_DEVICE void start() & noexcept {

@@ -38,7 +38,7 @@ namespace ustdex {
   class _variant_impl;
 
   template <std::size_t... Idx, class... Ts>
-  class _variant_impl<std::index_sequence<Idx...>, Ts...> : _immovable {
+  class _variant_impl<std::index_sequence<Idx...>, Ts...> {
     static constexpr std::size_t _max_size = _max({sizeof(Ts)...});
     std::size_t _index{_variant_npos};
     alignas(Ts...) unsigned char _storage[_max_size];
@@ -53,6 +53,8 @@ namespace ustdex {
     using _at = _m_at_c<Ny, Ts...>;
 
    public:
+    USTDEX_IMMOVABLE(_variant_impl);
+
     USTDEX_HOST_DEVICE _variant_impl() noexcept {
     }
 
