@@ -53,7 +53,7 @@ namespace ustdex {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
 
-      explicit opstate_t(Rcvr)
+      explicit opstate_t(Rcvr rcvr)
         : _rcvr(static_cast<Rcvr &&>(rcvr)) {
       }
 
