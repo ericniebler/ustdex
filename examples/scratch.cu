@@ -31,8 +31,13 @@ struct sink {
     std::printf("%d\n", a);
   }
 
+  template <class... As>
+  USTDEX_HOST_DEVICE void set_value(As &&...) noexcept {
+    std::printf("%s\n", "In sink::set_value(auto&&...)");
+  }
+
   USTDEX_HOST_DEVICE void set_error(std::exception_ptr eptr) noexcept {
-    std::puts("Error");
+    std::printf("Error\n");
   }
 
   USTDEX_HOST_DEVICE void set_stopped() noexcept {
@@ -96,9 +101,8 @@ USTDEX_HOST_DEVICE void _main() {
 
   auto s4 = just(42) | then([](int){}) | upon_error([](auto){ /*return 42;*/ });
   auto s5 = when_all(std::move(s4), just(42, 42), just(+""));
-  using S5 = decltype(s5);
-  s5.get_completion_signatures();
-  // auto o5 = connect(std::move(s5), sink{});
+  auto o5 = connect(std::move(s5), sink{});
+  o5.start();
   // using X = completion_signatures_of_t<decltype(s5)>;
   // print<X>();
 }

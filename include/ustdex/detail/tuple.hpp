@@ -23,7 +23,10 @@
 namespace ustdex {
   template <std::size_t Idx, class Ty>
   struct _box {
-    USTDEX_NO_UNIQUE_ADDRESS Ty _value;
+    // Too many compiler bugs with [[no_unique_address]] to use it here.
+    // E.g., https://github.com/llvm/llvm-project/issues/88077
+    // USTDEX_NO_UNIQUE_ADDRESS
+    Ty _value;
   };
 
   template <class Idx, class... Ts>

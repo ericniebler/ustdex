@@ -136,10 +136,10 @@ namespace {
     "when_all terminates with stopped if one child is cancelled",
     "[adaptors][when_all]") {
     stopped_scheduler sched;
-    auto snd = ex::when_all( //
-      ex::just(2),                      //
-      ex::just(5) | ex::continue_on(sched),      //
-      ex::just(7)                       //
+    auto snd = ex::when_all(                //
+      ex::just(2),                          //
+      ex::just(5) | ex::continue_on(sched), //
+      ex::just(7)                           //
     );
     auto op = ex::connect(std::move(snd), checked_stopped_receiver{});
     ex::start(op);

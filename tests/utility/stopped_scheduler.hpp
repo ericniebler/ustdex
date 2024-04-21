@@ -50,9 +50,7 @@ namespace {
       using sender_concept = ustdex::sender_t;
 
       auto get_completion_signatures(ustdex::_ignore_t = {})
-        -> ustdex::completion_signatures<
-          ustdex::set_value_t(),
-          ustdex::set_stopped_t()>;
+        -> ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
 
       template <typename Rcvr>
       opstate_t<Rcvr> connect(Rcvr rcvr) const {
