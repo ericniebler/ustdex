@@ -160,6 +160,10 @@ namespace ustdex {
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
         _complete(set_stopped_t());
       }
+
+      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+        return ustdex::get_env(_rcvr);
+      }
     };
 
     template <class CvSndr, class Fn, class... Env>
