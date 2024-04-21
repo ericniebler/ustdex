@@ -17,6 +17,8 @@
 #include "ustdex/detail/config.hpp"
 #include "ustdex/detail/continue_on.hpp"
 #include "ustdex/detail/just.hpp"
+#include "ustdex/detail/let_value.hpp"
+#include "ustdex/detail/start_on.hpp"
 #include "ustdex/detail/then.hpp"
 #include "ustdex/detail/when_all.hpp"
 
@@ -145,37 +147,37 @@ namespace {
     ex::start(op);
   }
 
-  // TEST_CASE(
-  //   "when_all cancels remaining children if error is detected",
-  //   "[adaptors][when_all]") {
-  //   impulse_scheduler sched;
-  //   error_scheduler err_sched;
-  //   bool called1{false};
-  //   bool called3{false};
-  //   bool cancelled{false};
-  //   auto snd = ex::when_all(                              //
-  //     ex::on(sched, ex::just()) | ex::then([&] { called1 = true; }), //
-  //     ex::on(sched, ex::transfer_just(err_sched, 5)),                //
-  //     ex::on(sched, ex::just())                                      //
-  //       | ex::then([&] { called3 = true; })                          //
-  //       | ex::let_stopped([&] {
-  //           cancelled = true;
-  //           return ex::just();
-  //         }) //
-  //   );
-  //   auto op = ex::connect(std::move(snd), expect_error_receiver{});
-  //   ex::start(op);
-  //   // The first child will complete; the third one will be cancelled
-  //   CHECK_FALSE(called1);
-  //   CHECK_FALSE(called3);
-  //   sched.start_next(); // start the first child
-  //   CHECK(called1);
-  //   sched.start_next(); // start the second child; this will generate an error
-  //   CHECK_FALSE(called3);
-  //   sched.start_next(); // start the third child
-  //   CHECK_FALSE(called3);
-  //   CHECK(cancelled);
-  // }
+  TEST_CASE(
+    "when_all cancels remaining children if error is detected",
+    "[adaptors][when_all]") {
+    impulse_scheduler sched;
+    error_scheduler err_sched{42};
+    bool called1{false};
+    bool called3{false};
+    bool cancelled{false};
+    auto snd = ex::when_all(                                               //
+      ex::start_on(sched, ex::just()) | ex::then([&] { called1 = true; }), //
+      ex::start_on(sched, ex::just(5) | ex::continue_on(err_sched)),       //
+      ex::start_on(sched, ex::just())                                      //
+        | ex::then([&] { called3 = true; })                                //
+        | ex::let_stopped([&] {
+            cancelled = true;
+            return ex::just();
+          }) //
+    );
+    auto op = ex::connect(std::move(snd), checked_error_receiver{42});
+    ex::start(op);
+    // The first child will complete; the third one will be cancelled
+    CHECK_FALSE(called1);
+    CHECK_FALSE(called3);
+    sched.start_next(); // start the first child
+    CHECK(called1);
+    sched.start_next(); // start the second child; this will generate an error
+    CHECK_FALSE(called3);
+    sched.start_next(); // start the third child
+    CHECK_FALSE(called3);
+    CHECK(cancelled);
+  }
 
   // TEST_CASE(
   //   "when_all cancels remaining children if cancel is detected",
