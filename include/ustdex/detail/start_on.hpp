@@ -125,11 +125,11 @@ namespace ustdex {
 
     template <class... Env>
     auto get_completion_signatures(const Env &...) && //
-      -> completion_signatures_of_t<Sndr, Env...>;
+      -> _completions<Sndr, Env...>;
 
     template <class... Env>
     auto get_completion_signatures(const Env &...) const & //
-      -> completion_signatures_of_t<const Sndr &, Env...>;
+      -> _completions<const Sndr &, Env...>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
