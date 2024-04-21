@@ -106,7 +106,7 @@ namespace ustdex {
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
       -> opstate_t<Query, Rcvr> {
-      return opstate_t<Query, Rcvr>{{}, static_cast<Rcvr &&>(rcvr)};
+      return opstate_t<Query, Rcvr>{static_cast<Rcvr &&>(rcvr)};
     }
   };
 
