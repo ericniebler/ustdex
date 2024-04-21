@@ -56,7 +56,7 @@ namespace {
     using receiver_concept = ustdex::receiver_t;
 
     template <class... As>
-    void set_value(As... as) && noexcept {
+    void set_value(As...) && noexcept {
       FAIL("expected an error completion; got a value");
     }
 
@@ -78,5 +78,22 @@ namespace {
 
   template <class Error>
   checked_error_receiver(Error) -> checked_error_receiver<Error>;
+
+  struct checked_stopped_receiver {
+    using receiver_concept = ustdex::receiver_t;
+
+    template <class... As>
+    void set_value(As...) && noexcept {
+      FAIL("expected a stopped completion; got a value");
+    }
+
+    template <class Ty>
+    void set_error(Ty) && noexcept {
+      FAIL("expected an stopped completion; got an error");
+    }
+
+    void set_stopped() && noexcept {
+    }
+  };
 
 } // namespace

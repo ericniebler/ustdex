@@ -25,6 +25,7 @@
 #include "../tests/utility/checked_receiver.hpp"
 #include "../tests/utility/error_scheduler.hpp"
 #include "../tests/utility/impulse_scheduler.hpp"
+#include "../tests/utility/stopped_scheduler.hpp"
 #include "../tests/utility/utility.hpp"
 
 namespace ex = ustdex;
@@ -131,18 +132,18 @@ namespace {
     ex::start(op);
   }
 
-  // TEST_CASE(
-  //   "when_all terminates with stopped if one child is cancelled",
-  //   "[adaptors][when_all]") {
-  //   stopped_scheduler sched;
-  //   auto snd = ex::when_all( //
-  //     ex::just(2),                      //
-  //     ex::transfer_just(sched, 5),      //
-  //     ex::just(7)                       //
-  //   );
-  //   auto op = ex::connect(std::move(snd), expect_stopped_receiver{});
-  //   ex::start(op);
-  // }
+  TEST_CASE(
+    "when_all terminates with stopped if one child is cancelled",
+    "[adaptors][when_all]") {
+    stopped_scheduler sched;
+    auto snd = ex::when_all( //
+      ex::just(2),                      //
+      ex::just(5) | ex::continue_on(sched),      //
+      ex::just(7)                       //
+    );
+    auto op = ex::connect(std::move(snd), checked_stopped_receiver{});
+    ex::start(op);
+  }
 
   // TEST_CASE(
   //   "when_all cancels remaining children if error is detected",
