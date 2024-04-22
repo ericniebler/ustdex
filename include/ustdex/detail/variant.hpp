@@ -54,7 +54,7 @@ namespace ustdex {
 
     USTDEX_HOST_DEVICE void _destroy() noexcept {
       if (_index != _variant_npos) {
-        ((Idx == _index ? get<Idx>().~Ts() : void(0)), ...);
+        ((Idx == _index ? get<Idx>().Ts::~Ts() : void(0)), ...);
       }
     }
 

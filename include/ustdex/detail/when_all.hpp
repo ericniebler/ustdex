@@ -427,9 +427,8 @@ namespace ustdex {
         return _data->_stop_token;
       }
 
-      template <class Tag>
-      USTDEX_HOST_DEVICE auto query(Tag) const noexcept //
-        -> _query_result_t<Tag, env_of_t<Rcvr>> {
+      template <class Tag, class Env = env_of_t<Rcvr>>
+      USTDEX_HOST_DEVICE auto query(Tag) const noexcept -> _query_result_t<Tag, Env> {
         return ustdex::get_env(_data->_rcvr).query(Tag());
       }
     };
