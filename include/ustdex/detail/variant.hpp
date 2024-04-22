@@ -37,9 +37,18 @@ namespace ustdex {
   template <class Idx, class... Ts>
   class _variant_impl;
 
+  template <>
+  class _variant_impl<std::index_sequence<>> {
+   public:
+    template <class Fn, class... Us>
+    void visit(Fn&&, Us&&...) const noexcept {
+    }
+  };
+
   template <std::size_t... Idx, class... Ts>
   class _variant_impl<std::index_sequence<Idx...>, Ts...> {
     static constexpr std::size_t _max_size = _max({sizeof(Ts)...});
+    static_assert(_max_size != 0);
     std::size_t _index{_variant_npos};
     alignas(Ts...) unsigned char _storage[_max_size];
 

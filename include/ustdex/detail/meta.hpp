@@ -421,13 +421,16 @@ namespace ustdex {
 #endif
 
   template <class First, class Second>
-  using _mpair = _mlist<First, Second>;
+  struct _mpair {
+    using first = First;
+    using second = Second;
+  };
 
   template <class Pair>
-  using _mfirst = _mapply<_mtry_quote<_mget<0>::_f>, Pair>;
+  using _mfirst = typename Pair::first;
 
   template <class Pair>
-  using _msecond = _mapply<_mtry_quote<_mget<1>::_f>, Pair>;
+  using _msecond = typename Pair::second;
 
   template <template <class...> class Second, template <class...> class First>
   struct _mcompose_q {
@@ -440,8 +443,9 @@ namespace ustdex {
     using _f = _mvalue<sizeof...(Ts)>;
   };
 
-  template <class Set, class Ty>
-  inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mtype<Ty>, Set);
+  template <class Set, class... Ty>
+  inline constexpr bool _mset_contains =
+    (USTDEX_IS_BASE_OF(_mtype<Ty>, Set) &&...);
 
   namespace _set {
     template <class... Ts>
@@ -468,7 +472,7 @@ namespace ustdex {
 
       template <class... Ts>
       using _f =
-        _mbool<sizeof...(Ts) == count && (_mset_contains<ExpectedSet, Ts> && ...)>;
+        _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
     };
   } // namespace _set
 

@@ -48,6 +48,7 @@ namespace ustdex {
   namespace _detail {
     template <std::size_t Idx, std::size_t Size, std::size_t Align>
     struct _lazy_box_ {
+      static_assert(Size != 0);
       alignas(Align) unsigned char _data[Size];
     };
 
@@ -57,6 +58,15 @@ namespace ustdex {
 
   template <class Idx, class... Ts>
   struct _lazy_tupl;
+
+  template <>
+  struct _lazy_tupl<std::index_sequence<>> {
+    template <class Fn, class Self, class... Us>
+    USTDEX_INLINE USTDEX_HOST_DEVICE static auto apply(Fn &&fn, Self &&self, Us &&...us) //
+      noexcept(_nothrow_callable<Fn, Us...>) -> _call_result_t<Fn, Us...> {
+      return static_cast<Fn &&>(fn)(static_cast<Us &&>(us)...);
+    }
+  };
 
   template <std::size_t... Idx, class... Ts>
   struct _lazy_tupl<std::index_sequence<Idx...>, Ts...> : _detail::_lazy_box<Idx, Ts>... {

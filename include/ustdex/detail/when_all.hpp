@@ -245,6 +245,12 @@ namespace ustdex {
           set_value_t(As...),
           RightSigs...>>;
 
+    template <std::size_t... Offsets>
+    inline constexpr std::size_t _last_offset = (0, ..., Offsets);
+
+    template <std::size_t Count, std::size_t... Offsets>
+    using _append_offset = _moffsets<Offsets..., Count + _last_offset<Offsets...>>;
+
     // This overload is selected when both metadata structs are for senders with
     // a single value completion. Concatenate the value types.
     template <
@@ -260,7 +266,7 @@ namespace ustdex {
     extern _completion_metadata<
       _mand<LeftValsOK, RightValsOK>,
       _mand<LeftErrsOK, RightErrsOK>,
-      _moffsets<Offsets..., sizeof...(Bs) + (0, ..., Offsets)>,
+      _append_offset<sizeof...(Bs), Offsets...>,
       set_value_t(As..., Bs...), // Concatenate the value types.
       LeftSigs...,
       RightSigs...>
@@ -565,8 +571,7 @@ namespace ustdex {
 
     template <class CvFn, class... Env>
     using _completions = //
-      _minvoke_q<        //
-        _mfirst,
+      _mfirst<           //
         _when_all::_collect_outer<
           _when_all::_inner_completions<_minvoke1<CvFn, Sndrs>, Env...>...>>;
 
