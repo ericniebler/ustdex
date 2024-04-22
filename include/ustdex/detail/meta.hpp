@@ -435,10 +435,15 @@ namespace ustdex {
     using _f = Second<First<Ts...>>;
   };
 
-  namespace _set {
-    template <class Set, class Ty>
-    inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mtype<Ty>, Set);
+  struct _mcount {
+    template <class... Ts>
+    using _f = _mvalue<sizeof...(Ts)>;
+  };
 
+  template <class Set, class Ty>
+  inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mtype<Ty>, Set);
+
+  namespace _set {
     template <class... Ts>
     struct _inherit { };
 
@@ -456,6 +461,15 @@ namespace ustdex {
         _mset_contains<_inherit<Set...>, Ty>,
         _inherit<Set...>,
         _inherit<Ty, Set...>> &;
+
+    template <class ExpectedSet>
+    struct _eq {
+      static constexpr std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
+
+      template <class... Ts>
+      using _f =
+        _mbool<sizeof...(Ts) == count && (_mset_contains<ExpectedSet, Ts> && ...)>;
+    };
   } // namespace _set
 
   template <class... Ts>
@@ -465,17 +479,15 @@ namespace ustdex {
   using _mset_insert = decltype(+(DECLVAL(Set &) % ... % DECLVAL(_mtype<Ts> &)));
 
   template <class... Ts>
-  using _mmake_set = _mset_insert<_set::_inherit<>, Ts...>;
+  using _mmake_set = _mset_insert<_mset<>, Ts...>;
+
+  template <class Set1, class Set2>
+  inline constexpr bool _mset_eq = _v<_mapply<_set::_eq<Set1>, Set2>>;
 
   template <class Fn>
   struct _munique {
     template <class... Ts>
     using _f = _minvoke<_mmake_set<Ts...>, Fn>;
-  };
-
-  struct _mcount {
-    template <class... Ts>
-    using _f = _mvalue<sizeof...(Ts)>;
   };
 
   template <class Ty>

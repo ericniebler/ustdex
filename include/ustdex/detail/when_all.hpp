@@ -289,7 +289,7 @@ namespace ustdex {
 
     // The initial value for the fold.
     using _outer_fold_init =
-      _completion_metadata<_mtrue, _mtrue, _moffsets<0ul>, set_value_t()>;
+      _completion_metadata<_mtrue, _mtrue, _moffsets<0ul>, set_value_t(), set_stopped_t()>;
 
     template <class... Sigs>
     using _collect_outer = //

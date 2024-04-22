@@ -58,3 +58,34 @@ void check_values(Sndr&& sndr, const Values&... values) noexcept {
     FAIL("Expected value completion; got error instead.");
   }
 }
+
+template <class... Ts>
+using types = ustdex::_mlist<Ts...>;
+
+template <class... Values, class Sndr>
+void check_value_types(Sndr&& sndr) noexcept {
+  using actual_t =
+    ustdex::value_types_of_t<Sndr, ustdex::empty_env, types, ustdex::_mmake_set>;
+  using expected_t = ustdex::_mmake_set<Values...>;
+
+  static_assert(
+    ustdex::_mset_eq<expected_t, actual_t>,
+    "value_types_of_t does not match expected types");
+}
+
+template <class... Errors, class Sndr>
+void check_error_types(Sndr&& sndr) noexcept {
+  using actual_t = ustdex::error_types_of_t<Sndr, ustdex::empty_env, ustdex::_mmake_set>;
+  using expected_t = ustdex::_mmake_set<Errors...>;
+
+  static_assert(
+    ustdex::_mset_eq<expected_t, actual_t>,
+    "error_types_of_t does not match expected types");
+}
+
+template <bool SendsStopped, class Sndr>
+void check_sends_stopped(Sndr&& sndr) noexcept {
+  static_assert(
+    ustdex::sends_stopped<Sndr> == SendsStopped,
+    "sends_stopped does not match expected value");
+}
