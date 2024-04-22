@@ -18,6 +18,9 @@
 #include <cassert>
 #include <type_traits>
 
+// Needed by the warning suppression macros
+#define USTDEX_STRINGIZE(_ARG) #_ARG
+
 // Compiler detections:
 #if defined(__NVCC__)
 #  define USTDEX_NVCC() 1
@@ -62,6 +65,41 @@
 #endif
 #ifndef USTDEX_MSVC
 #  define USTDEX_MSVC() 0
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// warning push/pop portability macros
+#if USTDEX_NVCC()
+#  define USTDEX_PRAGMA_PUSH() _Pragma("nv_diagnostic push")
+#  define USTDEX_PRAGMA_POP()  _Pragma("nv_diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_EDG(...)                                                  \
+    _Pragma(USTDEX_STRINGIZE(nv_diag_suppress __VA_ARGS__))
+#elif USTDEX_NVHPC() || USTDEX_EDG()
+#  define USTDEX_PRAGMA_PUSH()                                                           \
+    _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
+#  define USTDEX_PRAGMA_POP() _Pragma("diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_EDG(...)                                                  \
+    _Pragma(USTDEX_STRINGIZE(diag_suppress __VA_ARGS__))
+#elif USTDEX_CLANG() || USTDEX_GCC()
+#  define USTDEX_PRAGMA_PUSH()                                                           \
+    _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas")                 \
+      USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas")                                      \
+        USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option")                             \
+          USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")                               \
+            USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
+#  define USTDEX_PRAGMA_POP() _Pragma("GCC diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_GNU(...)                                                  \
+    _Pragma(USTDEX_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
+#else
+#  define USTDEX_PRAGMA_PUSH()
+#  define USTDEX_PRAGMA_POP()
+#endif
+
+#ifndef USTDEX_PRAGMA_IGNORE_GNU
+#  define USTDEX_PRAGMA_IGNORE_GNU(...)
+#endif
+#ifndef USTDEX_PRAGMA_IGNORE_EDG
+#  define USTDEX_PRAGMA_IGNORE_EDG(...)
 #endif
 
 #ifdef __CUDACC__
@@ -170,4 +208,11 @@ namespace ustdex {
 #  define USTDEX_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 #  define USTDEX_NO_UNIQUE_ADDRESS
+#endif
+
+// GCC struggles with guaranteed copy elision
+#if USTDEX_GCC()
+#  define USTDEX_IMMOVABLE(XP) XP(XP&&)
+#else
+#  define USTDEX_IMMOVABLE(XP) XP(XP&&) = delete
 #endif

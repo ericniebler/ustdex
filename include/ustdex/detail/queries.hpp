@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include "meta.hpp"
 #include "stop_token.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
@@ -23,7 +24,7 @@
 
 namespace ustdex {
   template <class Query, class Ty>
-  using _query_result_t = decltype(DECLVAL(Ty).query(Query()));
+  using _query_result_t = decltype(DECLVAL(_m_at_c<0, Ty, Query>).query(Query()));
 
   USTDEX_DEVICE constexpr struct get_allocator_t {
     template <class Env>

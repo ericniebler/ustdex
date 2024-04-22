@@ -16,6 +16,8 @@
 #pragma once
 
 #include "config.hpp"
+#include "meta.hpp"
+#include "type_traits.hpp"
 
 #include <initializer_list>
 
@@ -36,8 +38,7 @@ namespace ustdex {
 
   struct _immovable {
     _immovable() = default;
-    _immovable(const _immovable &) = delete;
-    _immovable &operator=(const _immovable &) = delete;
+    USTDEX_IMMOVABLE(_immovable);
   };
 
   inline constexpr std::size_t _max(std::initializer_list<std::size_t> il) noexcept {

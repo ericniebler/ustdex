@@ -49,9 +49,15 @@ namespace ustdex {
     };
 
     template <class Query, class Rcvr>
-    struct opstate_t : _immovable {
+    struct opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
+
+      explicit opstate_t(Rcvr rcvr)
+        : _rcvr(static_cast<Rcvr &&>(rcvr)) {
+      }
+
+      USTDEX_IMMOVABLE(opstate_t);
 
       USTDEX_HOST_DEVICE void start() noexcept {
         // If the query invocation is noexcept, call it directly. Otherwise,
@@ -100,7 +106,7 @@ namespace ustdex {
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
       -> opstate_t<Query, Rcvr> {
-      return opstate_t<Query, Rcvr>{{}, static_cast<Rcvr &&>(rcvr)};
+      return opstate_t<Query, Rcvr>{static_cast<Rcvr &&>(rcvr)};
     }
   };
 

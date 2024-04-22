@@ -118,7 +118,7 @@ namespace ustdex {
             // sender, storing the operation state in _opstate2.
             auto &nextop = _opstate2.emplace_from(
               ustdex::connect,
-              tupl.apply(static_cast<Fn &&>(_fn)),
+              tupl.apply(static_cast<Fn &&>(_fn), tupl),
               ustdex::_rcvr_ref(_rcvr));
             ustdex::start(nextop);
           }

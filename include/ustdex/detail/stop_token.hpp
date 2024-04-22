@@ -136,7 +136,7 @@ namespace ustdex {
    public:
     inplace_stop_source() noexcept = default;
     USTDEX_HOST_DEVICE ~inplace_stop_source();
-    inplace_stop_source(inplace_stop_source &&) = delete;
+    USTDEX_IMMOVABLE(inplace_stop_source);
 
     USTDEX_HOST_DEVICE auto get_token() const noexcept -> inplace_stop_token;
 

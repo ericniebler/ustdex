@@ -46,6 +46,9 @@ namespace ustdex {
     using type = Ty;
   };
 
+  template <class Ty>
+  using _t = typename Ty::type;
+
   template <class... Ts>
   struct _mlist;
 
@@ -66,14 +69,27 @@ namespace ustdex {
     static constexpr auto value = Val;
   };
 
-  using _mtrue = _mvalue<true>;
-  using _mfalse = _mvalue<false>;
+  // A separate _mbool template is needed in addition to _mvalue
+  // because of an EDG bug in the handling of auto template parameters.
+  template <bool Val>
+  struct _mbool {
+    static constexpr auto value = Val;
+  };
+
+  using _mtrue = _mbool<true>;
+  using _mfalse = _mbool<false>;
+
+  template <auto... Vals>
+  struct _mvalues;
+
+  template <std::size_t... Vals>
+  struct _moffsets;
 
   template <class... Bools>
-  using _mand = _mvalue<(Bools::value && ...)>;
+  using _mand = _mbool<(Bools::value && ...)>;
 
   template <class... Bools>
-  using _mor = _mvalue<(Bools::value || ...)>;
+  using _mor = _mbool<(Bools::value || ...)>;
 
 #if USTDEX_NVCC()
   template <std::size_t... Idx>
@@ -155,11 +171,11 @@ namespace ustdex {
   // True if any of the types in Ts... are errors; false otherwise.
   template <class... Ts>
   inline constexpr bool _contains_error =
-  #if USTDEX_MSVC()
-    (_is_error<Ts> ||...);
-  #else
+#if USTDEX_MSVC()
+    (_is_error<Ts> || ...);
+#else
     _ustdex_unhandled_error(static_cast<_mlist<Ts...> *>(nullptr));
-  #endif
+#endif
 
   template <class... Ts>
   using _find_error = decltype(+(DECLVAL(Ts &), ..., DECLVAL(ERROR<UNKNOWN> &)));
@@ -214,6 +230,9 @@ namespace ustdex {
 
   template <auto Value>
   inline constexpr auto _v<_mvalue<Value>> = Value;
+
+  template <bool Value>
+  inline constexpr auto _v<_mbool<Value>> = Value;
 
   template <class Tp, Tp Value>
   inline constexpr auto _v<std::integral_constant<Tp, Value>> = Value;
@@ -357,6 +376,12 @@ namespace ustdex {
 
   template <std::size_t Np, class... Ts>
   using _m_at_c = _minvoke<_m_at_<Np == ~0ul>, _mvalue<Np>, Ts...>;
+
+  template <std::size_t Idx>
+  struct _mget {
+    template <class... Ts>
+    using _f = _m_at<_mvalue<Idx>, Ts...>;
+  };
 #else
   template <std::size_t Idx>
   struct _mget {
@@ -395,16 +420,34 @@ namespace ustdex {
   using _m_at_c = _minvoke<_mget<Np>, Ts...>;
 #endif
 
+  template <class First, class Second>
+  struct _mpair {
+    using first = First;
+    using second = Second;
+  };
+
+  template <class Pair>
+  using _mfirst = typename Pair::first;
+
+  template <class Pair>
+  using _msecond = typename Pair::second;
+
   template <template <class...> class Second, template <class...> class First>
   struct _mcompose_q {
     template <class... Ts>
     using _f = Second<First<Ts...>>;
   };
 
-  namespace _set {
-    template <class Set, class Ty>
-    inline constexpr bool _mset_contains = USTDEX_IS_BASE_OF(_mtype<Ty>, Set);
+  struct _mcount {
+    template <class... Ts>
+    using _f = _mvalue<sizeof...(Ts)>;
+  };
 
+  template <class Set, class... Ty>
+  inline constexpr bool _mset_contains =
+    (USTDEX_IS_BASE_OF(_mtype<Ty>, Set) &&...);
+
+  namespace _set {
     template <class... Ts>
     struct _inherit { };
 
@@ -422,6 +465,15 @@ namespace ustdex {
         _mset_contains<_inherit<Set...>, Ty>,
         _inherit<Set...>,
         _inherit<Ty, Set...>> &;
+
+    template <class ExpectedSet>
+    struct _eq {
+      static constexpr std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
+
+      template <class... Ts>
+      using _f =
+        _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
+    };
   } // namespace _set
 
   template <class... Ts>
@@ -431,17 +483,15 @@ namespace ustdex {
   using _mset_insert = decltype(+(DECLVAL(Set &) % ... % DECLVAL(_mtype<Ts> &)));
 
   template <class... Ts>
-  using _mmake_set = _mset_insert<_set::_inherit<>, Ts...>;
+  using _mmake_set = _mset_insert<_mset<>, Ts...>;
+
+  template <class Set1, class Set2>
+  inline constexpr bool _mset_eq = _v<_mapply<_set::_eq<Set1>, Set2>>;
 
   template <class Fn>
   struct _munique {
     template <class... Ts>
     using _f = _minvoke<_mmake_set<Ts...>, Fn>;
-  };
-
-  struct _mcount {
-    template <class... Ts>
-    using _f = _mvalue<sizeof...(Ts)>;
   };
 
   template <class Ty>

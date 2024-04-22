@@ -17,6 +17,7 @@
 #include "ustdex/ustdex.hpp"
 
 #include <cstdio>
+#include <iostream>
 #include <string>
 
 using namespace ustdex;
@@ -29,6 +30,11 @@ struct sink {
 
   void set_value(int a) noexcept {
     std::printf("%d\n", a);
+  }
+
+  template <class... As>
+  void set_value(As &&...) noexcept {
+    std::puts("In sink::set_value(auto&&...)");
   }
 
   void set_error(std::exception_ptr) noexcept {
@@ -63,4 +69,18 @@ int main() {
   sync_wait(s3);
 
   auto [sch2] = sync_wait(read_env(get_scheduler)).value();
+
+  auto s4 = just(42) | then([](int) {}) | upon_error([](auto) { /*return 42;*/ });
+  auto s5 = when_all(std::move(s4), just(42, 43), just(+"hello"));
+  //using X = completion_signatures_of_t<decltype(s5)>;
+  //print<X>();
+  auto [i, j, k] = sync_wait(std::move(s5)).value();
+  std::cout << i << ' ' << j << ' ' << k << '\n';
+
+  // auto s1 = when_all(just(42), just(43, 44), just(45, 46, 47)); //
+  // auto s2 = when_all(s1, s1, s1, s1, s1, s1);
+  // auto s3 = when_all(s2, s2, s2, s2, s2, s2, s2);
+  // // using X = completion_signatures_of_t<decltype(s3)>;
+  // // print<X>();
+  // (void) sync_wait(s3);
 }

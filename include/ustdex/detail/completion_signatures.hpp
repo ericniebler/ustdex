@@ -264,11 +264,11 @@ namespace ustdex {
       set_stopped_t,
       _malways<_mtrue>::_f,
       _malways<_mfalse>::_f,
-      _mand>::value;
+      _mor>::value;
 
-  template <class Sndr, class Env>
+  template <class Sndr, class... Env>
   USTDEX_DEVICE constexpr bool sends_stopped = //
-    _sends_stopped<completion_signatures_of_t<Sndr, Env>>;
+    _sends_stopped<completion_signatures_of_t<Sndr, Env...>>;
 
   using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;
 
