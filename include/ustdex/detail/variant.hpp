@@ -41,7 +41,7 @@ namespace ustdex {
   class _variant_impl<std::index_sequence<>> {
    public:
     template <class Fn, class... Us>
-    void visit(Fn&&, Us&&...) const noexcept {
+    void visit(Fn &&, Us &&...) const noexcept {
     }
   };
 

@@ -444,8 +444,7 @@ namespace ustdex {
   };
 
   template <class Set, class... Ty>
-  inline constexpr bool _mset_contains =
-    (USTDEX_IS_BASE_OF(_mtype<Ty>, Set) &&...);
+  inline constexpr bool _mset_contains = (USTDEX_IS_BASE_OF(_mtype<Ty>, Set) && ...);
 
   namespace _set {
     template <class... Ts>
@@ -471,8 +470,7 @@ namespace ustdex {
       static constexpr std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
 
       template <class... Ts>
-      using _f =
-        _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
+      using _f = _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
     };
   } // namespace _set
 
