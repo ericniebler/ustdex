@@ -333,12 +333,13 @@ namespace ustdex {
           if constexpr (_nothrow_decay_copyable<Ts...>) {
             (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
           } else {
-            USTDEX_TRY {
-              (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
-            }
-            USTDEX_CATCH (...) {
-              _set_error(std::current_exception());
-            }
+            USTDEX_TRY(
+              ({
+                (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
+              }),
+              USTDEX_CATCH(...)({ //
+                _set_error(std::current_exception());
+              }))
           }
         }
       }
@@ -353,12 +354,13 @@ namespace ustdex {
           if constexpr (_nothrow_decay_copyable<Error>) {
             _errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
           } else {
-            USTDEX_TRY {
-              _errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
-            }
-            USTDEX_CATCH (...) {
-              _errors.template emplace<std::exception_ptr>(std::current_exception());
-            }
+            USTDEX_TRY(
+              ({
+                _errors.template emplace<_decay_t<Error>>(static_cast<Error &&>(_err));
+              }),
+              USTDEX_CATCH(...)({
+                _errors.template emplace<std::exception_ptr>(std::current_exception());
+              }))
           }
         }
       }

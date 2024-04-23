@@ -45,18 +45,19 @@ struct movable {
 
 template <class Sndr, class... Values>
 void check_values(Sndr&& sndr, const Values&... values) noexcept {
-  USTDEX_TRY {
-    auto opt = ustdex::sync_wait(static_cast<Sndr&&>(sndr));
-    if (!opt) {
-      FAIL("Expected value completion; got stopped instead.");
-    } else {
-      auto&& vals = *opt;
-      CHECK(vals == std::tie(values...));
-    }
-  }
-  USTDEX_CATCH(...) {
-    FAIL("Expected value completion; got error instead.");
-  }
+  USTDEX_TRY(
+    ({
+      auto opt = ustdex::sync_wait(static_cast<Sndr&&>(sndr));
+      if (!opt) {
+        FAIL("Expected value completion; got stopped instead.");
+      } else {
+        auto&& vals = *opt;
+        CHECK(vals == std::tie(values...));
+      }
+    }),
+    USTDEX_CATCH(...)({ //
+      FAIL("Expected value completion; got error instead.");
+    }))
 }
 
 template <class... Ts>

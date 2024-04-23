@@ -75,7 +75,7 @@ namespace ustdex {
     template <class Fn, class... Ts>
     using _completion =
       _completion_<_call_result_t<Fn, Ts...>, _nothrow_callable<Fn, Ts...>>;
-  }
+  } // namespace _upon
 
   template <_disposition_t Disposition>
   struct _upon_t {
@@ -131,12 +131,13 @@ namespace ustdex {
               static_cast<Fn &&>(_fn)(static_cast<Ts &&>(ts)...));
           }
         } else {
-          USTDEX_TRY {
-            _set<true>(static_cast<Ts &&>(ts)...);
-          }
-          USTDEX_CATCH(...) {
-            ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-          }
+          USTDEX_TRY(
+            ({                                       //
+              _set<true>(static_cast<Ts &&>(ts)...); //
+            }),                                      //
+            USTDEX_CATCH(...)({
+              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+            }))
         }
       }
 

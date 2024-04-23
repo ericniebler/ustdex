@@ -109,22 +109,23 @@ namespace ustdex {
       template <class Tag, class... As>
       USTDEX_HOST_DEVICE void _complete(Tag, As &&...as) noexcept {
         if constexpr (USTDEX_IS_SAME(Tag, SetTag)) {
-          USTDEX_TRY {
-            // Store the results so the lvalue refs we pass to the function
-            // will be valid for the duration of the async op.
-            auto &tupl =
-              _result.template emplace<_decayed_tuple<As...>>(static_cast<As &&>(as)...);
-            // Call the function with the results and connect the resulting
-            // sender, storing the operation state in _opstate2.
-            auto &nextop = _opstate2.emplace_from(
-              ustdex::connect,
-              tupl.apply(static_cast<Fn &&>(_fn), tupl),
-              ustdex::_rcvr_ref(_rcvr));
-            ustdex::start(nextop);
-          }
-          USTDEX_CATCH(...) {
-            ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-          }
+          USTDEX_TRY(
+            ({
+              // Store the results so the lvalue refs we pass to the function
+              // will be valid for the duration of the async op.
+              auto &tupl = _result.template emplace<_decayed_tuple<As...>>(
+                static_cast<As &&>(as)...);
+              // Call the function with the results and connect the resulting
+              // sender, storing the operation state in _opstate2.
+              auto &nextop = _opstate2.emplace_from(
+                ustdex::connect,
+                tupl.apply(static_cast<Fn &&>(_fn), tupl),
+                ustdex::_rcvr_ref(_rcvr));
+              ustdex::start(nextop);
+            }),
+            USTDEX_CATCH(...)({
+              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+            }))
         } else {
           // Forward the completion to the receiver unchanged.
           Tag()(static_cast<Rcvr &&>(_rcvr), static_cast<As &&>(as)...);

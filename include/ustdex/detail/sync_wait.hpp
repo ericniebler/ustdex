@@ -64,12 +64,9 @@ namespace ustdex {
 
       template <class... As>
       USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
-        USTDEX_TRY {
-          _values->emplace(static_cast<As&&>(_as)...);
-        }
-        USTDEX_CATCH(...) {
-          _state->_eptr = std::current_exception();
-        }
+        USTDEX_TRY(
+          ({ _values->emplace(static_cast<As&&>(_as)...); }), //
+          USTDEX_CATCH(...)({ _state->_eptr = std::current_exception(); }))
         _state->_loop.finish();
       }
 

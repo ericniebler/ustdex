@@ -52,16 +52,17 @@ namespace ustdex {
 
     USTDEX_HOST_DEVICE static void _execute_impl(_task *_p) noexcept {
       auto &_rcvr = static_cast<_operation *>(_p)->_rcvr;
-      USTDEX_TRY {
-        if (get_stop_token(get_env(_rcvr)).stop_requested()) {
-          set_stopped(static_cast<Rcvr &&>(_rcvr));
-        } else {
-          set_value(static_cast<Rcvr &&>(_rcvr));
-        }
-      }
-      USTDEX_CATCH(...) {
-        set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-      }
+      USTDEX_TRY(
+        ({
+          if (get_stop_token(get_env(_rcvr)).stop_requested()) {
+            set_stopped(static_cast<Rcvr &&>(_rcvr));
+          } else {
+            set_value(static_cast<Rcvr &&>(_rcvr));
+          }
+        }),
+        USTDEX_CATCH(...)({
+          set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+        }))
     }
 
     USTDEX_HOST_DEVICE explicit _operation(_task *_tail) noexcept
@@ -180,12 +181,13 @@ namespace ustdex {
 
   template <class Rcvr>
   USTDEX_HOST_DEVICE inline void _operation<Rcvr>::start() & noexcept {
-    USTDEX_TRY {
-      _loop->_push_back(this);
-    }
-    USTDEX_CATCH(...) {
-      set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-    }
+    USTDEX_TRY(
+      ({                                                                  //
+        _loop->_push_back(this);                                          //
+      }),                                                                 //
+      USTDEX_CATCH(...)({                                                 //
+        set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception()); //
+      }))                                                                 //
   }
 
   USTDEX_HOST_DEVICE inline void run_loop::run() {

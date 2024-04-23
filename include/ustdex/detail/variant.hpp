@@ -54,7 +54,12 @@ namespace ustdex {
 
     USTDEX_HOST_DEVICE void _destroy() noexcept {
       if (_index != _variant_npos) {
+#if USTDEX_NVHPC()
+        // Unknown nvc++ name lookup bug
         ((Idx == _index ? get<Idx>().Ts::~Ts() : void(0)), ...);
+#else
+        ((Idx == _index ? get<Idx>().~Ts() : void(0)), ...);
+#endif
       }
     }
 
