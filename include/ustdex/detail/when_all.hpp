@@ -17,6 +17,7 @@
 
 #include "config.hpp"
 
+#include "atomic.hpp"
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
 #include "lazy.hpp"
@@ -25,8 +26,6 @@
 #include "type_traits.hpp"
 #include "utility.hpp"
 #include "variant.hpp"
-
-#include <atomic>
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_EDG(expr_has_no_effect)
@@ -375,17 +374,17 @@ namespace ustdex {
         }
       }
 
-      void _arrive() noexcept {
+      USTDEX_HOST_DEVICE void _arrive() noexcept {
         if (0 == --_count) {
           _complete();
         }
       }
 
-      void _complete() noexcept {
+      USTDEX_HOST_DEVICE void _complete() noexcept {
         // Stop callback is no longer needed. Destroy it.
         _on_stop.destroy();
         // All child operations have completed and arrived at the barrier.
-        switch (_state.load(std::memory_order_relaxed)) {
+        switch (_state.load(ustd::memory_order_relaxed)) {
         case _started:
           if constexpr (!USTDEX_IS_SAME(Values, _nil)) {
             // All child operations completed successfully:
@@ -410,10 +409,10 @@ namespace ustdex {
       }
 
       Rcvr _rcvr;
-      std::atomic<std::size_t> _count;
+      ustd::atomic<std::size_t> _count;
       inplace_stop_source _stop_source;
       inplace_stop_token _stop_token{_stop_source.get_token()};
-      std::atomic<_state_t> _state{_started};
+      ustd::atomic<_state_t> _state{_started};
       Errors _errors;
       Values _values;
       _lazy<stop_callback_t> _on_stop;
