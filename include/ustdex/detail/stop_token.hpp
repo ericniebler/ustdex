@@ -16,9 +16,10 @@
 #pragma once
 
 #include "config.hpp"
+
+#include "atomic.hpp"
 #include "utility.hpp"
 
-#include <atomic>
 #include <cstdint>
 #include <thread>
 #include <type_traits>
@@ -27,13 +28,6 @@
 
 #if __has_include(<stop_token>) && __cpp_lib_jthread >= 201911
 #  include <stop_token>
-#endif
-
-#ifdef __CUDA_ARCH__
-#  include <cuda/std/atomic>
-#  define USTDEX_CUDA_NS cuda::
-#else
-#  define USTDEX_CUDA_NS
 #endif
 
 namespace ustdex {
@@ -72,7 +66,7 @@ namespace ustdex {
       _inplace_stop_callback_base *_next = nullptr;
       _inplace_stop_callback_base **_prev_ptr = nullptr;
       bool *_removed_during_callback = nullptr;
-      USTDEX_CUDA_NS std::atomic<bool> _callback_completed{false};
+      ustd::atomic<bool> _callback_completed{false};
     };
 
     struct _spin_wait {
@@ -143,9 +137,7 @@ namespace ustdex {
     USTDEX_HOST_DEVICE auto request_stop() noexcept -> bool;
 
     USTDEX_HOST_DEVICE auto stop_requested() const noexcept -> bool {
-      return (_state.load(USTDEX_CUDA_NS std::memory_order_acquire)
-              & _stop_requested_flag)
-          != 0;
+      return (_state.load(ustd::memory_order_acquire) & _stop_requested_flag) != 0;
     }
 
    private:
@@ -168,7 +160,7 @@ namespace ustdex {
     static constexpr uint8_t _stop_requested_flag = 1;
     static constexpr uint8_t _locked_flag = 2;
 
-    mutable USTDEX_CUDA_NS std::atomic<uint8_t> _state{0};
+    mutable ustd::atomic<uint8_t> _state{0};
     mutable _stok::_inplace_stop_callback_base *_callbacks = nullptr;
     std::thread::id _notifying_thread;
   };
@@ -284,8 +276,7 @@ namespace ustdex {
   } // namespace _stok
 
   USTDEX_HOST_DEVICE inline inplace_stop_source::~inplace_stop_source() {
-    USTDEX_ASSERT(
-      (_state.load(USTDEX_CUDA_NS std::memory_order_relaxed) & _locked_flag) == 0);
+    USTDEX_ASSERT((_state.load(ustd::memory_order_relaxed) & _locked_flag) == 0);
     USTDEX_ASSERT(_callbacks == nullptr);
   }
 
@@ -303,7 +294,7 @@ namespace ustdex {
       if (_callbacks != nullptr)
         _callbacks->_prev_ptr = &_callbacks;
 
-      _state.store(_stop_requested_flag, USTDEX_CUDA_NS std::memory_order_release);
+      _state.store(_stop_requested_flag, ustd::memory_order_release);
 
       bool _removed_during_callback = false;
       _callbk->_removed_during_callback = &_removed_during_callback;
@@ -312,42 +303,42 @@ namespace ustdex {
 
       if (!_removed_during_callback) {
         _callbk->_removed_during_callback = nullptr;
-        _callbk->_callback_completed.store(true, USTDEX_CUDA_NS std::memory_order_release);
+        _callbk->_callback_completed.store(true, ustd::memory_order_release);
       }
 
       _lock();
     }
 
-    _state.store(_stop_requested_flag, USTDEX_CUDA_NS std::memory_order_release);
+    _state.store(_stop_requested_flag, ustd::memory_order_release);
     return false;
   }
 
   USTDEX_HOST_DEVICE inline auto inplace_stop_source::_lock() const noexcept -> uint8_t {
     _stok::_spin_wait _spin;
-    auto _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
+    auto _old_state = _state.load(ustd::memory_order_relaxed);
     do {
       while ((_old_state & _locked_flag) != 0) {
         _spin._wait();
-        _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
+        _old_state = _state.load(ustd::memory_order_relaxed);
       }
     } while (!_state.compare_exchange_weak(
       _old_state,
       _old_state | _locked_flag,
-      USTDEX_CUDA_NS std::memory_order_acquire,
-      USTDEX_CUDA_NS std::memory_order_relaxed));
+      ustd::memory_order_acquire,
+      ustd::memory_order_relaxed));
 
     return _old_state;
   }
 
   USTDEX_HOST_DEVICE inline void
     inplace_stop_source::_unlock(uint8_t _old_state) const noexcept {
-    (void) _state.store(_old_state, USTDEX_CUDA_NS std::memory_order_release);
+    (void) _state.store(_old_state, ustd::memory_order_release);
   }
 
   USTDEX_HOST_DEVICE inline auto inplace_stop_source::_try_lock_unless_stop_requested(
     bool _set_stop_requested) const noexcept -> bool {
     _stok::_spin_wait _spin;
-    auto _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
+    auto _old_state = _state.load(ustd::memory_order_relaxed);
     do {
       while (true) {
         if ((_old_state & _stop_requested_flag) != 0) {
@@ -357,14 +348,14 @@ namespace ustdex {
           break;
         } else {
           _spin._wait();
-          _old_state = _state.load(USTDEX_CUDA_NS std::memory_order_relaxed);
+          _old_state = _state.load(ustd::memory_order_relaxed);
         }
       }
     } while (!_state.compare_exchange_weak(
       _old_state,
       _set_stop_requested ? (_locked_flag | _stop_requested_flag) : _locked_flag,
-      USTDEX_CUDA_NS std::memory_order_acq_rel,
-      USTDEX_CUDA_NS std::memory_order_relaxed));
+      ustd::memory_order_acq_rel,
+      ustd::memory_order_relaxed));
 
     // Lock acquired successfully
     return true;
@@ -414,8 +405,7 @@ namespace ustdex {
         // Concurrently executing on another thread.
         // Wait until the other thread finishes executing the callback.
         _stok::_spin_wait _spin;
-        while (
-          !_callbk->_callback_completed.load(USTDEX_CUDA_NS std::memory_order_acquire)) {
+        while (!_callbk->_callback_completed.load(ustd::memory_order_acquire)) {
           _spin._wait();
         }
       }

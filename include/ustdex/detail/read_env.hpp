@@ -68,13 +68,14 @@ namespace ustdex {
           // arguments by forwarding reference, so it's safe.
           ustdex::set_value(static_cast<Rcvr &&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
         } else {
-          USTDEX_TRY {
-            ustdex::set_value(
-              static_cast<Rcvr &&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
-          }
-          USTDEX_CATCH(...) {
-            ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-          }
+          USTDEX_TRY(
+            ({
+              ustdex::set_value(
+                static_cast<Rcvr &&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
+            }),
+            USTDEX_CATCH(...)({
+              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+            }))
         }
       }
     };

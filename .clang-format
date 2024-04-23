@@ -85,8 +85,6 @@ LineEnding: LF
 Macros: [
   'USTDEX_INLINE=inline',
   'USTDEX_NO_UNIQUE_ADDRESS=[[no_unique_address]]',
-  'USTDEX_TRY=try',
-  'USTDEX_CATCH=catch',
 ]
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All
