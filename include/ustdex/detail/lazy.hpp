@@ -24,19 +24,19 @@ namespace ustdex {
   /// @brief A lazy type that can be used to delay the construction of a type.
   template <class Ty>
   struct _lazy {
-    _lazy() noexcept {
+    USTDEX_HOST_DEVICE _lazy() noexcept {
     }
 
-    ~_lazy() {
+    USTDEX_HOST_DEVICE ~_lazy() {
     }
 
     template <class... Ts>
-    Ty &construct(Ts &&...ts) noexcept(_nothrow_constructible<Ty, Ts...>) {
+    USTDEX_HOST_DEVICE Ty &construct(Ts &&...ts) noexcept(_nothrow_constructible<Ty, Ts...>) {
       ::new (static_cast<void *>(std::addressof(value))) Ty(static_cast<Ts &&>(ts)...);
       return value;
     }
 
-    void destroy() noexcept {
+    USTDEX_HOST_DEVICE void destroy() noexcept {
       value.~Ty();
     }
 
