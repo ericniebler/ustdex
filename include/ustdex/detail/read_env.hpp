@@ -18,10 +18,9 @@
 #include "config.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
+#include "exception.hpp"
 #include "queries.hpp"
 #include "utility.hpp"
-
-#include <exception>
 
 namespace ustdex {
   struct THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY;
@@ -48,7 +47,7 @@ namespace ustdex {
           set_error_t(std::exception_ptr)>>;
     };
 
-    template <class Query, class Rcvr>
+    template <class Rcvr, class Query>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
@@ -98,7 +97,7 @@ namespace ustdex {
     USTDEX_NO_UNIQUE_ADDRESS Query _query;
 
     template <class Env>
-    auto get_completion_signatures(const Env &) const //
+    auto get_completion_signatures(Env &&) const //
       -> _minvoke<
         _mif<_callable<Query, Env>, _completions_fn, _error_env_lacks_query<Query, Env>>,
         Query,
@@ -106,8 +105,8 @@ namespace ustdex {
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
-      -> opstate_t<Query, Rcvr> {
-      return opstate_t<Query, Rcvr>{static_cast<Rcvr &&>(rcvr)};
+      -> opstate_t<Rcvr, Query> {
+      return opstate_t<Rcvr, Query>{static_cast<Rcvr &&>(rcvr)};
     }
   };
 

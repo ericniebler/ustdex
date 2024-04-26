@@ -20,11 +20,11 @@
 // run_loop isn't supported on-device yet, so neither can sync_wait be.
 #ifndef USTDEX_CUDA
 
+#  include "exception.hpp"
 #  include "meta.hpp"
 #  include "run_loop.hpp"
 #  include "utility.hpp"
 
-#  include <exception>
 #  include <optional>
 #  include <system_error>
 #  include <tuple>

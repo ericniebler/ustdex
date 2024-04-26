@@ -79,7 +79,7 @@ namespace ustdex {
       }
     };
 
-    template <class CvSndr, class Sch, class Rcvr>
+    template <class Rcvr, class CvSndr, class Sch>
     struct _opstate_t {
       using operation_state_concept = operation_state_t;
       using _result_t = _transform_completion_signatures<
@@ -193,26 +193,26 @@ namespace ustdex {
       }
 
       template <class Query>
-      USTDEX_HOST_DEVICE auto
-        query(Query) const -> _query_result_t<Query, env_of_t<Sndr>> {
+      USTDEX_HOST_DEVICE auto query(Query) const //
+        -> _query_result_t<Query, env_of_t<Sndr>> {
         return ustdex::get_env(_sndr->_sndr).query(Query{});
       }
     };
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) && -> _completions<Sndr, Sch, Env...>;
+    auto get_completion_signatures(Env &&...) && -> _completions<Sndr, Sch, Env...>;
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) const & //
+    auto get_completion_signatures(Env &&...) const & //
       -> _completions<const Sndr &, Sch, Env...>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE _opstate_t<Sndr, Sch, Rcvr> connect(Rcvr rcvr) && {
+    USTDEX_HOST_DEVICE _opstate_t<Rcvr, Sndr, Sch> connect(Rcvr rcvr) && {
       return {static_cast<Sndr &&>(_sndr), _sch, static_cast<Rcvr &&>(rcvr)};
     }
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE _opstate_t<const Sndr &, Sch, Rcvr> connect(Rcvr rcvr) const & {
+    USTDEX_HOST_DEVICE _opstate_t<Rcvr, const Sndr &, Sch> connect(Rcvr rcvr) const & {
       return {_sndr, _sch, static_cast<Rcvr &&>(rcvr)};
     }
 

@@ -35,7 +35,7 @@ namespace {
       }
     };
 
-    template <typename Rcvr>
+    template <class Rcvr>
     struct opstate_t : ustdex::_immovable {
       using operation_state_concept = ustdex::operation_state_t;
 
@@ -52,7 +52,7 @@ namespace {
       auto get_completion_signatures(ustdex::_ignore_t = {})
         -> ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
 
-      template <typename Rcvr>
+      template <class Rcvr>
       opstate_t<Rcvr> connect(Rcvr rcvr) const {
         return {{}, static_cast<Rcvr&&>(rcvr)};
       }
