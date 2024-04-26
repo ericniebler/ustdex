@@ -24,7 +24,13 @@
 
 namespace ustdex {
   template <class Query, class Ty>
-  using _query_result_t = decltype(DECLVAL(Ty).query(Query()));
+  auto _query_result_() -> decltype(DECLVAL(Ty).query(Query()));
+
+  template <class Query, class Ty>
+  using _query_result_t = decltype(_query_result_<Query, Ty>());
+
+  template <class Query, class Ty>
+  USTDEX_DEVICE constexpr bool _has_query = _mvalid_q<_query_result_t, Query, Ty>;
 
   USTDEX_DEVICE constexpr struct get_allocator_t {
     template <class Env>

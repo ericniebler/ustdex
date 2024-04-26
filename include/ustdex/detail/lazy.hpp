@@ -31,7 +31,8 @@ namespace ustdex {
     }
 
     template <class... Ts>
-    USTDEX_HOST_DEVICE Ty &construct(Ts &&...ts) noexcept(_nothrow_constructible<Ty, Ts...>) {
+    USTDEX_HOST_DEVICE Ty &
+      construct(Ts &&...ts) noexcept(_nothrow_constructible<Ty, Ts...>) {
       ::new (static_cast<void *>(std::addressof(value))) Ty(static_cast<Ts &&>(ts)...);
       return value;
     }

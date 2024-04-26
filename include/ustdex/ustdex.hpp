@@ -29,3 +29,4 @@
 #include "detail/then.hpp"
 #include "detail/thread_context.hpp"
 #include "detail/when_all.hpp"
+#include "detail/write_env.hpp"

@@ -17,11 +17,11 @@
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
+#include "exception.hpp"
 #include "meta.hpp"
 #include "tuple.hpp"
 #include "utility.hpp"
 
-#include <exception>
 #include <type_traits>
 
 namespace ustdex {
@@ -100,7 +100,7 @@ namespace ustdex {
         _minvoke<_mtry_quote<_upon::_completion, _error_not_callable<Fn, Ts...>>, Fn, Ts...>;
     };
 
-    template <class Sndr, class Rcvr, class Fn>
+    template <class Rcvr, class Sndr, class Fn>
     struct _opstate_t {
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
@@ -164,7 +164,7 @@ namespace ustdex {
         _complete(set_stopped_t());
       }
 
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept {
         return ustdex::get_env(_rcvr);
       }
     };
@@ -185,33 +185,35 @@ namespace ustdex {
       Sndr _sndr;
 
       template <class... Env>
-      auto get_completion_signatures(const Env &...) && //
+      auto get_completion_signatures(Env &&...) && //
         -> _completions<Sndr, Fn, Env...>;
 
       template <class... Env>
-      auto get_completion_signatures(const Env &...) const & //
+      auto get_completion_signatures(Env &&...) const & //
         -> _completions<const Sndr &, Fn, Env...>;
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<Sndr, Rcvr, Fn> connect(Rcvr rcvr) && noexcept(
-        _nothrow_constructible<_opstate_t<Sndr, Rcvr, Fn>, Sndr, Rcvr, Fn>) {
-        return _opstate_t<Sndr, Rcvr, Fn>{
+      USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&                                  //
+        noexcept(_nothrow_constructible<_opstate_t<Rcvr, Sndr, Fn>, Sndr, Rcvr, Fn>) //
+        -> _opstate_t<Rcvr, Sndr, Fn> {
+        return _opstate_t<Rcvr, Sndr, Fn>{
           static_cast<Sndr &&>(_sndr),
           static_cast<Rcvr &&>(rcvr),
           static_cast<Fn &&>(_fn)};
       }
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE _opstate_t<const Sndr &, Rcvr, Fn>
-        connect(Rcvr rcvr) const & noexcept(_nothrow_constructible<
-                                            _opstate_t<const Sndr &, Rcvr, Fn>,
-                                            const Sndr &,
-                                            Rcvr,
-                                            const Fn &>) {
-        return _opstate_t<const Sndr &, Rcvr, Fn>{_sndr, static_cast<Rcvr &&>(rcvr), _fn};
+      USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const & //
+        noexcept(_nothrow_constructible<
+                 _opstate_t<Rcvr, const Sndr &, Fn>,
+                 const Sndr &,
+                 Rcvr,
+                 const Fn &>) //
+        -> _opstate_t<Rcvr, const Sndr &, Fn> {
+        return _opstate_t<Rcvr, const Sndr &, Fn>{_sndr, static_cast<Rcvr &&>(rcvr), _fn};
       }
 
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE env_of_t<Sndr> get_env() const noexcept {
         return ustdex::get_env(_sndr);
       }
     };

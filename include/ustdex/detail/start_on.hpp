@@ -23,6 +23,15 @@
 #include "variant.hpp"
 
 namespace ustdex {
+  template <class Sch>
+  struct _sch_env_t {
+    Sch _sch;
+
+    Sch query(get_scheduler_t) const noexcept {
+      return _sch;
+    }
+  };
+
   USTDEX_DEVICE constexpr struct start_on_t {
 #ifndef __CUDACC__
    private:
@@ -30,51 +39,41 @@ namespace ustdex {
     template <class Sch, class Rcvr>
     struct _rcvr_t {
       using receiver_concept = receiver_t;
-      _pair<Sch, Rcvr> *_fs;
-
-      struct _env_t {
-        _pair<Sch, Rcvr> *_fs;
-
-        Sch query(get_scheduler_t) const noexcept {
-          return _fs->first;
-        }
-
-        template <class Query>
-        auto query(Query) const noexcept -> _query_result_t<Query, env_of_t<Rcvr>> {
-          return _fs->second.query(Query{});
-        }
-      };
+      _env_rcvr_t<_sch_env_t<Sch>, Rcvr> *_env_rcvr;
 
       template <class... As>
       USTDEX_HOST_DEVICE void set_value(As &&...as) noexcept {
-        ustdex::set_value(static_cast<Rcvr &&>(_fs->second), static_cast<As &&>(as)...);
+        ustdex::set_value(
+          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<As &&>(as)...);
       }
 
       template <class Error>
       USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
-        ustdex::set_error(static_cast<Rcvr &&>(_fs->second), static_cast<Error &&>(error));
+        ustdex::set_error(
+          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<Error &&>(error));
       }
 
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        ustdex::set_stopped(static_cast<Rcvr &&>(_fs->second));
+        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr->_rcvr));
       }
 
-      USTDEX_HOST_DEVICE _env_t get_env() const noexcept {
-        return {_fs};
+      USTDEX_HOST_DEVICE auto get_env() const noexcept //
+        -> _env_pair_t<_sch_env_t<Sch>, env_of_t<Rcvr>> & {
+        return *_env_rcvr;
       }
     };
 
-    template <class Sch, class Sndr, class Rcvr>
+    template <class Rcvr, class Sch, class Sndr>
     struct _opstate_t {
       using operation_state_concept = operation_state_t;
-      _pair<Sch, Rcvr> _fs;
+      _env_rcvr_t<_sch_env_t<Sch>, Rcvr> _env_rcvr;
       connect_result_t<schedule_result_t<Sch>, _opstate_t *> _opstate1;
       connect_result_t<Sndr, _rcvr_t<Sch, Rcvr>> _opstate2;
 
       USTDEX_HOST_DEVICE _opstate_t(Sch sch, Rcvr rcvr, Sndr &&sndr)
-        : _fs{sch, rcvr}
-        , _opstate1{connect(schedule(_fs.first), this)}
-        , _opstate2{connect(static_cast<Sndr &&>(sndr), _rcvr_t<Sch, Rcvr>{&_fs})} {
+        : _env_rcvr{{sch}, static_cast<Rcvr &&>(rcvr)}
+        , _opstate1{connect(schedule(_env_rcvr._env._sch), this)}
+        , _opstate2{connect(static_cast<Sndr &&>(sndr), _rcvr_t<Sch, Rcvr>{&_env_rcvr})} {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -89,15 +88,16 @@ namespace ustdex {
 
       template <class Error>
       USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
-        ustdex::set_error(static_cast<Rcvr &&>(_fs.second), static_cast<Error &&>(error));
+        ustdex::set_error(
+          static_cast<Rcvr &&>(_env_rcvr._rcvr), static_cast<Error &&>(error));
       }
 
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        ustdex::set_stopped(static_cast<Rcvr &&>(_fs.second));
+        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr._rcvr));
       }
 
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
-        return ustdex::get_env(_fs.second);
+      USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept {
+        return ustdex::get_env(_env_rcvr._rcvr);
       }
     };
 
@@ -117,35 +117,38 @@ namespace ustdex {
     Sch _sch;
     Sndr _sndr;
 
+    template <class Env>
+    using _env_t = const _env_pair_t<_sch_env_t<Sch>, Env> &;
+
     template <class CvSndr, class... Env>
     using _completions = transform_completion_signatures<
-      completion_signatures_of_t<CvSndr, Env...>,
+      completion_signatures_of_t<CvSndr, _env_t<Env>...>,
       transform_completion_signatures<
         completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
         completion_signatures<>,
         _malways<completion_signatures<>>::_f>>;
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) && //
+    auto get_completion_signatures(Env &&...) && //
       -> _completions<Sndr, Env...>;
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) const & //
+    auto get_completion_signatures(Env &&...) const & //
       -> _completions<const Sndr &, Env...>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE _opstate_t<Sch, Sndr, Rcvr> connect(Rcvr rcvr) && noexcept {
-      return _opstate_t<Sch, Sndr, Rcvr>{
+    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, Sch, Sndr> {
+      return _opstate_t<Rcvr, Sch, Sndr>{
         _sch, static_cast<Rcvr &&>(rcvr), static_cast<Sndr &&>(_sndr)};
     }
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE _opstate_t<Sch, const Sndr &, Rcvr>
-      connect(Rcvr rcvr) const & noexcept {
-      return _opstate_t<Sch, const Sndr &, Rcvr>{_sch, static_cast<Rcvr &&>(rcvr), _sndr};
+    USTDEX_HOST_DEVICE auto
+      connect(Rcvr rcvr) const & -> _opstate_t<Rcvr, Sch, const Sndr &> {
+      return _opstate_t<Rcvr, Sch, const Sndr &>{_sch, static_cast<Rcvr &&>(rcvr), _sndr};
     }
 
-    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+    USTDEX_HOST_DEVICE env_of_t<Sndr> get_env() const noexcept {
       return ustdex::get_env(_sndr);
     }
   };

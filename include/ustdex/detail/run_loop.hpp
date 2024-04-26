@@ -22,10 +22,10 @@
 
 #  include "completion_signatures.hpp"
 #  include "env.hpp"
+#  include "exception.hpp"
 #  include "queries.hpp"
 
 #  include <condition_variable>
-#  include <exception>
 #  include <mutex>
 #  include <utility>
 
@@ -93,16 +93,15 @@ namespace ustdex {
         using _id = _schedule_task;
         using sender_concept = sender_t;
 
-        template <class... Env>
-        auto get_completion_signatures(const Env &...) const //
+        auto get_completion_signatures(_ignore_t = {}) const //
           -> completion_signatures<
             set_value_t(),
             set_error_t(std::exception_ptr),
             set_stopped_t()>;
 
         template <class Rcvr>
-        USTDEX_HOST_DEVICE auto connect(Rcvr _rcvr) const noexcept -> _operation<Rcvr> {
-          return {&_loop->_head, _loop, static_cast<Rcvr &&>(_rcvr)};
+        USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept -> _operation<Rcvr> {
+          return {&_loop->_head, _loop, static_cast<Rcvr &&>(rcvr)};
         }
 
        private:

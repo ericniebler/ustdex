@@ -430,8 +430,9 @@ namespace ustdex {
         return _data->_stop_token;
       }
 
-      template <class Tag, class Env = env_of_t<Rcvr>>
-      USTDEX_HOST_DEVICE auto query(Tag) const noexcept -> _query_result_t<Tag, Env> {
+      template <class Tag>
+      USTDEX_HOST_DEVICE auto
+        query(Tag) const noexcept -> _query_result_t<Tag, env_of_t<Rcvr>> {
         return ustdex::get_env(_data->_rcvr).query(Tag());
       }
     };
@@ -493,8 +494,8 @@ namespace ustdex {
     };
 
     /// The operation state for when_all
-    template <class CvFn, std::size_t... Idx, class... Sndrs, class Rcvr>
-    struct _opstate_t<CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>, Rcvr> {
+    template <class Rcvr, class CvFn, std::size_t... Idx, class... Sndrs>
+    struct _opstate_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>> {
       using operation_state_concept = operation_state_t;
       using _sndrs_t = _minvoke<CvFn, _tuple<Sndrs...>>;
       using _env_t = env_of_t<Rcvr>;
@@ -582,23 +583,23 @@ namespace ustdex {
     _sndrs_t _sndrs;
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) && //
+    auto get_completion_signatures(Env &&...) && //
       -> _completions<_cp, Env...>;
 
     template <class... Env>
-    auto get_completion_signatures(const Env &...) const & //
+    auto get_completion_signatures(Env &&...) const & //
       -> _completions<_cpclr, Env...>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<_cp, _sndrs_t, Rcvr> {
-      return _opstate_t<_cp, _sndrs_t, Rcvr>(
+    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, _cp, _sndrs_t> {
+      return _opstate_t<Rcvr, _cp, _sndrs_t>(
         static_cast<_sndrs_t &&>(_sndrs), static_cast<Rcvr &&>(rcvr));
     }
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const & //
-      -> _opstate_t<_cpclr, _sndrs_t, Rcvr> {
-      return _opstate_t<_cpclr, _sndrs_t, Rcvr>(_sndrs, static_cast<Rcvr &&>(rcvr));
+      -> _opstate_t<Rcvr, _cpclr, _sndrs_t> {
+      return _opstate_t<Rcvr, _cpclr, _sndrs_t>(_sndrs, static_cast<Rcvr &&>(rcvr));
     }
   };
 

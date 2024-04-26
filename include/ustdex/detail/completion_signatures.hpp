@@ -16,8 +16,7 @@
 #pragma once
 
 #include "cpos.hpp"
-
-#include <exception>
+#include "exception.hpp"
 
 namespace ustdex {
   template <class... Ts>

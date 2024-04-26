@@ -22,7 +22,7 @@
 
 namespace {
   //! Scheduler that returns a sender that always completes with error.
-  template <typename Error>
+  template <class Error>
   struct error_scheduler {
    private:
     struct env_t {
@@ -36,7 +36,7 @@ namespace {
       }
     };
 
-    template <typename Rcvr>
+    template <class Rcvr>
     struct opstate_t : ustdex::_immovable {
       using operation_state_concept = ustdex::operation_state_t;
 
@@ -57,7 +57,7 @@ namespace {
           ustdex::set_error_t(Error),
           ustdex::set_stopped_t()>;
 
-      template <typename Rcvr>
+      template <class Rcvr>
       opstate_t<Rcvr> connect(Rcvr rcvr) const {
         return {{}, static_cast<Rcvr&&>(rcvr), _err};
       }
