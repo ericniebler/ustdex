@@ -354,6 +354,12 @@ namespace ustdex {
     using _f = Ty;
   };
 
+  template <class Ty>
+  struct _malways1 {
+    template <class>
+    using _f = Ty;
+  };
+
   template <bool>
   struct _mif_ {
     template <class Then, class...>

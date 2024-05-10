@@ -22,107 +22,26 @@ namespace ustdex {
   template <class... Ts>
   struct completion_signatures { };
 
-  template <
-    class Sig,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else>
-  extern _undefined<Sig> _gather_sig;
-
-  template <
-    class ActualTag,
-    class... Ts,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else>
-  extern Else<ActualTag, Ts...> _gather_sig<ActualTag(Ts...), WantedTag, Then, Else>;
-
-  template <
-    class... Ts,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else>
-  extern Then<Ts...> _gather_sig<WantedTag(Ts...), WantedTag, Then, Else>;
-
-  template <
-    class Sig,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else>
-  using _gather_sig_t = decltype(_gather_sig<Sig, WantedTag, Then, Else>);
-
-  template <
-    class Sigs,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else,
-    template <class...>
-    class Variant,
-    class... More>
-  extern DIAGNOSTIC<Sigs> _gather_completion_signatures_v;
-
-  template <
-    class... Sigs,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else,
-    template <class...>
-    class Variant,
-    class... More>
-  extern Variant<_gather_sig_t<Sigs, WantedTag, Then, Else>..., More...>
-    _gather_completion_signatures_v<
-      completion_signatures<Sigs...>,
-      WantedTag,
-      Then,
-      Else,
-      Variant,
-      More...>;
-
-  template <
-    class Sigs,
-    class WantedTag,
-    template <class...>
-    class Then,
-    template <class...>
-    class Else,
-    template <class...>
-    class Variant,
-    class... More>
-  using _gather_completion_signatures =
-    decltype(_gather_completion_signatures_v<Sigs, WantedTag, Then, Else, Variant, More...>);
-
-  template <class Sig, template <class...> class V, template <class> class E, class S>
+  template <class Sig, template <class...> class V, template <class...> class E, class S>
   extern _undefined<Sig> _transform_sig;
 
-  template <class... Values, template <class...> class V, template <class> class E, class S>
+  template <class... Values, template <class...> class V, template <class...> class E, class S>
   extern V<Values...> _transform_sig<set_value_t(Values...), V, E, S>;
 
-  template <class Error, template <class...> class V, template <class> class E, class S>
+  template <class Error, template <class...> class V, template <class...> class E, class S>
   extern E<Error> _transform_sig<set_error_t(Error), V, E, S>;
 
-  template <template <class...> class V, template <class> class E, class S>
+  template <template <class...> class V, template <class...> class E, class S>
   extern S _transform_sig<set_stopped_t(), V, E, S>;
 
-  template <class Sig, template <class...> class V, template <class> class E, class S>
+  template <class Sig, template <class...> class V, template <class...> class E, class S>
   using _transform_sig_t = decltype(_transform_sig<Sig, V, E, S>);
 
   template <
     class Sigs,
     template <class...>
     class V,
-    template <class>
+    template <class...>
     class E,
     class S,
     template <class...>
@@ -134,7 +53,7 @@ namespace ustdex {
     class... Sigs,
     template <class...>
     class V,
-    template <class>
+    template <class...>
     class E,
     class S,
     template <class...>
@@ -153,7 +72,7 @@ namespace ustdex {
     class Sigs,
     template <class...>
     class V,
-    template <class>
+    template <class...>
     class E,
     class S,
     template <class...>
@@ -161,6 +80,82 @@ namespace ustdex {
     class... More>
   using _transform_completion_signatures =
     decltype(_transform_completion_signatures_v<Sigs, V, E, S, Variant, More...>);
+
+  template <class WantedTag>
+  struct _gather_sigs_fn;
+
+  template <>
+  struct _gather_sigs_fn<set_value_t> {
+    template <
+      class Sigs,
+      template <class...>
+      class Then,
+      template <class...>
+      class Else,
+      template <class...>
+      class Variant,
+      class... More>
+    using _f = _transform_completion_signatures<
+      Sigs,
+      Then,
+      _mbind_front_q<Else, set_error_t>::template _f,
+      Else<set_stopped_t>,
+      Variant,
+      More...>;
+  };
+
+  template <>
+  struct _gather_sigs_fn<set_error_t> {
+    template <
+      class Sigs,
+      template <class...>
+      class Then,
+      template <class...>
+      class Else,
+      template <class...>
+      class Variant,
+      class... More>
+    using _f = _transform_completion_signatures<
+      Sigs,
+      _mbind_front_q<Else, set_value_t>::template _f,
+      Then,
+      Else<set_stopped_t>,
+      Variant,
+      More...>;
+  };
+
+  template <>
+  struct _gather_sigs_fn<set_stopped_t> {
+    template <
+      class Sigs,
+      template <class...>
+      class Then,
+      template <class...>
+      class Else,
+      template <class...>
+      class Variant,
+      class... More>
+    using _f = _transform_completion_signatures<
+      Sigs,
+      _mbind_front_q<Else, set_value_t>::template _f,
+      _mbind_front_q<Else, set_error_t>::template _f,
+      Then<>,
+      Variant,
+      More...>;
+  };
+
+  template <
+    class Sigs,
+    class WantedTag,
+    template <class...>
+    class Then,
+    template <class...>
+    class Else,
+    template <class...>
+    class Variant,
+    class... More>
+  using _gather_completion_signatures =
+    typename _gather_sigs_fn<WantedTag>::template _f<Sigs, Then, Else, Variant, More...>;
 
   template <class... Ts>
   using _set_value_transform_t = completion_signatures<set_value_t(Ts...)>;
@@ -224,11 +219,11 @@ namespace ustdex {
     template <class...>
     class Variant>
   using _value_types = //
-    _gather_completion_signatures<
+    _transform_completion_signatures<
       Sigs,
-      set_value_t,
       _mcompose_q<_mlist_ref, Tuple>::template _f,
       _malways<_mlist_ref<>>::_f,
+      _mlist_ref<>,
       _mconcat_into<_mtry_quote<Variant>>::template _f>;
 
   template <
@@ -246,11 +241,11 @@ namespace ustdex {
     template <class...>
     class Variant>
   using _error_types = //
-    _gather_completion_signatures<
+    _transform_completion_signatures<
       Sigs,
-      set_error_t,
-      _mlist_ref,
       _malways<_mlist_ref<>>::_f,
+      _mlist_ref,
+      _mlist_ref<>,
       _mconcat_into<_mtry_quote<Variant>>::template _f>;
 
   template <class Sndr, class Env, template <class...> class Variant>
@@ -258,11 +253,11 @@ namespace ustdex {
 
   template <class Sigs>
   USTDEX_DEVICE constexpr bool _sends_stopped = //
-    _gather_completion_signatures<
+    _transform_completion_signatures<
       Sigs,
-      set_stopped_t,
-      _malways<_mtrue>::_f,
       _malways<_mfalse>::_f,
+      _malways<_mfalse>::_f,
+      _mtrue,
       _mor>::value;
 
   template <class Sndr, class... Env>
