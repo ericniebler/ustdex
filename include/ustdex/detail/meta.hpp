@@ -18,6 +18,12 @@
 #include "config.hpp"
 
 #include <utility>
+#if __cpp_lib_three_way_comparison
+#  include <compare>
+#endif
+
+USTDEX_PRAGMA_PUSH()
+USTDEX_PRAGMA_IGNORE_GNU("-Wgnu-string-literal-operator-template")
 
 namespace ustdex {
   template <class Ty>
@@ -110,6 +116,106 @@ namespace ustdex {
   template <class... Ts>
   using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)> *;
 #endif
+
+  constexpr std::size_t _mpow2(std::size_t _size) noexcept {
+    --_size;
+    _size |= _size >> 1;
+    _size |= _size >> 2;
+    _size |= _size >> 4;
+    _size |= _size >> 8;
+    if constexpr (sizeof(_size) >= 4)
+      _size |= _size >> 16;
+    if constexpr (sizeof(_size) >= 8)
+      _size |= _size >> 32;
+    return ++_size;
+  }
+
+  template <class Ty>
+  constexpr Ty _mmin(Ty _lhs, Ty _rhs) noexcept {
+    return _lhs < _rhs ? _lhs : _rhs;
+  }
+
+  template <class Ty>
+  constexpr int _mcompare(Ty _lhs, Ty _rhs) noexcept {
+    return _lhs < _rhs ? -1 : _lhs > _rhs ? 1 : 0;
+  }
+
+  template <std::size_t Len>
+  struct _mstring {
+    template <std::size_t Ny, std::size_t... Is>
+    constexpr _mstring(const char (&_str)[Ny], _mindices<Is...>) noexcept
+      : len_{Ny}
+      , what_{(Is < Ny ? _str[Is] : '\0')...} {
+    }
+
+    template <std::size_t Ny>
+    constexpr _mstring(const char (&_str)[Ny], int = 0) noexcept
+      : _mstring{_str, _mmake_indices<Len>{}} {
+    }
+
+    constexpr auto length() const noexcept -> std::size_t {
+      return len_;
+    }
+
+    template <std::size_t OtherLen>
+    constexpr int compare(const _mstring<OtherLen> &other) const noexcept {
+      std::size_t const len = _mmin(len_, other.len_);
+      for (std::size_t i = 0; i < len; ++i) {
+        if (auto const cmp = _mcompare(what_[i], other.what_[i])) {
+          return cmp;
+        }
+      }
+      return _mcompare(len_, other.len_);
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator==(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return len_ == other.len_ && compare(other) == 0;
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator!=(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return !operator==(other);
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator<(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return compare(other) < 0;
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator>(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return compare(other) > 0;
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator<=(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return compare(other) <= 0;
+    }
+
+    template <std::size_t OtherLen>
+    constexpr auto operator>=(const _mstring<OtherLen> &other) const noexcept -> bool {
+      return compare(other) >= 0;
+    }
+
+    std::size_t len_;
+    char what_[Len];
+  };
+
+  template <std::size_t Len>
+  _mstring(const char (&_str)[Len]) -> _mstring<Len>;
+
+  template <std::size_t Len>
+  _mstring(const char (&_str)[Len], int) -> _mstring<_mpow2(Len)>;
+
+  template <class T>
+  constexpr auto _mnameof() noexcept {
+#if USTDEX_MSVC()
+    return _mstring{__FUNCSIG__, 0};
+#else
+    return _mstring{__PRETTY_FUNCTION__, 0};
+#endif
+  }
 
   // The following must be left undefined
   template <class...>
@@ -498,3 +604,5 @@ namespace ustdex {
     using _f = Uy;
   };
 } // namespace ustdex
+
+USTDEX_PRAGMA_POP()
