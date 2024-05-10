@@ -19,7 +19,7 @@
 
 #include <utility>
 #if __cpp_lib_three_way_comparison
-#include <compare>
+#  include <compare>
 #endif
 
 USTDEX_PRAGMA_PUSH()
@@ -144,7 +144,8 @@ namespace ustdex {
   struct _mstring {
     template <std::size_t Ny, std::size_t... Is>
     constexpr _mstring(const char (&_str)[Ny], _mindices<Is...>) noexcept
-      : len_{Ny}, what_{(Is < Ny ? _str[Is] : '\0')...} {
+      : len_{Ny}
+      , what_{(Is < Ny ? _str[Is] : '\0')...} {
     }
 
     template <std::size_t Ny>
@@ -157,7 +158,7 @@ namespace ustdex {
     }
 
     template <std::size_t OtherLen>
-    constexpr int compare(const _mstring<OtherLen>& other) const noexcept {
+    constexpr int compare(const _mstring<OtherLen> &other) const noexcept {
       std::size_t const len = _mmin(len_, other.len_);
       for (std::size_t i = 0; i < len; ++i) {
         if (auto const cmp = _mcompare(what_[i], other.what_[i])) {
@@ -168,32 +169,32 @@ namespace ustdex {
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator==(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator==(const _mstring<OtherLen> &other) const noexcept -> bool {
       return len_ == other.len_ && compare(other) == 0;
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator!=(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator!=(const _mstring<OtherLen> &other) const noexcept -> bool {
       return !operator==(other);
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator<(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator<(const _mstring<OtherLen> &other) const noexcept -> bool {
       return compare(other) < 0;
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator>(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator>(const _mstring<OtherLen> &other) const noexcept -> bool {
       return compare(other) > 0;
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator<=(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator<=(const _mstring<OtherLen> &other) const noexcept -> bool {
       return compare(other) <= 0;
     }
 
     template <std::size_t OtherLen>
-    constexpr auto operator>=(const _mstring<OtherLen>& other) const noexcept -> bool {
+    constexpr auto operator>=(const _mstring<OtherLen> &other) const noexcept -> bool {
       return compare(other) >= 0;
     }
 
