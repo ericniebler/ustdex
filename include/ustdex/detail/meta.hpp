@@ -32,11 +32,7 @@ namespace ustdex {
   template <class Ty>
   Ty &&_declval() noexcept;
 
-#if __CUDACC__
-#  define DECLVAL(...) _declval<__VA_ARGS__>()
-#else
-#  define DECLVAL(...) _declfn<__VA_ARGS__>()()
-#endif
+#define DECLVAL(...) _declval<__VA_ARGS__>()
 
   template <class Ret, class... Args>
   using _fn_t = Ret(Args...);

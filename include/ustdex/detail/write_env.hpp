@@ -27,43 +27,16 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    template <class Rcvr, class Env>
-    struct _rcvr_t {
-      using receiver_concept = receiver_t;
-      _env_rcvr_t<Env, Rcvr> *_env_rcvr;
-
-      template <class... As>
-      USTDEX_HOST_DEVICE void set_value(As &&...as) noexcept {
-        ustdex::set_value(
-          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<As &&>(as)...);
-      }
-
-      template <class Error>
-      USTDEX_HOST_DEVICE void set_value(Error &&error) noexcept {
-        ustdex::set_error(
-          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<Error &&>(error));
-      }
-
-      USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr->_rcvr));
-      }
-
-      USTDEX_HOST_DEVICE auto get_env() const noexcept //
-        -> const _env_pair_t<Env, env_of_t<Rcvr>> & {
-        return *_env_rcvr;
-      }
-    };
-
     template <class Rcvr, class Sndr, class Env>
     struct _opstate_t {
       using operation_state_concept = operation_state_t;
-      _env_rcvr_t<Env, Rcvr> _env_rcvr;
-      connect_result_t<Sndr, _rcvr_t<Rcvr, Env>> _op;
+      _receiver_with_env_t<Rcvr, Env> _env_rcvr;
+      connect_result_t<Sndr, _receiver_with_env_t<Rcvr, Env> *> _op;
 
       USTDEX_HOST_DEVICE explicit _opstate_t(Sndr &&sndr, Env env, Rcvr rcvr)
         : _env_rcvr(static_cast<Env &&>(env), static_cast<Rcvr &&>(rcvr))
         , _op(
-            ustdex::connect(static_cast<Sndr &&>(sndr), _rcvr_t<Rcvr, Env>{&_env_rcvr})) {
+            ustdex::connect(static_cast<Sndr &&>(sndr), &_env_rcvr)) {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -92,7 +65,7 @@ namespace ustdex {
     Sndr _sndr;
 
     template <class OtherEnv>
-    using _env_t = const _env_pair_t<Env, OtherEnv> &;
+    using _env_t = _joined_env_t<const Env &, OtherEnv>;
 
     template <class... OtherEnv>
     auto get_completion_signatures(OtherEnv &&...) && //
@@ -103,8 +76,7 @@ namespace ustdex {
       -> completion_signatures_of_t<const Sndr &, _env_t<OtherEnv>...>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && //
-      -> _opstate_t<Rcvr, Sndr, Env> {
+    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, Sndr, Env> {
       return _opstate_t<Rcvr, Sndr, Env>{
         static_cast<Sndr &&>(_sndr),
         static_cast<Env &&>(_env),

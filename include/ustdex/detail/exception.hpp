@@ -15,8 +15,6 @@
  */
 #pragma once
 
-#include "config.hpp"
-
 #include <exception>
 
 #define USTDEX_PP_EXPAND(...) __VA_ARGS__
@@ -37,4 +35,12 @@
     } catch (...) {                                                                      \
       USTDEX_PP_EXPAND CATCH                                                             \
     }
+#endif
+
+#if defined(__CUDA_ARCH__)
+// Treat everything as no-throw in device code
+#  define USTDEXEC_NOEXCEPT(...) true
+#else
+// This is the default behavior for host code, and for nvc++
+#  define USTDEXEC_NOEXCEPT(...) noexcept(__VA_ARGS__)
 #endif

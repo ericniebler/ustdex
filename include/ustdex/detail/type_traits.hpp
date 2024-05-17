@@ -168,6 +168,22 @@ namespace ustdex {
   template <class Fn, class... As>
   inline constexpr bool _callable = _mvalid_q<_call_result_t, Fn, As...>;
 
+#if defined(__CUDA_ARCH__)
+  template <class Fn, class... As>
+  inline constexpr bool _nothrow_callable = true;
+
+  template <class Ty, class... As>
+  inline constexpr bool _nothrow_constructible = true;
+
+  template <class... As>
+  inline constexpr bool _nothrow_decay_copyable = true;
+
+  template <class... As>
+  inline constexpr bool _nothrow_movable = true;
+
+  template <class... As>
+  inline constexpr bool _nothrow_copyable = true;
+#else
   template <class Fn, class... As>
   using _nothrow_callable_ = _mif<noexcept(DECLVAL(Fn)(DECLVAL(As)...))>;
 
@@ -199,4 +215,5 @@ namespace ustdex {
 
   template <class... As>
   inline constexpr bool _nothrow_copyable = (_mvalid_q<_nothrow_copyable_, As> && ...);
+#endif
 } // namespace ustdex

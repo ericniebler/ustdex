@@ -36,7 +36,7 @@ struct sink {
     std::printf("%s\n", "In sink::set_value(auto&&...)");
   }
 
-  USTDEX_HOST_DEVICE void set_error(std::exception_ptr eptr) noexcept {
+  USTDEX_HOST_DEVICE void set_error([[maybe_unused]] const std::exception_ptr& eptr) noexcept {
     std::printf("Error\n");
   }
 

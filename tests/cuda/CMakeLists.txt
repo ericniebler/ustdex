@@ -12,24 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Add Catch2
-CPMAddPackage("gh:catchorg/Catch2@3.5.4")
-list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
-
-include(CTest)
-include(Catch)
-
 # Find all test files with "test_" prefix
-file(GLOB TEST_FILES test_*.cpp)
+file(GLOB TEST_FILES test_*.cu)
 
 # Add each test file as a test
 foreach(TEST_FILE ${TEST_FILES})
   get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-  add_executable(${TEST_NAME} ${TEST_FILE})
-  target_link_libraries(${TEST_NAME} ustdex Catch2::Catch2WithMain)
-  catch_discover_tests(${TEST_NAME})
+  add_executable(cuda_${TEST_NAME} ${TEST_FILE})
+  target_link_libraries(cuda_${TEST_NAME} ustdex Catch2::Catch2WithMain)
+  catch_discover_tests(cuda_${TEST_NAME})
 endforeach()
-
-if (USTDEX_ENABLE_CUDA)
-  add_subdirectory(cuda)
-endif()

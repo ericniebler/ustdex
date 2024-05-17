@@ -36,44 +36,21 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    template <class Sch, class Rcvr>
-    struct _rcvr_t {
-      using receiver_concept = receiver_t;
-      _env_rcvr_t<_sch_env_t<Sch>, Rcvr> *_env_rcvr;
-
-      template <class... As>
-      USTDEX_HOST_DEVICE void set_value(As &&...as) noexcept {
-        ustdex::set_value(
-          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<As &&>(as)...);
-      }
-
-      template <class Error>
-      USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
-        ustdex::set_error(
-          static_cast<Rcvr &&>(_env_rcvr->_rcvr), static_cast<Error &&>(error));
-      }
-
-      USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr->_rcvr));
-      }
-
-      USTDEX_HOST_DEVICE auto get_env() const noexcept //
-        -> _env_pair_t<_sch_env_t<Sch>, env_of_t<Rcvr>> & {
-        return *_env_rcvr;
-      }
-    };
-
     template <class Rcvr, class Sch, class Sndr>
     struct _opstate_t {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate_t* self) noexcept {
+        return ustdex::get_env(self->_env_rcvr.rcvr());
+      }
+
       using operation_state_concept = operation_state_t;
-      _env_rcvr_t<_sch_env_t<Sch>, Rcvr> _env_rcvr;
+      _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> _env_rcvr;
       connect_result_t<schedule_result_t<Sch>, _opstate_t *> _opstate1;
-      connect_result_t<Sndr, _rcvr_t<Sch, Rcvr>> _opstate2;
+      connect_result_t<Sndr, _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> *> _opstate2;
 
       USTDEX_HOST_DEVICE _opstate_t(Sch sch, Rcvr rcvr, Sndr &&sndr)
-        : _env_rcvr{{sch}, static_cast<Rcvr &&>(rcvr)}
+        : _env_rcvr{static_cast<Rcvr &&>(rcvr), {sch}}
         , _opstate1{connect(schedule(_env_rcvr._env._sch), this)}
-        , _opstate2{connect(static_cast<Sndr &&>(sndr), _rcvr_t<Sch, Rcvr>{&_env_rcvr})} {
+        , _opstate2{connect(static_cast<Sndr &&>(sndr), &_env_rcvr)} {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -89,15 +66,11 @@ namespace ustdex {
       template <class Error>
       USTDEX_HOST_DEVICE void set_error(Error &&error) noexcept {
         ustdex::set_error(
-          static_cast<Rcvr &&>(_env_rcvr._rcvr), static_cast<Error &&>(error));
+          static_cast<Rcvr &&>(_env_rcvr.rcvr()), static_cast<Error &&>(error));
       }
 
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr._rcvr));
-      }
-
-      USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept {
-        return ustdex::get_env(_env_rcvr._rcvr);
+        ustdex::set_stopped(static_cast<Rcvr &&>(_env_rcvr.rcvr()));
       }
     };
 
@@ -118,7 +91,7 @@ namespace ustdex {
     Sndr _sndr;
 
     template <class Env>
-    using _env_t = const _env_pair_t<_sch_env_t<Sch>, Env> &;
+    using _env_t = _joined_env_t<const _sch_env_t<Sch> &, Env>;
 
     template <class CvSndr, class... Env>
     using _completions = transform_completion_signatures<

@@ -24,14 +24,6 @@
 #include <type_traits>
 
 namespace ustdex {
-  namespace _detail {
-    template <class... Ts, std::size_t... Idx>
-    USTDEX_HOST_DEVICE inline void
-      _destroy(_mindices<Idx...>, std::size_t idx, void *pv) noexcept {
-      ((Idx == idx ? static_cast<Ts *>(pv)->~Ts() : void()), ...);
-    }
-  } // namespace _detail
-
   USTDEX_DEVICE constexpr std::size_t _variant_npos = static_cast<std::size_t>(-1);
 
   template <class Idx, class... Ts>

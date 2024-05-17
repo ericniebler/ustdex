@@ -20,10 +20,32 @@
 #include "type_traits.hpp"
 #include "utility.hpp"
 
+// warning #20012-D: __device__ annotation is ignored on a
+// function("inplace_stop_source") that is explicitly defaulted on its first
+// declaration
+USTDEX_PRAGMA_PUSH()
+USTDEX_PRAGMA_IGNORE_EDG(20012)
+
 namespace ustdex {
   struct empty_env { };
 
-  USTDEX_DEVICE constexpr struct get_env_t {
+  namespace _adl {
+    template <class Ty>
+    auto get_env(Ty *ty) noexcept -> decltype(ty->get_env()) {
+      static_assert(noexcept(ty->get_env()));
+      return ty->get_env();
+    }
+
+    struct _get_env_t {
+      template <class Ty>
+      auto operator()(Ty *ty) const noexcept -> decltype(get_env(ty)) {
+        static_assert(noexcept(get_env(ty)));
+        return get_env(ty);
+      }
+    };
+  } // namespace _adl
+
+  struct get_env_t {
     template <class Ty>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Ty &&ty) const noexcept //
       -> decltype(ty.get_env()) {
@@ -31,40 +53,49 @@ namespace ustdex {
       return ty.get_env();
     }
 
-    template <class Self = get_env_t, template <class...> class Op, class Rcvr, class... Ts>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Op<Rcvr, Ts...> *ty) const noexcept //
-      -> _call_result_t<Self, Rcvr> {
-      static_assert(noexcept(ty->get_env()));
-      return ty->get_env();
+    template <class Ty>
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Ty *ty) const noexcept //
+      -> _call_result_t<_adl::_get_env_t, Ty *> {
+      return _adl::_get_env_t()(ty);
     }
 
     USTDEX_INLINE USTDEX_HOST_DEVICE empty_env operator()(_ignore_t) const noexcept {
       return {};
     }
-  } get_env{};
+  };
+
+  namespace _region {
+    USTDEX_DEVICE constexpr get_env_t get_env{};
+  }
+  using namespace _region;
 
   template <class Ty, class Query>
   inline constexpr bool _queryable = _mvalid_q<_query_result_t, Query, Ty>;
 
+#if defined(__CUDA_ARCH__)
+  template <class Ty, class Query>
+  inline constexpr bool _nothrow_queryable = true;
+#else
   template <class Ty, class Query>
   using _nothrow_queryable_ = _mif<noexcept(DECLVAL(Ty).query(Query()))>;
 
   template <class Ty, class Query>
   inline constexpr bool _nothrow_queryable = _mvalid_q<_nothrow_queryable_, Ty, Query>;
+#endif
 
   template <class Ty>
   using env_of_t = decltype(get_env(DECLVAL(Ty)));
 
   template <class Env1, class Env2>
-  struct _env_pair_t : _immovable {
-    Env1 _env;
-    Env2 (*const _get_env2)(const _env_pair_t *) noexcept;
+  struct _joined_env_t {
+    Env1 _env1;
+    Env2 _env2;
 
     template <class Query>
     USTDEX_HOST_DEVICE auto query(Query) const          //
       noexcept(_nothrow_queryable<const Env1 &, Query>) //
       -> _query_result_t<Query, const Env1 &> {
-      return _env.query(Query{});
+      return _env1.query(Query{});
     }
 
     // The volatile here is to create an ordering between the two `query`
@@ -72,25 +103,33 @@ namespace ustdex {
     // environments have the query.
     template <class Query>
     USTDEX_HOST_DEVICE auto query(Query) const volatile //
-      noexcept(_nothrow_queryable<Env2, Query>)         //
-      -> _query_result_t<Query, Env2> {
-      return _get_env2(this).query(Query{});
+      noexcept(_nothrow_queryable<const Env2&, Query>)  //
+      -> _query_result_t<Query, const Env2 &> {
+      return const_cast<const Env2 &>(_env2).query(Query{});
     }
   };
 
-  template <class Env, class Rcvr>
-  struct _env_rcvr_t : _env_pair_t<Env, env_of_t<Rcvr>> {
-    using _env_pair = _env_pair_t<Env, env_of_t<Rcvr>>;
-    Rcvr _rcvr;
+  template <class Env1, class Env2>
+  USTDEX_HOST_DEVICE _joined_env_t(Env1&&, Env2&&) -> _joined_env_t<Env1, Env2>;
 
-    static env_of_t<Rcvr> _get_env2(const _env_pair *self) noexcept {
-      return ustdex::get_env(static_cast<const _env_rcvr_t *>(self)->_rcvr);
+  template <class Rcvr, class Env>
+  struct _receiver_with_env_t : Rcvr {
+    using _env_t = _joined_env_t<const Env &, env_of_t<Rcvr>>;
+
+    USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
+      return *this;
     }
 
-    USTDEX_HOST_DEVICE _env_rcvr_t(Env env, Rcvr rcvr)
-      : _env_pair{{}, static_cast<Env &&>(env), &_get_env2}
-      , _rcvr(static_cast<Rcvr &&>(rcvr)) {
+    USTDEX_HOST_DEVICE auto rcvr() const noexcept -> const Rcvr & {
+      return *this;
     }
+
+    USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
+      return _joined_env_t{_env, ustdex::get_env(static_cast<const Rcvr &>(*this))};
+    }
+
+    Env _env;
   };
-
 } // namespace ustdex
+
+USTDEX_PRAGMA_POP()

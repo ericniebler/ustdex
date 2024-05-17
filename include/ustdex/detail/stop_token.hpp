@@ -30,6 +30,12 @@
 #  include <stop_token>
 #endif
 
+// warning #20012-D: __device__ annotation is ignored on a
+// function("inplace_stop_source") that is explicitly defaulted on its first
+// declaration
+USTDEX_PRAGMA_PUSH()
+USTDEX_PRAGMA_IGNORE_EDG(20012)
+
 namespace ustdex {
   // [stoptoken.inplace], class inplace_stop_token
   class inplace_stop_token;
@@ -128,7 +134,7 @@ namespace ustdex {
   // [stopsource.inplace], class inplace_stop_source
   class inplace_stop_source {
    public:
-    inplace_stop_source() noexcept = default;
+    USTDEX_HOST_DEVICE inplace_stop_source() noexcept = default;
     USTDEX_HOST_DEVICE ~inplace_stop_source();
     USTDEX_IMMOVABLE(inplace_stop_source);
 
@@ -190,12 +196,12 @@ namespace ustdex {
       return *this;
     }
 
-    USTDEX_HOST_DEVICE [[nodiscard]]
+     [[nodiscard]] USTDEX_HOST_DEVICE
     auto stop_requested() const noexcept -> bool {
       return _source != nullptr && _source->stop_requested();
     }
 
-    USTDEX_HOST_DEVICE [[nodiscard]]
+    [[nodiscard]] USTDEX_HOST_DEVICE
     auto stop_possible() const noexcept -> bool {
       return _source != nullptr;
     }
@@ -423,3 +429,5 @@ namespace ustdex {
   template <class Token, class Callback>
   using stop_callback_for_t = typename Token::template callback_type<Callback>;
 } // namespace ustdex
+
+USTDEX_PRAGMA_POP()

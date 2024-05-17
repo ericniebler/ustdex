@@ -81,6 +81,10 @@ namespace ustdex {
 
     template <class Rcvr, class CvSndr, class Sch>
     struct _opstate_t {
+      USTDEX_HOST_DEVICE friend auto get_env(const _opstate_t* self) noexcept -> env_of_t<Rcvr> {
+        return ustdex::get_env(self->_rcvr._rcvr);
+      }
+
       using operation_state_concept = operation_state_t;
       using _result_t = _transform_completion_signatures<
         completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
@@ -120,10 +124,6 @@ namespace ustdex {
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
         _rcvr._set_result(set_stopped_t());
         ustdex::start(_opstate2);
-      }
-
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
-        return ustdex::get_env(_rcvr._rcvr);
       }
     };
 

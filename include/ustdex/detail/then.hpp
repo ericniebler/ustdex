@@ -102,6 +102,10 @@ namespace ustdex {
 
     template <class Rcvr, class Sndr, class Fn>
     struct _opstate_t {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate_t* self) noexcept {
+        return ustdex::get_env(self->_rcvr);
+      }
+
       using operation_state_concept = operation_state_t;
       Rcvr _rcvr;
       Fn _fn;
@@ -162,10 +166,6 @@ namespace ustdex {
 
       USTDEX_HOST_DEVICE void set_stopped() noexcept {
         _complete(set_stopped_t());
-      }
-
-      USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept {
-        return ustdex::get_env(_rcvr);
       }
     };
 
