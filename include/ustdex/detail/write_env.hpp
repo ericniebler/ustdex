@@ -19,6 +19,7 @@
 #include "cpos.hpp"
 #include "env.hpp"
 #include "exception.hpp"
+#include "receiver_with_env.hpp"
 #include "queries.hpp"
 #include "utility.hpp"
 

@@ -111,25 +111,6 @@ namespace ustdex {
 
   template <class Env1, class Env2>
   USTDEX_HOST_DEVICE _joined_env_t(Env1&&, Env2&&) -> _joined_env_t<Env1, Env2>;
-
-  template <class Rcvr, class Env>
-  struct _receiver_with_env_t : Rcvr {
-    using _env_t = _joined_env_t<const Env &, env_of_t<Rcvr>>;
-
-    USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
-      return *this;
-    }
-
-    USTDEX_HOST_DEVICE auto rcvr() const noexcept -> const Rcvr & {
-      return *this;
-    }
-
-    USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return _joined_env_t{_env, ustdex::get_env(static_cast<const Rcvr &>(*this))};
-    }
-
-    Env _env;
-  };
 } // namespace ustdex
 
 USTDEX_PRAGMA_POP()

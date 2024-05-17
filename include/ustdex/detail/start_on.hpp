@@ -18,6 +18,7 @@
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
 #include "queries.hpp"
+#include "receiver_with_env.hpp"
 #include "tuple.hpp"
 #include "utility.hpp"
 #include "variant.hpp"
