@@ -50,7 +50,9 @@ namespace ustdex {
         // Unknown nvc++ name lookup bug
         ((Idx == _index ? get<Idx>().Ts::~Ts() : void(0)), ...);
 #else
-        ((Idx == _index ? get<Idx>().~Ts() : void(0)), ...);
+        // casting the destructor expression to void is necessary for MSVC in
+        // /permissive- mode.
+        ((Idx == _index ? void(get<Idx>().~Ts()) : void(0)), ...);
 #endif
       }
     }

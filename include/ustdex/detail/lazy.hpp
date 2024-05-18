@@ -78,7 +78,9 @@ namespace ustdex {
     }
 
     USTDEX_HOST_DEVICE ~_lazy_tupl() {
-      ((_engaged[Idx] ? _get<Idx, Ts>()->~Ts() : void(0)), ...);
+      // casting the destructor expression to void is necessary for MSVC in
+      // /permissive- mode.
+      ((_engaged[Idx] ? void((*_get<Idx, Ts>()).~Ts()) : void(0)), ...);
     }
 
     template <std::size_t Ny, class Ty>
