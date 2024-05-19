@@ -18,6 +18,7 @@
 #include "config.hpp"
 
 #include "atomic.hpp"
+#include "thread.hpp"
 #include "utility.hpp"
 
 #include <cstdint>
@@ -79,18 +80,17 @@ namespace ustdex {
       _spin_wait() noexcept = default;
 
       USTDEX_HOST_DEVICE void _wait() noexcept {
-        if (_count++ < _yield_threshold) {
-          // TODO: _mm_pause();
+        if (_count == 0) {
+          ustdex::_this_thread_yield();
         } else {
-          if (_count == 0)
-            _count = _yield_threshold;
-          std::this_thread::yield();
+          --_count;
+          USTDEX_PAUSE();
         }
       }
 
      private:
       static constexpr uint32_t _yield_threshold = 20;
-      uint32_t _count = 0;
+      uint32_t _count = _yield_threshold;
     };
 
     template <template <class> class>
@@ -169,7 +169,7 @@ namespace ustdex {
 
     mutable ustd::atomic<uint8_t> _state{0};
     mutable _stok::_inplace_stop_callback_base *_callbacks = nullptr;
-    std::thread::id _notifying_thread;
+    ustdex::_thread_id _notifying_thread;
   };
 
   // [stoptoken.inplace], class inplace_stop_token
@@ -292,7 +292,7 @@ namespace ustdex {
     if (!_try_lock_unless_stop_requested(true))
       return true;
 
-    _notifying_thread = std::this_thread::get_id();
+    _notifying_thread = ustdex::_this_thread_id();
 
     // We are responsible for executing callbacks.
     while (_callbacks != nullptr) {
@@ -407,7 +407,7 @@ namespace ustdex {
 
       // Callback has either already been executed or is
       // currently executing on another thread.
-      if (std::this_thread::get_id() == _notifying_thread) {
+      if (ustdex::_this_thread_id() == _notifying_thread) {
         if (_callbk->_removed_during_callback != nullptr) {
           *_callbk->_removed_during_callback = true;
         }

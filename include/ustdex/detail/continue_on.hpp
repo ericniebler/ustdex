@@ -17,6 +17,7 @@
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
+#include "exception.hpp"
 #include "meta.hpp"
 #include "queries.hpp"
 #include "tuple.hpp"
