@@ -15,9 +15,10 @@
  */
 #pragma once
 
-#include <exception>
+#include "config.hpp"
+#include "preprocessor.hpp"
 
-#define USTDEX_PP_EXPAND(...) __VA_ARGS__
+#include <exception>
 
 #if defined(__CUDACC__)
 #  include <nv/target>

@@ -16,6 +16,7 @@
 #pragma once
 
 #include "ustdex/detail/config.hpp"
+#include "ustdex/detail/exception.hpp"
 #include "ustdex/detail/sync_wait.hpp"
 
 #include <catch2/catch_all.hpp>

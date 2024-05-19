@@ -15,41 +15,8 @@
  */
 #pragma once
 
-#include "config.hpp"
-
-#ifndef USTDEX_CUDA
-
-#  include "run_loop.hpp"
-
-#  include <thread>
-
-namespace ustdex {
-  struct thread_context {
-    thread_context() noexcept
-      : _thread{[this] {
-        _loop.run();
-      }} {
-    }
-
-    ~thread_context() noexcept {
-      join();
-    }
-
-    void join() noexcept {
-      if (_thread.joinable()) {
-        _loop.finish();
-        _thread.join();
-      }
-    }
-
-    auto get_scheduler() {
-      return _loop.get_scheduler();
-    }
-
-   private:
-    run_loop _loop;
-    std::thread _thread;
-  };
-} // namespace ustdex
-
-#endif // USTDEX_CUDA
+#define USTDEX_PP_CAT_I(A, ...) A##__VA_ARGS__
+#define USTDEX_PP_CAT(A, ...)   USTDEX_PP_CAT_I(A, __VA_ARGS__)
+#define USTDEX_PP_EAT(...)
+#define USTDEX_PP_EVAL(M, ...) M(__VA_ARGS__)
+#define USTDEX_PP_EXPAND(...)  __VA_ARGS__

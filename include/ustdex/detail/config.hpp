@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include "preprocessor.hpp"
+
 #include <cassert>
 #include <type_traits>
 
@@ -210,5 +212,3 @@ namespace ustdex {
 #else
 #  define USTDEX_IMMOVABLE(XP) XP(XP&&) = delete
 #endif
-
-#include "exception.hpp"

@@ -21,6 +21,7 @@
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
+#include "exception.hpp"
 #include "lazy.hpp"
 #include "stop_token.hpp"
 #include "tuple.hpp"
