@@ -39,7 +39,8 @@ namespace ustdex {
 #endif
     template <class Rcvr, class Sch, class Sndr>
     struct _opstate_t {
-      USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate_t* self) noexcept {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
+        get_env(const _opstate_t *self) noexcept {
         return ustdex::get_env(self->_env_rcvr.rcvr());
       }
 

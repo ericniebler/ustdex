@@ -53,7 +53,17 @@ namespace ustdex {
       template <class Tag, class... As>
       USTDEX_HOST_DEVICE void _set_result(Tag, As &&...as) noexcept {
         using _tupl_t = _tuple<Tag, _decay_t<As>...>;
-        _result.template emplace<_tupl_t>(Tag(), static_cast<As &&>(as)...);
+        if constexpr (_nothrow_decay_copyable<As...>) {
+          _result.template emplace<_tupl_t>(Tag(), static_cast<As &&>(as)...);
+        } else {
+          USTDEX_TRY(
+            ({ //
+              _result.template emplace<_tupl_t>(Tag(), static_cast<As &&>(as)...);
+            }),
+            USTDEX_CATCH(...)({
+              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+            }))
+        }
         _complete = +[](void *ptr) noexcept {
           auto &self = *static_cast<_rcvr_t *>(ptr);
           auto &tupl = *static_cast<_tupl_t *>(self._result._get_ptr());
@@ -81,7 +91,8 @@ namespace ustdex {
 
     template <class Rcvr, class CvSndr, class Sch>
     struct _opstate_t {
-      USTDEX_HOST_DEVICE friend auto get_env(const _opstate_t* self) noexcept -> env_of_t<Rcvr> {
+      USTDEX_HOST_DEVICE friend auto
+        get_env(const _opstate_t *self) noexcept -> env_of_t<Rcvr> {
         return ustdex::get_env(self->_rcvr._rcvr);
       }
 
@@ -128,10 +139,17 @@ namespace ustdex {
     };
 
     template <class... Ts>
-    using _set_value_completion = completion_signatures<set_value_t(_decay_t<Ts>...)>;
+    using _set_value_completion = _mif<
+      _nothrow_decay_copyable<Ts...>,
+      completion_signatures<set_value_t(_decay_t<Ts>...)>,
+      completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(std::exception_ptr)>>;
+
 
     template <class Error>
-    using _set_error_completion = completion_signatures<set_error_t(_decay_t<Error>)>;
+    using _set_error_completion = _mif<
+      _nothrow_decay_copyable<Error>,
+      completion_signatures<set_error_t(_decay_t<Error>)>,
+      completion_signatures<set_error_t(_decay_t<Error>), set_error_t(std::exception_ptr)>>;
 
     // The scheduler contributes error and stopped completions.
     // This causes its set_value_t() completion to be ignored.
@@ -161,10 +179,12 @@ namespace ustdex {
 
    public:
     template <class Sndr, class Sch>
-    USTDEX_HOST_DEVICE _sndr_t<Sndr, Sch> operator()(Sndr sndr, Sch sch) const noexcept;
+    USTDEX_HOST_DEVICE _sndr_t<Sndr, Sch>
+      operator()(Sndr sndr, Sch sch) const noexcept;
 
     template <class Sch>
-    USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch> operator()(Sch sch) const noexcept;
+    USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch>
+      operator()(Sch sch) const noexcept;
   };
 
   template <class Sch>
@@ -172,7 +192,8 @@ namespace ustdex {
     Sch _sch;
 
     template <class Sndr>
-    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
+    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+      operator|(Sndr sndr, _closure_t &&_self) {
       return continue_on_t()(static_cast<Sndr &&>(sndr), static_cast<Sch &&>(_self._sch));
     }
   };
@@ -188,7 +209,8 @@ namespace ustdex {
       _sndr_t *_sndr;
 
       template <class SetTag>
-      USTDEX_HOST_DEVICE auto query(get_completion_scheduler_t<SetTag>) const noexcept {
+      USTDEX_HOST_DEVICE auto
+        query(get_completion_scheduler_t<SetTag>) const noexcept {
         return _sndr->_sch;
       }
 
@@ -212,7 +234,8 @@ namespace ustdex {
     }
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE _opstate_t<Rcvr, const Sndr &, Sch> connect(Rcvr rcvr) const & {
+    USTDEX_HOST_DEVICE _opstate_t<Rcvr, const Sndr &, Sch>
+      connect(Rcvr rcvr) const & {
       return {_sndr, _sch, static_cast<Rcvr &&>(rcvr)};
     }
 
@@ -222,7 +245,8 @@ namespace ustdex {
   };
 
   template <class Sndr, class Sch>
-  USTDEX_HOST_DEVICE auto continue_on_t::operator()(Sndr sndr, Sch sch) const noexcept
+  USTDEX_HOST_DEVICE auto
+    continue_on_t::operator()(Sndr sndr, Sch sch) const noexcept
     -> continue_on_t::_sndr_t<Sndr, Sch> {
     return _sndr_t<Sndr, Sch>{{}, sch, static_cast<Sndr &&>(sndr)};
   }

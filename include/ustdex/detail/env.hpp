@@ -31,14 +31,16 @@ namespace ustdex {
 
   namespace _adl {
     template <class Ty>
-    auto get_env(Ty *ty) noexcept -> decltype(ty->get_env()) {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto get_env(Ty *ty) noexcept //
+      -> decltype(ty->get_env()) {
       static_assert(noexcept(ty->get_env()));
       return ty->get_env();
     }
 
     struct _get_env_t {
       template <class Ty>
-      auto operator()(Ty *ty) const noexcept -> decltype(get_env(ty)) {
+      USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Ty *ty) const noexcept //
+        -> decltype(get_env(ty)) {
         static_assert(noexcept(get_env(ty)));
         return get_env(ty);
       }
@@ -66,7 +68,8 @@ namespace ustdex {
 
   namespace _region {
     USTDEX_DEVICE constexpr get_env_t get_env{};
-  }
+  } // namespace _region
+
   using namespace _region;
 
   template <class Ty, class Query>
@@ -92,7 +95,7 @@ namespace ustdex {
     Env2 _env2;
 
     template <class Query>
-    USTDEX_HOST_DEVICE auto query(Query) const          //
+    USTDEX_HOST_DEVICE auto query(Query) const     //
       noexcept(_nothrow_queryable<const Env1 &, Query>) //
       -> _query_result_t<Query, const Env1 &> {
       return _env1.query(Query{});
@@ -103,14 +106,14 @@ namespace ustdex {
     // environments have the query.
     template <class Query>
     USTDEX_HOST_DEVICE auto query(Query) const volatile //
-      noexcept(_nothrow_queryable<const Env2&, Query>)  //
+      noexcept(_nothrow_queryable<const Env2 &, Query>)      //
       -> _query_result_t<Query, const Env2 &> {
       return const_cast<const Env2 &>(_env2).query(Query{});
     }
   };
 
   template <class Env1, class Env2>
-  USTDEX_HOST_DEVICE _joined_env_t(Env1&&, Env2&&) -> _joined_env_t<Env1, Env2>;
+  USTDEX_HOST_DEVICE _joined_env_t(Env1 &&, Env2 &&) -> _joined_env_t<Env1, Env2>;
 } // namespace ustdex
 
 USTDEX_PRAGMA_POP()

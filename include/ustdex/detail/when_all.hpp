@@ -592,7 +592,8 @@ namespace ustdex {
       -> _completions<_cpclr, Env...>;
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, _cp, _sndrs_t> {
+    USTDEX_HOST_DEVICE auto
+      connect(Rcvr rcvr) && -> _opstate_t<Rcvr, _cp, _sndrs_t> {
       return _opstate_t<Rcvr, _cp, _sndrs_t>(
         static_cast<_sndrs_t &&>(_sndrs), static_cast<Rcvr &&>(rcvr));
     }

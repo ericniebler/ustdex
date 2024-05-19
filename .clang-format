@@ -26,9 +26,7 @@ AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: Yes
-AttributeMacros: [
-  'USTDEX_HOST_DEVICE'
-]
+AttributeMacros: []
 BinPackArguments: false
 BinPackParameters: false
 BitFieldColonSpacing: Both
@@ -83,8 +81,9 @@ KeepEmptyLinesAtTheStartOfBlocks: true
 LambdaBodyIndentation: Signature
 LineEnding: LF
 Macros: [
-  'USTDEX_INLINE=inline',
+  'USTDEX_INLINE=inline inline',
   'USTDEX_NO_UNIQUE_ADDRESS=[[no_unique_address]]',
+  'USTDEX_HOST_DEVICE=__attribute__((inline))'
 ]
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All

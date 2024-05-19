@@ -36,8 +36,10 @@ namespace ustdex {
     }
 
     void join() noexcept {
-      _loop.finish();
-      _thread.join();
+      if (_thread.joinable()) {
+        _loop.finish();
+        _thread.join();
+      }
     }
 
     auto get_scheduler() {
@@ -45,8 +47,8 @@ namespace ustdex {
     }
 
    private:
-    std::thread _thread;
     run_loop _loop;
+    std::thread _thread;
   };
 } // namespace ustdex
 

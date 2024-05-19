@@ -88,7 +88,8 @@ namespace ustdex {
     /// sender.
     template <class Rcvr, class CvSndr, class Fn>
     struct _opstate_t {
-      USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate_t* self) noexcept {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
+        get_env(const _opstate_t *self) noexcept {
         return ustdex::get_env(self->_rcvr);
       }
 
@@ -252,7 +253,8 @@ namespace ustdex {
       Fn _fn;
 
       template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
+      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+        operator|(Sndr sndr, _closure_t &&_self) {
         return LetTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };

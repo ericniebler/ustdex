@@ -102,7 +102,8 @@ namespace ustdex {
 
     template <class Rcvr, class Sndr, class Fn>
     struct _opstate_t {
-      USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate_t* self) noexcept {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
+        get_env(const _opstate_t *self) noexcept {
         return ustdex::get_env(self->_rcvr);
       }
 
@@ -193,7 +194,7 @@ namespace ustdex {
         -> _completions<const Sndr &, Fn, Env...>;
 
       template <class Rcvr>
-      USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&                                  //
+      USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&                             //
         noexcept(_nothrow_constructible<_opstate_t<Rcvr, Sndr, Fn>, Sndr, Rcvr, Fn>) //
         -> _opstate_t<Rcvr, Sndr, Fn> {
         return _opstate_t<Rcvr, Sndr, Fn>{
@@ -224,14 +225,16 @@ namespace ustdex {
       Fn _fn;
 
       template <class Sndr>
-      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t &&_self) {
+      USTDEX_HOST_DEVICE USTDEX_INLINE friend auto
+        operator|(Sndr sndr, _closure_t &&_self) {
         return UponTag()(static_cast<Sndr &&>(sndr), static_cast<Fn &&>(_self._fn));
       }
     };
 
    public:
     template <class Sndr, class Fn>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr sndr, Fn fn) const noexcept {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto
+      operator()(Sndr sndr, Fn fn) const noexcept {
       return _sndr_t<Fn, Sndr>{{}, static_cast<Fn &&>(fn), static_cast<Sndr &&>(sndr)};
     }
 
