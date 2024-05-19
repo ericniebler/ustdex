@@ -100,7 +100,8 @@ namespace ustdex {
             set_stopped_t()>;
 
         template <class Rcvr>
-        USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept -> _operation<Rcvr> {
+        USTDEX_HOST_DEVICE auto
+          connect(Rcvr rcvr) const noexcept -> _operation<Rcvr> {
           return {&_loop->_head, _loop, static_cast<Rcvr &&>(rcvr)};
         }
 

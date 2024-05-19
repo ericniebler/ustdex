@@ -35,7 +35,8 @@ namespace ustdex {
   template <std::size_t... Idx, class... Ts>
   struct _tupl<std::index_sequence<Idx...>, Ts...> : _box<Idx, Ts>... {
     template <class Fn, class Self, class... Us>
-    USTDEX_INLINE USTDEX_HOST_DEVICE static auto apply(Fn &&fn, Self &&self, Us &&...us) //
+    USTDEX_INLINE USTDEX_HOST_DEVICE static auto
+      apply(Fn &&fn, Self &&self, Us &&...us) //
       noexcept(_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>...>)
         -> _call_result_t<Fn, Us..., _copy_cvref_t<Self, Ts>...> {
       return static_cast<Fn &&>(fn)(
@@ -44,7 +45,8 @@ namespace ustdex {
     }
 
     template <class Fn, class Self, class... Us>
-    USTDEX_INLINE USTDEX_HOST_DEVICE static auto for_each(Fn &&fn, Self &&self, Us &&...us) //
+    USTDEX_INLINE USTDEX_HOST_DEVICE static auto
+      for_each(Fn &&fn, Self &&self, Us &&...us) //
       noexcept((_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>> && ...))
         -> _mif<(_callable<Fn, Us..., _copy_cvref_t<Self, Ts>> && ...)> {
       return (

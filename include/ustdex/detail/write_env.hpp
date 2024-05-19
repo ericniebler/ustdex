@@ -36,8 +36,7 @@ namespace ustdex {
 
       USTDEX_HOST_DEVICE explicit _opstate_t(Sndr &&sndr, Env env, Rcvr rcvr)
         : _env_rcvr(static_cast<Env &&>(env), static_cast<Rcvr &&>(rcvr))
-        , _op(
-            ustdex::connect(static_cast<Sndr &&>(sndr), &_env_rcvr)) {
+        , _op(ustdex::connect(static_cast<Sndr &&>(sndr), &_env_rcvr)) {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);

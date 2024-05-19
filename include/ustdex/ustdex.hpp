@@ -23,6 +23,7 @@
 #include "detail/queries.hpp"
 #include "detail/read_env.hpp"
 #include "detail/run_loop.hpp"
+#include "detail/start_detached.hpp"
 #include "detail/start_on.hpp"
 #include "detail/stop_token.hpp"
 #include "detail/sync_wait.hpp"

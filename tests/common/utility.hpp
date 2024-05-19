@@ -43,6 +43,25 @@ struct movable {
   int value_;
 };
 
+//! A type with potentially throwing move/copy constructors
+struct potentially_throwing {
+  potentially_throwing() = default;
+
+  potentially_throwing(potentially_throwing&&) noexcept(false) {
+  }
+
+  potentially_throwing(const potentially_throwing&) noexcept(false) {
+  }
+
+  potentially_throwing& operator=(potentially_throwing&&) noexcept(false) {
+    return *this;
+  }
+
+  potentially_throwing& operator=(const potentially_throwing&) noexcept(false) {
+    return *this;
+  }
+};
+
 template <class Sndr, class... Values>
 void check_values(Sndr&& sndr, const Values&... values) noexcept {
   USTDEX_TRY(

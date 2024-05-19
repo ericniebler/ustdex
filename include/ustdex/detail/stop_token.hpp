@@ -57,7 +57,7 @@ namespace ustdex {
       using _execute_fn_t = void(_inplace_stop_callback_base *) noexcept;
 
       USTDEX_HOST_DEVICE explicit _inplace_stop_callback_base( //
-        const inplace_stop_source *_source,                    //
+        const inplace_stop_source *_source,                         //
         _execute_fn_t *_execute) noexcept
         : _source(_source)
         , _execute_fn(_execute) {
@@ -155,7 +155,8 @@ namespace ustdex {
     USTDEX_HOST_DEVICE auto _lock() const noexcept -> uint8_t;
     USTDEX_HOST_DEVICE void _unlock(uint8_t) const noexcept;
 
-    USTDEX_HOST_DEVICE auto _try_lock_unless_stop_requested(bool) const noexcept -> bool;
+    USTDEX_HOST_DEVICE auto
+      _try_lock_unless_stop_requested(bool) const noexcept -> bool;
 
     USTDEX_HOST_DEVICE auto
       _try_add_callback(_stok::_inplace_stop_callback_base *) const noexcept -> bool;
@@ -196,13 +197,13 @@ namespace ustdex {
       return *this;
     }
 
-     [[nodiscard]] USTDEX_HOST_DEVICE
-    auto stop_requested() const noexcept -> bool {
+    [[nodiscard]]
+    USTDEX_HOST_DEVICE auto stop_requested() const noexcept -> bool {
       return _source != nullptr && _source->stop_requested();
     }
 
-    [[nodiscard]] USTDEX_HOST_DEVICE
-    auto stop_possible() const noexcept -> bool {
+    [[nodiscard]]
+    USTDEX_HOST_DEVICE auto stop_possible() const noexcept -> bool {
       return _source != nullptr;
     }
 
@@ -286,7 +287,8 @@ namespace ustdex {
     USTDEX_ASSERT(_callbacks == nullptr);
   }
 
-  USTDEX_HOST_DEVICE inline auto inplace_stop_source::request_stop() noexcept -> bool {
+  USTDEX_HOST_DEVICE inline auto
+    inplace_stop_source::request_stop() noexcept -> bool {
     if (!_try_lock_unless_stop_requested(true))
       return true;
 
@@ -319,7 +321,8 @@ namespace ustdex {
     return false;
   }
 
-  USTDEX_HOST_DEVICE inline auto inplace_stop_source::_lock() const noexcept -> uint8_t {
+  USTDEX_HOST_DEVICE inline auto
+    inplace_stop_source::_lock() const noexcept -> uint8_t {
     _stok::_spin_wait _spin;
     auto _old_state = _state.load(ustd::memory_order_relaxed);
     do {
@@ -341,8 +344,9 @@ namespace ustdex {
     (void) _state.store(_old_state, ustd::memory_order_release);
   }
 
-  USTDEX_HOST_DEVICE inline auto inplace_stop_source::_try_lock_unless_stop_requested(
-    bool _set_stop_requested) const noexcept -> bool {
+  USTDEX_HOST_DEVICE inline auto
+    inplace_stop_source::_try_lock_unless_stop_requested(
+      bool _set_stop_requested) const noexcept -> bool {
     _stok::_spin_wait _spin;
     auto _old_state = _state.load(ustd::memory_order_relaxed);
     do {
