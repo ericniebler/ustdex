@@ -37,11 +37,15 @@ namespace ustdex {
     template <class Fn, class Self, class... Us>
     USTDEX_INLINE USTDEX_HOST_DEVICE static auto
       apply(Fn &&fn, Self &&self, Us &&...us) //
-      noexcept(_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>...>)
-        -> _call_result_t<Fn, Us..., _copy_cvref_t<Self, Ts>...> {
+      noexcept(noexcept(static_cast<Fn &&>(fn)(
+        static_cast<Us &&>(us)...,
+        static_cast<Self &&>(self)._box<Idx, Ts>::_value...)))
+        -> decltype(static_cast<Fn &&>(fn)(
+        static_cast<Us &&>(us)...,
+        static_cast<Self &&>(self)._box<Idx, Ts>::_value...)) {
       return static_cast<Fn &&>(fn)(
         static_cast<Us &&>(us)...,
-        static_cast<_copy_cvref_t<Self, Ts> &&>(self._box<Idx, Ts>::_value)...);
+        static_cast<Self &&>(self)._box<Idx, Ts>::_value...);
     }
 
     template <class Fn, class Self, class... Us>
@@ -52,7 +56,7 @@ namespace ustdex {
       return (
         static_cast<Fn &&>(fn)(
           static_cast<Us &&>(us)...,
-          static_cast<_copy_cvref_t<Self, Ts> &&>(self._box<Idx, Ts>::_value)),
+          static_cast<Self &&>(self)._box<Idx, Ts>::_value),
         ...);
     }
   };

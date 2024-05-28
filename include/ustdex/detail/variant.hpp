@@ -46,13 +46,15 @@ namespace ustdex {
 
     USTDEX_HOST_DEVICE void _destroy() noexcept {
       if (_index != _variant_npos) {
+         // make this local in case destroying the sub-object destroys *this
+        const auto index = std::exchange(_index, _variant_npos);
 #if USTDEX_NVHPC()
         // Unknown nvc++ name lookup bug
-        ((Idx == _index ? get<Idx>().Ts::~Ts() : void(0)), ...);
+        ((Idx == index ? get<Idx>().Ts::~Ts() : void(0)), ...);
 #else
         // casting the destructor expression to void is necessary for MSVC in
         // /permissive- mode.
-        ((Idx == _index ? void(get<Idx>().~Ts()) : void(0)), ...);
+        ((Idx == index ? void(get<Idx>().~Ts()) : void(0)), ...);
 #endif
       }
     }
@@ -91,7 +93,7 @@ namespace ustdex {
     }
 
     template <std::size_t Ny, class... As>
-    USTDEX_HOST_DEVICE _at<Ny> &emplace(As &&...as) //
+    USTDEX_HOST_DEVICE _at<Ny> &emplace_at(As &&...as) //
       noexcept(_nothrow_constructible<_at<Ny>, As...>) {
       static_assert(Ny < sizeof...(Ts), "variant index is too large");
 
@@ -117,10 +119,12 @@ namespace ustdex {
     template <class Fn, class Self, class... As>
     USTDEX_HOST_DEVICE static void visit(Fn &&fn, Self &&self, As &&...as) //
       noexcept((_nothrow_callable<Fn, As..., _copy_cvref_t<Self, Ts>> && ...)) {
-      USTDEX_ASSERT(self._index != _variant_npos);
-      ((Idx == self._index ? static_cast<Fn &&>(fn)(
+      // make this local in case destroying the sub-object destroys *this
+      const auto index = self._index;
+      USTDEX_ASSERT(index != _variant_npos);
+      ((Idx == index ? static_cast<Fn &&>(fn)(
           static_cast<As &&>(as)..., static_cast<Self &&>(self).template get<Idx>())
-                           : void()),
+                     : void()),
        ...);
     }
 
