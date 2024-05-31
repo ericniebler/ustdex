@@ -44,23 +44,27 @@ namespace ustdex {
     std::size_t _index{_variant_npos};
     alignas(Ts...) unsigned char _storage[_max_size];
 
+    template <std::size_t Ny>
+    using _at = _m_at_c<Ny, Ts...>;
+
     USTDEX_HOST_DEVICE void _destroy() noexcept {
       if (_index != _variant_npos) {
          // make this local in case destroying the sub-object destroys *this
         const auto index = std::exchange(_index, _variant_npos);
 #if USTDEX_NVHPC()
         // Unknown nvc++ name lookup bug
-        ((Idx == index ? get<Idx>().Ts::~Ts() : void(0)), ...);
+        ((Idx == index ? reinterpret_cast<const _at<Idx>*>(_storage)->Ts::~Ts()
+                       : void(0)),
+          ...);
 #else
         // casting the destructor expression to void is necessary for MSVC in
         // /permissive- mode.
-        ((Idx == index ? void(get<Idx>().~Ts()) : void(0)), ...);
+        ((Idx == index ? void(reinterpret_cast<const _at<Idx>*>(_storage)->~Ts())
+                       : void(0)),
+          ...);
 #endif
       }
     }
-
-    template <std::size_t Ny>
-    using _at = _m_at_c<Ny, Ts...>;
 
    public:
     USTDEX_IMMOVABLE(_variant_impl);
