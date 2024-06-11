@@ -93,7 +93,7 @@ namespace ustdex {
         using _id = _schedule_task;
         using sender_concept = sender_t;
 
-        auto get_completion_signatures(_ignore_t = {}) const //
+        auto get_completion_signatures(_ignore = {}) const //
           -> completion_signatures<
             set_value_t(),
             set_error_t(std::exception_ptr),

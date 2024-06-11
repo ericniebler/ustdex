@@ -244,12 +244,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct then_t : _upon_t<_value> {
+  USTDEX_DEVICE_CONSTANT constexpr struct then_t : _upon_t<_value> {
   } then{};
 
-  USTDEX_DEVICE constexpr struct upon_error_t : _upon_t<_error> {
+  USTDEX_DEVICE_CONSTANT constexpr struct upon_error_t : _upon_t<_error> {
   } upon_error{};
 
-  USTDEX_DEVICE constexpr struct upon_stopped_t : _upon_t<_stopped> {
+  USTDEX_DEVICE_CONSTANT constexpr struct upon_stopped_t : _upon_t<_stopped> {
   } upon_stopped{};
 } // namespace ustdex

@@ -33,7 +33,7 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct start_on_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct start_on_t {
 #ifndef __CUDACC__
    private:
 #endif
@@ -93,7 +93,7 @@ namespace ustdex {
     Sndr _sndr;
 
     template <class Env>
-    using _env_t = _joined_env_t<const _sch_env_t<Sch> &, Env>;
+    using _env_t = env<const _sch_env_t<Sch> &, Env>;
 
     template <class CvSndr, class... Env>
     using _completions = transform_completion_signatures<

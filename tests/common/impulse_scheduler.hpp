@@ -97,7 +97,7 @@ namespace {
 
       data_t* data_;
 
-      auto get_completion_signatures(ustdex::_ignore_t = {}) const
+      auto get_completion_signatures(ustdex::_ignore = {}) const
         -> ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
 
       template <class Rcvr>

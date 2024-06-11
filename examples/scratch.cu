@@ -60,7 +60,7 @@ struct _inline_scheduler {
   struct _sndr_t {
     using sender_concept = sender_t;
 
-    auto get_completion_signatures(_ignore_t = {}) const
+    auto get_completion_signatures(_ignore = {}) const
       -> completion_signatures<set_value_t()>;
 
     template <class Rcvr>

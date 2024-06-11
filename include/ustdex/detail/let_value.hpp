@@ -272,12 +272,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct let_value_t : _let<_value> {
+  USTDEX_DEVICE_CONSTANT constexpr struct let_value_t : _let<_value> {
   } let_value{};
 
-  USTDEX_DEVICE constexpr struct let_error_t : _let<_error> {
+  USTDEX_DEVICE_CONSTANT constexpr struct let_error_t : _let<_error> {
   } let_error{};
 
-  USTDEX_DEVICE constexpr struct let_stopped_t : _let<_stopped> {
+  USTDEX_DEVICE_CONSTANT constexpr struct let_stopped_t : _let<_stopped> {
   } let_stopped{};
 } // namespace ustdex

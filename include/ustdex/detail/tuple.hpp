@@ -29,6 +29,12 @@ namespace ustdex {
     Ty _value;
   };
 
+  template <std::size_t Idx, class Ty>
+  USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto
+    _cget(_box<Idx, Ty> const &box) noexcept -> Ty const & {
+    return box._value;
+  }
+
   template <class Idx, class... Ts>
   struct _tupl;
 
@@ -41,11 +47,10 @@ namespace ustdex {
         static_cast<Us &&>(us)...,
         static_cast<Self &&>(self)._box<Idx, Ts>::_value...)))
         -> decltype(static_cast<Fn &&>(fn)(
-        static_cast<Us &&>(us)...,
-        static_cast<Self &&>(self)._box<Idx, Ts>::_value...)) {
+          static_cast<Us &&>(us)...,
+          static_cast<Self &&>(self)._box<Idx, Ts>::_value...)) {
       return static_cast<Fn &&>(fn)(
-        static_cast<Us &&>(us)...,
-        static_cast<Self &&>(self)._box<Idx, Ts>::_value...);
+        static_cast<Us &&>(us)..., static_cast<Self &&>(self)._box<Idx, Ts>::_value...);
     }
 
     template <class Fn, class Self, class... Us>
@@ -55,8 +60,7 @@ namespace ustdex {
         -> _mif<(_callable<Fn, Us..., _copy_cvref_t<Self, Ts>> && ...)> {
       return (
         static_cast<Fn &&>(fn)(
-          static_cast<Us &&>(us)...,
-          static_cast<Self &&>(self)._box<Idx, Ts>::_value),
+          static_cast<Us &&>(us)..., static_cast<Self &&>(self)._box<Idx, Ts>::_value),
         ...);
     }
   };

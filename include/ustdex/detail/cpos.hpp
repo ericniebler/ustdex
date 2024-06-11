@@ -40,15 +40,16 @@ namespace ustdex {
   using _scheduler_concept_t = typename USTDEX_REMOVE_REFERENCE(Ty)::scheduler_concept;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_sender = _mvalid_q<_sender_concept_t, Ty>;
+  USTDEX_DEVICE_CONSTANT constexpr bool _is_sender = _mvalid_q<_sender_concept_t, Ty>;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_receiver = _mvalid_q<_receiver_concept_t, Ty>;
+  USTDEX_DEVICE_CONSTANT constexpr bool _is_receiver = _mvalid_q<_receiver_concept_t, Ty>;
 
   template <class Ty>
-  USTDEX_DEVICE constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept_t, Ty>;
+  USTDEX_DEVICE_CONSTANT constexpr bool _is_scheduler =
+    _mvalid_q<_scheduler_concept_t, Ty>;
 
-  USTDEX_DEVICE constexpr struct set_value_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct set_value_t {
     template <class Rcvr, class... Ts>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(Rcvr &&rcvr, Ts &&...ts) const noexcept
@@ -73,7 +74,7 @@ namespace ustdex {
     }
   } set_value{};
 
-  USTDEX_DEVICE constexpr struct set_error_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct set_error_t {
     template <class Rcvr, class E>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(Rcvr &&rcvr, E &&e) const noexcept
@@ -94,7 +95,7 @@ namespace ustdex {
     }
   } set_error{};
 
-  USTDEX_DEVICE constexpr struct set_stopped_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct set_stopped_t {
     template <class Rcvr>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Rcvr &&rcvr) const noexcept
       -> decltype(static_cast<Rcvr &&>(rcvr).set_stopped()) {
@@ -114,7 +115,7 @@ namespace ustdex {
     }
   } set_stopped{};
 
-  USTDEX_DEVICE constexpr struct start_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct start_t {
     template <class OpState>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(OpState &opstate) const noexcept -> decltype(opstate.start()) {
@@ -124,7 +125,7 @@ namespace ustdex {
     }
   } start{};
 
-  USTDEX_DEVICE constexpr struct get_completion_signatures_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct get_completion_signatures_t {
     template <class Sndr>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr &&sndr) const noexcept
       -> decltype(static_cast<Sndr &&>(sndr).get_completion_signatures()) {
@@ -140,7 +141,7 @@ namespace ustdex {
     }
   } get_completion_signatures{};
 
-  USTDEX_DEVICE constexpr struct connect_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct connect_t {
     template <class Sndr, class Rcvr>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr &&sndr, Rcvr &&rcvr) const
       noexcept(noexcept(static_cast<Sndr &&>(sndr).connect(static_cast<Rcvr &&>(rcvr))))
@@ -149,7 +150,7 @@ namespace ustdex {
     }
   } connect{};
 
-  USTDEX_DEVICE constexpr struct schedule_t {
+  USTDEX_DEVICE_CONSTANT constexpr struct schedule_t {
     template <class Sch>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sch &&sch) const noexcept
       -> decltype(static_cast<Sch &&>(sch).schedule()) {
@@ -169,7 +170,7 @@ namespace ustdex {
   using schedule_result_t = decltype(schedule(DECLVAL(Sch)));
 
   template <class Sndr, class Rcvr>
-  USTDEX_DEVICE constexpr bool _nothrow_connectable =
+  USTDEX_DEVICE_CONSTANT constexpr bool _nothrow_connectable =
     noexcept(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
 
   // handy enumerations for keeping type names readable
