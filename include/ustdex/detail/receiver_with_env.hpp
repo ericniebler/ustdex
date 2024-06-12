@@ -21,18 +21,38 @@
 namespace ustdex {
   template <class Rcvr, class Env>
   struct _receiver_with_env_t : Rcvr {
-    using _env_t = env<const Env &, env_of_t<Rcvr>>;
+    using _env_t = _receiver_with_env_t const*;
 
-    USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
       return *this;
     }
 
-    USTDEX_HOST_DEVICE auto rcvr() const noexcept -> const Rcvr & {
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() const noexcept -> const Rcvr & {
       return *this;
     }
 
-    USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return {_env, ustdex::get_env(static_cast<const Rcvr &>(*this))};
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
+      return _env_t{this};
+    }
+
+    template <class Query>
+    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr decltype(auto)
+      _get_1st(Query) const noexcept {
+      if constexpr (_queryable<Env, Query>) {
+        return (_env);
+      } else if constexpr (_queryable<env_of_t<Rcvr>, Query>) {
+        return ustdex::get_env(static_cast<const Rcvr &>(*this));
+      }
+    }
+
+    template <class Query, class Self = _receiver_with_env_t>
+    using _1st_env_t = decltype(DECLVAL(const Self &)._get_1st(Query{}));
+
+    template <class Query>
+    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto
+      query(Query query) const noexcept(_nothrow_queryable<_1st_env_t<Query>, Query>) //
+      -> _query_result_t<_1st_env_t<Query>, Query> {
+      return _get_1st(query).query(query);
     }
 
     Env _env;
@@ -40,7 +60,7 @@ namespace ustdex {
 
   template <class Rcvr, class Env>
   struct _receiver_with_env_t<Rcvr *, Env> {
-    using _env_t = env<const Env &, env_of_t<Rcvr *>>;
+    using _env_t = _receiver_with_env_t const*;
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() const noexcept -> Rcvr * {
       return _rcvr;
@@ -60,8 +80,28 @@ namespace ustdex {
       ustdex::set_stopped(_rcvr);
     }
 
-    USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return {_env, ustdex::get_env(_rcvr)};
+    USTDEX_INLINE USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
+      return _env_t{this};
+    }
+
+    template <class Query>
+    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr decltype(auto)
+      _get_1st(Query) const noexcept {
+      if constexpr (_queryable<Env, Query>) {
+        return (_env);
+      } else if constexpr (_queryable<env_of_t<Rcvr>, Query>) {
+        return ustdex::get_env(_rcvr);
+      }
+    }
+
+    template <class Query, class Self = _receiver_with_env_t>
+    using _1st_env_t = decltype(DECLVAL(const Self &)._get_1st(Query{}));
+
+    template <class Query>
+    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto
+      query(Query query) const noexcept(_nothrow_queryable<_1st_env_t<Query>, Query>) //
+      -> _query_result_t<_1st_env_t<Query>, Query> {
+      return _get_1st(query).query(query);
     }
 
     Rcvr *_rcvr;
