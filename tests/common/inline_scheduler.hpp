@@ -45,7 +45,7 @@ namespace {
     struct sndr_t {
       using sender_concept = ustdex::sender_t;
 
-      auto get_completion_signatures(ustdex::_ignore_t = {})
+      auto get_completion_signatures(ustdex::_ignore = {})
         -> ustdex::completion_signatures<ustdex::set_value_t()>;
 
       template <class Rcvr>

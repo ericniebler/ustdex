@@ -73,7 +73,7 @@ namespace ustdex {
       USTDEX_NO_UNIQUE_ADDRESS JustTag _tag;
       _tuple<Ts...> _values;
 
-      auto get_completion_signatures(_ignore_t = {}) const
+      auto get_completion_signatures(_ignore = {}) const
         -> completion_signatures<SetTag(Ts...)>;
 
       template <class Rcvr>
@@ -97,12 +97,12 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr struct just_t : _just<_value> {
+  USTDEX_DEVICE_CONSTANT constexpr struct just_t : _just<_value> {
   } just{};
 
-  USTDEX_DEVICE constexpr struct just_error_t : _just<_error> {
+  USTDEX_DEVICE_CONSTANT constexpr struct just_error_t : _just<_error> {
   } just_error{};
 
-  USTDEX_DEVICE constexpr struct just_stopped_t : _just<_stopped> {
+  USTDEX_DEVICE_CONSTANT constexpr struct just_stopped_t : _just<_stopped> {
   } just_stopped{};
 } // namespace ustdex

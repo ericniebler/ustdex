@@ -101,7 +101,7 @@ namespace ustdex {
   struct never_stop_token {
    private:
     struct _callback_type {
-      USTDEX_HOST_DEVICE explicit _callback_type(never_stop_token, _ignore_t) noexcept {
+      USTDEX_HOST_DEVICE explicit _callback_type(never_stop_token, _ignore) noexcept {
       }
     };
 

@@ -65,7 +65,7 @@ namespace ustdex {
     Sndr _sndr;
 
     template <class OtherEnv>
-    using _env_t = _joined_env_t<const Env &, OtherEnv>;
+    using _env_t = env<const Env &, OtherEnv>;
 
     template <class... OtherEnv>
     auto get_completion_signatures(OtherEnv &&...) && //
@@ -102,6 +102,6 @@ namespace ustdex {
       {}, static_cast<Env &&>(env), static_cast<Sndr &&>(sndr)};
   }
 
-  USTDEX_DEVICE constexpr write_env_t write_env{};
+  USTDEX_DEVICE_CONSTANT constexpr write_env_t write_env{};
 
 } // namespace ustdex

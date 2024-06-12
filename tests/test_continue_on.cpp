@@ -41,7 +41,7 @@ namespace {
 
   // TEST_CASE("continue_on with environment returns a sender", "[adaptors][continue_on]") {
   //   auto snd = ex::continue_on(ex::just(13), inline_scheduler{});
-  //   static_assert(ex::sender_in<decltype(snd), empty_env>);
+  //   static_assert(ex::sender_in<decltype(snd), env<>>);
   //   (void) snd;
   // }
 

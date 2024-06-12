@@ -105,11 +105,13 @@
 #endif
 
 #ifdef __CUDACC__
-#  define USTDEX_DEVICE      __device__
-#  define USTDEX_HOST_DEVICE __host__ __device__
+#  define USTDEX_DEVICE          __device__
+#  define USTDEX_HOST_DEVICE     __host__ __device__
+#  define USTDEX_DEVICE_CONSTANT __constant__
 #else
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE
+#  define USTDEX_DEVICE_CONSTANT inline
 #endif
 
 #if defined(__has_attribute)

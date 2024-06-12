@@ -117,6 +117,6 @@ namespace ustdex {
     return _sndr_t<Query>{{}, query};
   }
 
-  USTDEX_DEVICE constexpr read_env_t read_env{};
+  USTDEX_DEVICE_CONSTANT constexpr read_env_t read_env{};
 
 } // namespace ustdex

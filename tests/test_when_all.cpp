@@ -177,7 +177,7 @@ namespace {
   template <class... Ts>
   struct just_ref {
     using sender_concept = ex::sender_t;
-    auto get_completion_signatures(ustdex::_ignore_t = {}) const
+    auto get_completion_signatures(ustdex::_ignore = {}) const
       -> ex::completion_signatures<ex::set_value_t(Ts &...)>;
   };
 

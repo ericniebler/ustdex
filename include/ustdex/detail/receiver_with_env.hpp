@@ -21,7 +21,7 @@
 namespace ustdex {
   template <class Rcvr, class Env>
   struct _receiver_with_env_t : Rcvr {
-    using _env_t = _joined_env_t<const Env &, env_of_t<Rcvr>>;
+    using _env_t = env<const Env &, env_of_t<Rcvr>>;
 
     USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
       return *this;
@@ -32,7 +32,7 @@ namespace ustdex {
     }
 
     USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return _joined_env_t{_env, ustdex::get_env(static_cast<const Rcvr &>(*this))};
+      return {_env, ustdex::get_env(static_cast<const Rcvr &>(*this))};
     }
 
     Env _env;
@@ -40,7 +40,7 @@ namespace ustdex {
 
   template <class Rcvr, class Env>
   struct _receiver_with_env_t<Rcvr *, Env> {
-    using _env_t = _joined_env_t<const Env &, env_of_t<Rcvr *>>;
+    using _env_t = env<const Env &, env_of_t<Rcvr *>>;
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() const noexcept -> Rcvr * {
       return _rcvr;
@@ -61,7 +61,7 @@ namespace ustdex {
     }
 
     USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return _joined_env_t{_env, ustdex::get_env(_rcvr)};
+      return {_env, ustdex::get_env(_rcvr)};
     }
 
     Rcvr *_rcvr;

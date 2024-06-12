@@ -73,5 +73,5 @@ namespace ustdex {
     }
   };
 
-  USTDEX_DEVICE constexpr start_detached_t start_detached{};
+  USTDEX_DEVICE_CONSTANT constexpr start_detached_t start_detached{};
 } // namespace ustdex

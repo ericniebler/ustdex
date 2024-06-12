@@ -24,6 +24,7 @@
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wgnu-string-literal-operator-template")
+USTDEX_PRAGMA_IGNORE_GNU("-Wnon-template-friend")
 
 namespace ustdex {
   template <class Ty>

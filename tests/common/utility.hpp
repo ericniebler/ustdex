@@ -86,7 +86,7 @@ using types = ustdex::_mlist<Ts...>;
 template <class... Values, class Sndr>
 void check_value_types(Sndr&& sndr) noexcept {
   using actual_t =
-    ustdex::value_types_of_t<Sndr, ustdex::empty_env, types, ustdex::_mmake_set>;
+    ustdex::value_types_of_t<Sndr, ustdex::env<>, types, ustdex::_mmake_set>;
   using expected_t = ustdex::_mmake_set<Values...>;
 
   static_assert(
@@ -96,7 +96,7 @@ void check_value_types(Sndr&& sndr) noexcept {
 
 template <class... Errors, class Sndr>
 void check_error_types(Sndr&& sndr) noexcept {
-  using actual_t = ustdex::error_types_of_t<Sndr, ustdex::empty_env, ustdex::_mmake_set>;
+  using actual_t = ustdex::error_types_of_t<Sndr, ustdex::env<>, ustdex::_mmake_set>;
   using expected_t = ustdex::_mmake_set<Errors...>;
 
   static_assert(

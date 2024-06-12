@@ -581,7 +581,7 @@ namespace ustdex {
           _when_all::_inner_completions<_minvoke1<CvFn, Sndrs>, Env...>...>>;
 
     USTDEX_NO_UNIQUE_ADDRESS when_all_t _tag;
-    USTDEX_NO_UNIQUE_ADDRESS _ignore_t _ignore1;
+    USTDEX_NO_UNIQUE_ADDRESS _ignore _ignore1;
     _sndrs_t _sndrs;
 
     template <class... Env>
@@ -612,7 +612,7 @@ namespace ustdex {
     return _when_all::_sndr_t<Sndrs...>{{}, {}, {static_cast<Sndrs &&>(sndrs)...}};
   }
 
-  USTDEX_DEVICE constexpr when_all_t when_all{};
+  USTDEX_DEVICE_CONSTANT constexpr when_all_t when_all{};
 
 } // namespace ustdex
 

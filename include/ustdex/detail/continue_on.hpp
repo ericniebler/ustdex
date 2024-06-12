@@ -67,7 +67,7 @@ namespace ustdex {
         }
         _complete = +[](void *ptr) noexcept {
           auto &self = *static_cast<_rcvr_t *>(ptr);
-          auto &tupl = *static_cast<_tupl_t *>(self._result._get_ptr());
+          auto &tupl = *static_cast<_tupl_t *>(self._result._ptr());
           tupl.apply(self, tupl);
         };
       }
@@ -258,5 +258,5 @@ namespace ustdex {
     return _closure_t<Sch>{sch};
   }
 
-  USTDEX_DEVICE constexpr continue_on_t continue_on{};
+  USTDEX_DEVICE_CONSTANT constexpr continue_on_t continue_on{};
 } // namespace ustdex

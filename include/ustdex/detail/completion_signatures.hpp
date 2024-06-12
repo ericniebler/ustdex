@@ -252,7 +252,7 @@ namespace ustdex {
   using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Variant>;
 
   template <class Sigs>
-  USTDEX_DEVICE constexpr bool _sends_stopped = //
+  USTDEX_DEVICE_CONSTANT constexpr bool _sends_stopped = //
     _transform_completion_signatures<
       Sigs,
       _malways<_mfalse>::_f,
@@ -261,7 +261,7 @@ namespace ustdex {
       _mor>::value;
 
   template <class Sndr, class... Env>
-  USTDEX_DEVICE constexpr bool sends_stopped = //
+  USTDEX_DEVICE_CONSTANT constexpr bool sends_stopped = //
     _sends_stopped<completion_signatures_of_t<Sndr, Env...>>;
 
   using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;

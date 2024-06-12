@@ -22,9 +22,11 @@
 #include <initializer_list>
 
 namespace ustdex {
-  struct _ignore_t {
+  USTDEX_DEVICE_CONSTANT constexpr std::size_t _npos = ~0UL;
+
+  struct _ignore {
     template <class... As>
-    constexpr _ignore_t(As &&...) noexcept {};
+    constexpr _ignore(As &&...) noexcept {};
   };
 
   template <class...>
@@ -51,14 +53,36 @@ namespace ustdex {
     return max;
   }
 
+  constexpr std::size_t
+    _find_pos(bool const *const begin, bool const *const end) noexcept {
+    for (bool const *where = begin; where != end; ++where) {
+      if (*where) {
+        return static_cast<std::size_t>(where - begin);
+      }
+    }
+    return _npos;
+  }
+
   template <class Ty, class... Ts>
   inline constexpr std::size_t _index_of() noexcept {
     constexpr bool _same[] = {USTDEX_IS_SAME(Ty, Ts)...};
-    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
-      if (_same[i]) {
-        return i;
-      }
-    }
-    return static_cast<std::size_t>(-1ul);
+    return ustdex::_find_pos(_same, _same + sizeof...(Ts));
+  }
+
+  template <class Ty, class Uy = Ty>
+  inline constexpr Ty _exchange(Ty &obj, Uy &&new_value) noexcept {
+    constexpr bool _nothrow =                        //
+      noexcept(Ty(static_cast<Ty &&>(obj))) &&       //
+      noexcept(obj = static_cast<Uy &&>(new_value)); //
+    static_assert(_nothrow);
+
+    Ty old_value = static_cast<Ty &&>(obj);
+    obj = static_cast<Uy &&>(new_value);
+    return old_value;
+  }
+
+  template <class Ty>
+  inline constexpr Ty _decay_copy(Ty &&ty) noexcept(_nothrow_decay_copyable<Ty>) {
+    return static_cast<Ty &&>(ty);
   }
 } // namespace ustdex
