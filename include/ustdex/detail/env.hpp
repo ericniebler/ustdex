@@ -45,7 +45,7 @@ namespace ustdex {
     USTDEX_NO_UNIQUE_ADDRESS Value _value;
 
     USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto
-      query() const noexcept -> const Value & {
+      query(Query) const noexcept -> const Value & {
       return _value;
     }
   };
