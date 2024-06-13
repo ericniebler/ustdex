@@ -100,7 +100,15 @@ namespace ustdex {
         _minvoke<_mtry_quote<_upon::_completion, _error_not_callable<Fn, Ts...>>, Fn, Ts...>;
     };
 
-    template <class Rcvr, class Sndr, class Fn>
+    template <class CvSndr, class Fn, class Rcvr>
+    using _completions = _gather_completion_signatures<
+      completion_signatures_of_t<CvSndr, Rcvr>,
+      SetTag,
+      _transform_completion<Fn>::template _f,
+      _default_completions,
+      _mtry_quote<_concat_completion_signatures>::_f>;
+
+    template <class Rcvr, class CvSndr, class Fn>
     struct _opstate_t {
       USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
         get_env(const _opstate_t *self) noexcept {
@@ -108,14 +116,16 @@ namespace ustdex {
       }
 
       using operation_state_concept = operation_state_t;
+      using completion_signatures = _completions<CvSndr, Fn, Rcvr>;
+
       Rcvr _rcvr;
       Fn _fn;
-      connect_result_t<Sndr, _opstate_t *> _opstate;
+      connect_result_t<CvSndr, _opstate_t *> _opstate;
 
-      USTDEX_HOST_DEVICE _opstate_t(Sndr &&sndr, Rcvr rcvr, Fn fn)
+      USTDEX_HOST_DEVICE _opstate_t(CvSndr &&sndr, Rcvr rcvr, Fn fn)
         : _rcvr{static_cast<Rcvr &&>(rcvr)}
         , _fn{static_cast<Fn &&>(fn)}
-        , _opstate{connect(static_cast<Sndr &&>(sndr), this)} {
+        , _opstate{connect(static_cast<CvSndr &&>(sndr), this)} {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -127,7 +137,7 @@ namespace ustdex {
       template <bool CanThrow = false, class... Ts>
       USTDEX_HOST_DEVICE USTDEX_INLINE void _set(Ts &&...ts) noexcept(!CanThrow) {
         if constexpr (CanThrow || _nothrow_callable<Fn, Ts...>) {
-          if constexpr (std::is_void_v<_call_result_t<Fn, Ts...>>) {
+          if constexpr (USTDEX_IS_SAME(void, _call_result_t<Fn, Ts...>)) {
             static_cast<Fn &&>(_fn)(static_cast<Ts &&>(ts)...);
             ustdex::set_value(static_cast<Rcvr &&>(_rcvr));
           } else {
@@ -170,28 +180,12 @@ namespace ustdex {
       }
     };
 
-    template <class CvSndr, class Fn, class... Env>
-    using _completions = _gather_completion_signatures<
-      completion_signatures_of_t<CvSndr, Env...>,
-      SetTag,
-      _transform_completion<Fn>::template _f,
-      _default_completions,
-      _concat_completion_signatures>;
-
     template <class Fn, class Sndr>
     struct _sndr_t {
       using sender_concept = sender_t;
       USTDEX_NO_UNIQUE_ADDRESS UponTag _tag;
       Fn _fn;
       Sndr _sndr;
-
-      template <class... Env>
-      auto get_completion_signatures(Env &&...) && //
-        -> _completions<Sndr, Fn, Env...>;
-
-      template <class... Env>
-      auto get_completion_signatures(Env &&...) const & //
-        -> _completions<const Sndr &, Fn, Env...>;
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&                             //

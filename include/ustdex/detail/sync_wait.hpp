@@ -49,49 +49,61 @@ namespace ustdex {
     };
 
     template <class Sndr>
-    using _values_of = value_types_of_t<Sndr, _env_t, std::tuple, _midentity::_f>;
-
     struct _state_t {
+      struct _rcvr_t {
+        using receiver_concept = receiver_t;
+        _state_t* _state;
+
+        template <class... As>
+        USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
+          USTDEX_TRY(
+            ({ //
+              _state->_values->emplace(static_cast<As&&>(_as)...);
+            }),                 //
+            USTDEX_CATCH(...)({ //
+              _state->_eptr = std::current_exception();
+            }))
+          _state->_loop.finish();
+        }
+
+        template <class Error>
+        USTDEX_HOST_DEVICE void set_error(Error _err) noexcept {
+          if constexpr (USTDEX_IS_SAME(Error, std::exception_ptr))
+            _state->_eptr = static_cast<Error&&>(_err);
+          else if constexpr (USTDEX_IS_SAME(Error, std::error_code))
+            _state->_eptr = std::make_exception_ptr(std::system_error(_err));
+          else
+            _state->_eptr = std::make_exception_ptr(static_cast<Error&&>(_err));
+          _state->_loop.finish();
+        }
+
+        USTDEX_HOST_DEVICE void set_stopped() noexcept {
+          _state->_loop.finish();
+        }
+
+        _env_t get_env() const noexcept {
+          return _env_t{&_state->_loop};
+        }
+      };
+
+      using _values_t =
+        _value_types<completion_signatures_of_t<Sndr, _rcvr_t>, std::tuple, _midentity::_f>;
+
+      std::optional<_values_t>* _values;
       std::exception_ptr _eptr;
       run_loop _loop;
     };
 
-    template <class Values>
-    struct _rcvr_t {
-      using receiver_concept = receiver_t;
-      std::optional<Values>* _values;
-      _state_t* _state;
-
-      template <class... As>
-      USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
-        USTDEX_TRY(
-          ({ //
-            _values->emplace(static_cast<As&&>(_as)...);
-          }),                 //
-          USTDEX_CATCH(...)({ //
-            _state->_eptr = std::current_exception();
-          }))
-        _state->_loop.finish();
+    struct _invalid_sync_wait {
+      const _invalid_sync_wait& value() const {
+        return *this;
       }
 
-      template <class Error>
-      USTDEX_HOST_DEVICE void set_error(Error _err) noexcept {
-        if constexpr (USTDEX_IS_SAME(Error, std::exception_ptr))
-          _state->_eptr = static_cast<Error&&>(_err);
-        else if constexpr (USTDEX_IS_SAME(Error, std::error_code))
-          _state->_eptr = std::make_exception_ptr(std::system_error(_err));
-        else
-          _state->_eptr = std::make_exception_ptr(static_cast<Error&&>(_err));
-        _state->_loop.finish();
+      const _invalid_sync_wait& operator*() const {
+        return *this;
       }
 
-      USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        _state->_loop.finish();
-      }
-
-      _env_t get_env() const noexcept {
-        return _env_t{&_state->_loop};
-      }
+      int i;
     };
 
    public:
@@ -121,24 +133,30 @@ namespace ustdex {
     /// @throws error otherwise
     // clang-format on
     template <class Sndr>
-    std::optional<_values_of<Sndr>> operator()(Sndr&& sndr) const {
-      using values_t = _values_of<Sndr>;
-      std::optional<values_t> result;
-      _state_t state{};
+    auto operator()(Sndr&& sndr) const {
+      using _rcvr_t = typename _state_t<Sndr>::_rcvr_t;
+      using _values_t = typename _state_t<Sndr>::_values_t;
+      static_assert(!_is_error<_values_t>);
 
-      // Launch the sender with a continuation that will fill in a variant
-      auto opstate =
-        connect(static_cast<Sndr&&>(sndr), _rcvr_t<values_t>{&result, &state});
-      start(opstate);
+      if constexpr (_is_error<_values_t>) {
+        return _invalid_sync_wait{0};
+      } else {
+        std::optional<_values_t> result{};
+        _state_t<Sndr> state{&result};
 
-      // Wait for the variant to be filled in, and process any work that
-      // may be delegated to this thread.
-      state._loop.run();
+        // Launch the sender with a continuation that will fill in a variant
+        auto opstate = connect(static_cast<Sndr&&>(sndr), _rcvr_t{&state});
+        start(opstate);
 
-      if (state._eptr)
-        std::rethrow_exception(state._eptr);
+        // Wait for the variant to be filled in, and process any work that
+        // may be delegated to this thread.
+        state._loop.run();
 
-      return result; // uses NRVO to "return" the result
+        if (state._eptr)
+          std::rethrow_exception(state._eptr);
+
+        return result; // uses NRVO to "return" the result
+      }
     }
   };
 

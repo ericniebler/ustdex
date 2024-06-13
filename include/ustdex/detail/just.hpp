@@ -51,6 +51,7 @@ namespace ustdex {
     template <class Rcvr, class... Ts>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
+      using completion_signatures = ustdex::completion_signatures<SetTag(Ts...)>;
       Rcvr _rcvr;
       _tuple<Ts...> _values;
 
@@ -70,11 +71,10 @@ namespace ustdex {
     template <class... Ts>
     struct _sndr_t {
       using sender_concept = sender_t;
+      using completion_signatures = ustdex::completion_signatures<SetTag(Ts...)>;
+
       USTDEX_NO_UNIQUE_ADDRESS JustTag _tag;
       _tuple<Ts...> _values;
-
-      auto get_completion_signatures(_ignore = {}) const
-        -> completion_signatures<SetTag(Ts...)>;
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE opstate_t<Rcvr, Ts...> connect(Rcvr rcvr) && //

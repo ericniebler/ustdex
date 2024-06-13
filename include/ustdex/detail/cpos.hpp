@@ -119,27 +119,12 @@ namespace ustdex {
     template <class OpState>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(OpState &opstate) const noexcept -> decltype(opstate.start()) {
+      static_assert(!_is_error<typename OpState::completion_signatures>);
       static_assert(USTDEX_IS_SAME(decltype(opstate.start()), void));
       static_assert(noexcept(opstate.start()));
       opstate.start();
     }
   } start{};
-
-  USTDEX_DEVICE_CONSTANT constexpr struct get_completion_signatures_t {
-    template <class Sndr>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr &&sndr) const noexcept
-      -> decltype(static_cast<Sndr &&>(sndr).get_completion_signatures()) {
-      return {};
-    }
-
-    template <class Sndr, class E>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto
-      operator()(Sndr &&sndr, E &&e) const noexcept
-      -> decltype(static_cast<Sndr &&>(sndr).get_completion_signatures(
-        static_cast<E &&>(e))) {
-      return {};
-    }
-  } get_completion_signatures{};
 
   USTDEX_DEVICE_CONSTANT constexpr struct connect_t {
     template <class Sndr, class Rcvr>
@@ -159,12 +144,26 @@ namespace ustdex {
     }
   } schedule{};
 
-  template <class Sndr, class... Env>
-  using completion_signatures_of_t =
-    decltype(get_completion_signatures(DECLVAL(Sndr), DECLVAL(Env)...));
+  struct receiver_archetype {
+    using receiver_concept = receiver_t;
+
+    template <class... Ts>
+    void set_value(Ts &&...) noexcept;
+
+    template <class Error>
+    void set_error(Error &&) noexcept;
+
+    void set_stopped() noexcept;
+
+    env<> get_env() const noexcept;
+  };
 
   template <class Sndr, class Rcvr>
   using connect_result_t = decltype(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
+
+  template <class Sndr, class Rcvr = receiver_archetype>
+  using completion_signatures_of_t =
+    typename connect_result_t<Sndr, Rcvr>::completion_signatures;
 
   template <class Sch>
   using schedule_result_t = decltype(schedule(DECLVAL(Sch)));

@@ -55,6 +55,10 @@ namespace {
 
     template <class Rcvr>
     struct opstate_t : ustdex::_immovable {
+      using operation_state_concept = ustdex::operation_state_t;
+      using completion_signatures =
+        ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
+
       data_t* data_;
       Rcvr rcvr_;
 
@@ -94,11 +98,10 @@ namespace {
 
     struct sndr_t {
       using sender_concept = ustdex::sender_t;
+      using completion_signatures =
+        ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
 
       data_t* data_;
-
-      auto get_completion_signatures(ustdex::_ignore = {}) const
-        -> ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
 
       template <class Rcvr>
       opstate_t<Rcvr> connect(Rcvr rcvr) {

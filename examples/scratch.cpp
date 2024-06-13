@@ -70,17 +70,13 @@ int main() {
 
   auto [sch2] = sync_wait(read_env(get_scheduler)).value();
 
+  auto [i1,i2] = sync_wait(when_all(just(42), just(43))).value();
+  std::cout << i1 << ' ' << i2 << '\n';
+
   auto s4 = just(42) | then([](int) {}) | upon_error([](auto) { /*return 42;*/ });
   auto s5 = when_all(std::move(s4), just(42, 43), just(+"hello"));
-  //using X = completion_signatures_of_t<decltype(s5)>;
-  //print<X>();
+  // using X = completion_signatures_of_t<decltype(s5)>;
+  // print<X>();
   auto [i, j, k] = sync_wait(std::move(s5)).value();
   std::cout << i << ' ' << j << ' ' << k << '\n';
-
-  // auto s1 = when_all(just(42), just(43, 44), just(45, 46, 47)); //
-  // auto s2 = when_all(s1, s1, s1, s1, s1, s1);
-  // auto s3 = when_all(s2, s2, s2, s2, s2, s2, s2);
-  // // using X = completion_signatures_of_t<decltype(s3)>;
-  // // print<X>();
-  // (void) sync_wait(s3);
 }

@@ -177,8 +177,10 @@ namespace {
   template <class... Ts>
   struct just_ref {
     using sender_concept = ex::sender_t;
-    auto get_completion_signatures(ustdex::_ignore = {}) const
-      -> ex::completion_signatures<ex::set_value_t(Ts &...)>;
+    using completion_signatures = ex::completion_signatures<ex::set_value_t(Ts &...)>;
+    just_ref connect(ex::_ignore) const {
+      return {};
+    }
   };
 
   TEST_CASE(

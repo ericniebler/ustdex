@@ -86,6 +86,11 @@ namespace ustdex {
     template <class>
     struct _reduce_completions;
 
+    template <class... What>
+    struct _reduce_completions<ERROR<What...> &> {
+      using type = _mpair<ERROR<What...>, _moffsets<>>;
+    };
+
     template <class ValsOK, class ErrsOK, class Offsets, class... Sigs>
     struct _reduce_completions<_completion_metadata<ValsOK, ErrsOK, Offsets, Sigs...> &> {
       using type = _mpair< //
@@ -286,7 +291,7 @@ namespace ustdex {
           RightSigs...>>;
 
     template <class... What, class Other>
-    extern ERROR<What...> &_merge_metadata<ERROR<What...> &, Other>;
+    extern ERROR<What...> &_merge_metadata<ERROR<What...>, Other>;
 
     // We use a fold expression over the bitwise AND operator to merge all the
     // completion metadata structs from the child senders into a single metadata
@@ -302,17 +307,74 @@ namespace ustdex {
     using _collect_outer = //
       _reduce_completions_t<decltype((DECLVAL(_outer_fold_init &) & ... & DECLVAL(Sigs)))>;
 
-    // TODO: The Env argument to completion_signatures_of_t should be a
-    // forwarding env that updates the stop token.
-    template <class Sndr, class... Env>
+    // Extract the first template parameter of the _state_t specialization.
+    // The first template parameter is the receiver type.
+    template <class State>
+    using _rcvr_from_state_t = _mapply<_mtry_quote<_mfront>, State>;
+
+    /// The receivers connected to the when_all's sub-operations expose this as
+    /// their environment. Its `get_stop_token` query returns the token from
+    /// when_all's stop source. All other queries are forwarded to the outer
+    /// receiver's environment.
+    template <class StateRef>
+    struct _env_t {
+      using _state_t = _call_result_t<StateRef>;
+      using _rcvr_t = _rcvr_from_state_t<_state_t>;
+
+      _state_t _state;
+
+      USTDEX_HOST_DEVICE inplace_stop_token query(get_stop_token_t) const noexcept {
+        return _state._stop_token;
+      }
+
+      template <class Tag>
+      USTDEX_HOST_DEVICE auto
+        query(Tag) const noexcept -> _query_result_t<Tag, env_of_t<_rcvr_t>> {
+        return ustdex::get_env(_state._rcvr).query(Tag());
+      }
+    };
+
+    template <class StateRef, std::size_t Index>
+    struct _rcvr_t {
+      using receiver_concept = receiver_t;
+      using _state_t = _call_result_t<StateRef>;
+
+      _state_t _state;
+
+      template <class... Ts>
+      USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(Ts &&...ts) noexcept {
+        constexpr auto idx = _mmake_indices<sizeof...(Ts)>();
+        _state.template _set_value<Index>(idx, static_cast<Ts &&>(ts)...);
+        _state._arrive();
+      }
+
+      template <class Error>
+      USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
+        _state._set_error(static_cast<Error &&>(error));
+        _state._arrive();
+      }
+
+      USTDEX_HOST_DEVICE void set_stopped() noexcept {
+        _state._set_stopped();
+        _state._arrive();
+      }
+
+      USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t<StateRef> {
+        return {_state};
+      }
+    };
+
+    template <class CvSndr, std::size_t Idx, class StateRef>
     using _inner_completions_ = //
-      _mapply_q<_collect_inner, completion_signatures_of_t<Sndr, Env...>>;
+      _mapply_q<_collect_inner, completion_signatures_of_t<CvSndr, _rcvr_t<StateRef, Idx>>>;
 
-    template <class Sndr, class... Env>
-    using _inner_completions = //
-      _midentity_or_error_with<_inner_completions_<Sndr, Env...>, WITH_SENDER(Sndr)>;
+    template <class CvSndr, std::size_t Idx, class StateRef>
+    using _inner_completions =                      //
+      _midentity_or_error_with<                     //
+        _inner_completions_<CvSndr, Idx, StateRef>, //
+        WITH_SENDER(CvSndr)>;
 
-    enum _state_t {
+    enum _estate_t {
       _started,
       _error,
       _stopped
@@ -321,22 +383,42 @@ namespace ustdex {
     /// @brief The data stored in the operation state and refered to
     /// by the receiver.
     /// @tparam Rcvr The receiver connected to the when_all sender.
-    /// @tparam Values A _lazy_tuple of the values.
-    /// @tparam Errors A _variant of the possible errors.
-    /// @tparam StopToken The stop token from the outer receiver's env.
-    template <class Rcvr, class Values, class Errors, class StopToken>
-    struct _data_t {
-      using stop_callback_t = stop_callback_for_t<StopToken, _on_stop_request>;
+    /// @tparam CvFn A metafunction to apply cv- and ref-qualifiers to the senders
+    /// @tparam Sndrs A tuple of the when_all sender's child senders.
+    template <class Rcvr, class CvFn, class Sndrs>
+    struct _state_t;
 
-      template <std::size_t Offset, std::size_t... Idx, class... Ts>
-      USTDEX_HOST_DEVICE void _set_value(_mindices<Idx...>, Ts &&...ts) noexcept {
-        if constexpr (!USTDEX_IS_SAME(Values, _nil)) {
+    template <class Rcvr, class CvFn, std::size_t... Idx, class... Sndrs>
+    struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>> {
+      using _completions_offsets_pair_t = //
+        _collect_outer<                   //
+          _inner_completions<_minvoke1<CvFn, Sndrs>, Idx, _ref_t<_state_t>>...>;
+      using _completions_t = _mfirst<_completions_offsets_pair_t>;
+      using _indices_t = _mindices<Idx...>;
+      using _offsets_t = _msecond<_completions_offsets_pair_t>;
+      using _values_t = _value_types<_completions_t, _lazy_tuple, _msingle_or<_nil>::_f>;
+      using _errors_t = _error_types<_completions_t, _variant>;
+
+      using stop_tok_t = stop_token_of_t<env_of_t<Rcvr>>;
+      using stop_callback_t = stop_callback_for_t<stop_tok_t, _on_stop_request>;
+
+      template <std::size_t Index, std::size_t... Offsets>
+      static constexpr std::size_t _offset_for(_moffsets<Offsets...> *) noexcept {
+        constexpr std::size_t offsets[] = {Offsets..., 0};
+        return offsets[Index];
+      }
+
+      template <std::size_t Index, std::size_t... Jdx, class... Ts>
+      USTDEX_HOST_DEVICE void _set_value(_mindices<Jdx...>, Ts &&...ts) noexcept {
+        constexpr std::size_t Offset =
+          _offset_for<Index>(static_cast<_offsets_t *>(nullptr));
+        if constexpr (!USTDEX_IS_SAME(_values_t, _nil)) {
           if constexpr (_nothrow_decay_copyable<Ts...>) {
-            (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
+            (_values.template _emplace<Jdx + Offset>(static_cast<Ts &&>(ts)), ...);
           } else {
             USTDEX_TRY(
               ({
-                (_values.template _emplace<Idx + Offset>(static_cast<Ts &&>(ts)), ...);
+                (_values.template _emplace<Jdx + Offset>(static_cast<Ts &&>(ts)), ...);
               }),
               USTDEX_CATCH(...)({ //
                 _set_error(std::current_exception());
@@ -367,7 +449,7 @@ namespace ustdex {
       }
 
       USTDEX_HOST_DEVICE void _set_stopped() noexcept {
-        _state_t expected = _started;
+        _estate_t expected = _started;
         // Transition to the "stopped" state if and only if we're in the
         // "started" state. (If this fails, it's because we're in an
         // error state, which trumps cancellation.)
@@ -388,11 +470,11 @@ namespace ustdex {
         // All child operations have completed and arrived at the barrier.
         switch (_state.load(ustd::memory_order_relaxed)) {
         case _started:
-          if constexpr (!USTDEX_IS_SAME(Values, _nil)) {
+          if constexpr (!USTDEX_IS_SAME(_values_t, _nil)) {
             // All child operations completed successfully:
             _values.apply(
               ustdex::set_value,
-              static_cast<Values &&>(_values),
+              static_cast<_values_t &&>(_values),
               static_cast<Rcvr &&>(_rcvr));
           }
           break;
@@ -400,7 +482,7 @@ namespace ustdex {
           // One or more child operations completed with an error:
           _errors.visit(
             ustdex::set_error,
-            static_cast<Errors &&>(_errors),
+            static_cast<_errors_t &&>(_errors),
             static_cast<Rcvr &&>(_rcvr));
           break;
         case _stopped:
@@ -414,85 +496,10 @@ namespace ustdex {
       ustd::atomic<std::size_t> _count;
       inplace_stop_source _stop_source;
       inplace_stop_token _stop_token{_stop_source.get_token()};
-      ustd::atomic<_state_t> _state{_started};
-      Errors _errors;
-      Values _values;
+      ustd::atomic<_estate_t> _state{_started};
+      _errors_t _errors;
+      _values_t _values;
       _lazy<stop_callback_t> _on_stop;
-    };
-
-    /// The receivers connected to the when_all's sub-operations expose this as
-    /// their environment. Its `get_stop_token` query returns the token from
-    /// when_all's stop source. All other queries are forwarded to the outer
-    /// receiver's environment.
-    template <class Rcvr, class Values, class Errors, class StopToken>
-    struct _env_t<_data_t<Rcvr, Values, Errors, StopToken>> {
-      _data_t<Rcvr, Values, Errors, StopToken> *_data;
-
-      USTDEX_HOST_DEVICE inplace_stop_token query(get_stop_token_t) const noexcept {
-        return _data->_stop_token;
-      }
-
-      template <class Tag>
-      USTDEX_HOST_DEVICE auto
-        query(Tag) const noexcept -> _query_result_t<Tag, env_of_t<Rcvr>> {
-        return ustdex::get_env(_data->_rcvr).query(Tag());
-      }
-    };
-
-    template <class Rcvr, class Values, class Errors, class StopToken, std::size_t Offset>
-    struct _rcvr_t<_data_t<Rcvr, Values, Errors, StopToken>, Offset> {
-      using receiver_concept = receiver_t;
-
-      using _data_t = _when_all::_data_t<Rcvr, Values, Errors, StopToken>;
-      _data_t *_data;
-
-      template <class... Ts>
-      USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(Ts &&...ts) noexcept {
-        constexpr auto idx = _mmake_indices<sizeof...(Ts)>();
-        _data->template _set_value<Offset>(idx, static_cast<Ts &&>(ts)...);
-        _data->_arrive();
-      }
-
-      template <class Error>
-      USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
-        _data->_set_error(static_cast<Error &&>(error));
-        _data->_arrive();
-      }
-
-      USTDEX_HOST_DEVICE void set_stopped() noexcept {
-        _data->_set_stopped();
-        _data->_arrive();
-      }
-
-      USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t<_data_t> {
-        return _env_t<_data_t>{_data};
-      }
-    };
-
-    // This function object is used to connect all the sub-operations with
-    // receivers, each of which knows which elements in the values tuple it
-    // is responsible for setting.
-    struct _connect_subs_fn {
-      template <class Data, std::size_t... Offsets, std::size_t... Idx, class... CvSndrs>
-      USTDEX_HOST_DEVICE auto operator()(
-        Data *data,
-        _moffsets<Offsets...> *,
-        _mindices<Idx...> y,
-        CvSndrs &&...sndrs) const {
-        if constexpr (0 != sizeof...(Offsets)) {
-          // The offsets are used to determine which elements in the values
-          // tuple each receiver is responsible for setting.
-          constexpr std::size_t offsets[] = {Offsets...};
-          return _tupl{ustdex::connect(
-            static_cast<CvSndrs &&>(sndrs), _rcvr_t<Data, offsets[Idx]>{data})...};
-        } else {
-          // When there are no offsets, the when_all sender has no value
-          // completions. All child senders can be connected to receivers
-          // of the same type.
-          return _tupl{
-            ustdex::connect(static_cast<CvSndrs &&>(sndrs), _rcvr_t<Data, 0>{data})...};
-        }
-      }
     };
 
     /// The operation state for when_all
@@ -500,34 +507,47 @@ namespace ustdex {
     struct _opstate_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>> {
       using operation_state_concept = operation_state_t;
       using _sndrs_t = _minvoke<CvFn, _tuple<Sndrs...>>;
-      using _env_t = env_of_t<Rcvr>;
-      using _completions_offsets_pair_t = //
-        _collect_outer<_inner_completions<_minvoke1<CvFn, Sndrs>, _env_t>...>;
-      using _completions_t = _mfirst<_completions_offsets_pair_t>;
-      using _indices_t = _mindices<Idx...>;
-      using _offsets_t = _msecond<_completions_offsets_pair_t>;
-      using _values_t = _value_types<_completions_t, _lazy_tuple, _msingle_or<_nil>::_f>;
-      using _errors_t = _error_types<_completions_t, _variant>;
-      using _stok_t = stop_token_of_t<_env_t>;
-      using _data_t = _when_all::_data_t<Rcvr, _values_t, _errors_t, _stok_t>;
+      using _state_t =
+        _when_all::_state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>;
+
+      using completion_signatures = typename _state_t::_completions_t;
+      using _offsets_t = typename _state_t::_offsets_t;
+
+      // This function object is used to connect all the sub-operations with
+      // receivers, each of which knows which elements in the values tuple it
+      // is responsible for setting.
+      struct _connect_subs_fn {
+        template <class... CvSndrs>
+        USTDEX_HOST_DEVICE auto
+          operator()(_state_t &state, CvSndrs &&...sndrs) const {
+          using _state_ref_t = _ref_t<_state_t>;
+          if constexpr (USTDEX_IS_SAME(_offsets_t, _moffsets<>)) {
+            // When there are no offsets, the when_all sender has no value
+            // completions. All child senders can be connected to receivers
+            // of the same type.
+            return _tupl{ustdex::connect(
+              static_cast<CvSndrs &&>(sndrs), _rcvr_t<_state_ref_t, 0>{state})...};
+          } else {
+            // The offsets are used to determine which elements in the values
+            // tuple each receiver is responsible for setting.
+            return _tupl{ustdex::connect(
+              static_cast<CvSndrs &&>(sndrs), _rcvr_t<_state_ref_t, Idx>{state})...};
+          }
+        }
+      };
 
       // This is a _tuple of operation states for the sub-operations.
-      using _sub_opstates_t =
-        _apply_result_t<_connect_subs_fn, _sndrs_t, _data_t *, _offsets_t *, _indices_t>;
+      using _sub_opstates_t = _apply_result_t<_connect_subs_fn, _sndrs_t, _state_t &>;
 
-      _data_t _data;
+      _state_t _state;
       _sub_opstates_t _sub_ops;
 
       /// Initialize the data member, connect all the sub-operations and
       /// save the resulting operation states in _sub_ops.
       USTDEX_HOST_DEVICE _opstate_t(_sndrs_t &&sndrs, Rcvr rcvr)
-        : _data{static_cast<Rcvr &&>(rcvr), sizeof...(Sndrs)}
-        , _sub_ops{sndrs.apply(
-            _connect_subs_fn(),
-            static_cast<_sndrs_t &&>(sndrs),
-            &_data,
-            static_cast<_offsets_t *>(nullptr),
-            _indices_t())} {
+        : _state{static_cast<Rcvr &&>(rcvr), sizeof...(Sndrs)}
+        , _sub_ops{
+            sndrs.apply(_connect_subs_fn(), static_cast<_sndrs_t &&>(sndrs), _state)} {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -535,25 +555,25 @@ namespace ustdex {
       /// Start all the sub-operations.
       USTDEX_HOST_DEVICE void start() & noexcept {
         // register stop callback:
-        _data._on_stop.construct(
-          get_stop_token(ustdex::get_env(_data._rcvr)),
-          _on_stop_request{_data._stop_source});
+        _state._on_stop.construct(
+          get_stop_token(ustdex::get_env(_state._rcvr)),
+          _on_stop_request{_state._stop_source});
 
-        if (_data._stop_source.stop_requested()) {
+        if (_state._stop_source.stop_requested()) {
           // Manually clean up the stop callback. We won't be starting the
           // sub-operations, so they won't complete and clean up for us.
-          _data._on_stop.destroy();
+          _state._on_stop.destroy();
 
           // Stop has already been requested. Don't bother starting the child
           // operations.
-          ustdex::set_stopped(static_cast<Rcvr &&>(_data._rcvr));
+          ustdex::set_stopped(static_cast<Rcvr &&>(_state._rcvr));
         } else {
           // Start all the sub-operations.
           _sub_ops.for_each(ustdex::start, _sub_ops);
 
           // If there are no sub-operations, we're done.
           if constexpr (sizeof...(Sndrs) == 0) {
-            _data._complete();
+            _state._complete();
           }
         }
       }
@@ -574,23 +594,9 @@ namespace ustdex {
     using sender_concept = sender_t;
     using _sndrs_t = _tuple<Sndrs...>;
 
-    template <class CvFn, class... Env>
-    using _completions = //
-      _mfirst<           //
-        _when_all::_collect_outer<
-          _when_all::_inner_completions<_minvoke1<CvFn, Sndrs>, Env...>...>>;
-
     USTDEX_NO_UNIQUE_ADDRESS when_all_t _tag;
     USTDEX_NO_UNIQUE_ADDRESS _ignore _ignore1;
     _sndrs_t _sndrs;
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) && //
-      -> _completions<_cp, Env...>;
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) const & //
-      -> _completions<_cpclr, Env...>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto

@@ -56,9 +56,9 @@ namespace ustdex {
 
     /// @brief Computes the type of a variant of tuples to hold the results of
     /// the predecessor sender.
-    template <class CvSndr, class Env>
+    template <class CvSndr, class Rcvr>
     using _results = _gather_completion_signatures<
-      completion_signatures_of_t<CvSndr, Env>,
+      completion_signatures_of_t<CvSndr, Rcvr>,
       SetTag,
       _decayed_tuple,
       _empty_tuple,
@@ -75,85 +75,13 @@ namespace ustdex {
     /// the second operation state.
     template <class CvSndr, class Fn, class Rcvr>
     using _opstate2_t = _gather_completion_signatures<
-      completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
+      completion_signatures_of_t<CvSndr, Rcvr>,
       SetTag,
       _opstate_fn<Fn, Rcvr>::template _f,
       _empty_tuple,
       _variant>;
 
-    /// @brief The `let_(value|error|stopped)` operation state.
-    /// @tparam CvSndr The cvref-qualified predecessor sender type.
-    /// @tparam Fn The function to be called when the predecessor sender
-    /// completes.
-    /// @tparam Rcvr The receiver connected to the `let_(value|error|stopped)`
-    /// sender.
-    template <class Rcvr, class CvSndr, class Fn>
-    struct _opstate_t {
-      USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
-        get_env(const _opstate_t *self) noexcept {
-        return ustdex::get_env(self->_rcvr);
-      }
-
-      using operation_state_concept = operation_state_t;
-      Rcvr _rcvr;
-      Fn _fn;
-      _results<CvSndr, env_of_t<Rcvr>> _result;
-      connect_result_t<CvSndr, _opstate_t *> _opstate1;
-      _opstate2_t<CvSndr, Fn, Rcvr> _opstate2;
-
-      USTDEX_HOST_DEVICE _opstate_t(CvSndr &&sndr, Fn fn, Rcvr rcvr) noexcept(
-        _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _opstate_t *>)
-        : _rcvr(static_cast<Rcvr &&>(rcvr))
-        , _fn(static_cast<Fn &&>(fn))
-        , _opstate1(ustdex::connect(static_cast<CvSndr &&>(sndr), this)) {
-      }
-
-      USTDEX_HOST_DEVICE void start() noexcept {
-        ustdex::start(_opstate1);
-      }
-
-      template <class Tag, class... As>
-      USTDEX_HOST_DEVICE void _complete(Tag, As &&...as) noexcept {
-        if constexpr (USTDEX_IS_SAME(Tag, SetTag)) {
-          USTDEX_TRY(
-            ({
-              // Store the results so the lvalue refs we pass to the function
-              // will be valid for the duration of the async op.
-              auto &tupl = _result.template emplace<_decayed_tuple<As...>>(
-                static_cast<As &&>(as)...);
-              // Call the function with the results and connect the resulting
-              // sender, storing the operation state in _opstate2.
-              auto &nextop = _opstate2.emplace_from(
-                ustdex::connect,
-                tupl.apply(static_cast<Fn &&>(_fn), tupl),
-                ustdex::_rcvr_ref(_rcvr));
-              ustdex::start(nextop);
-            }),
-            USTDEX_CATCH(...)({
-              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
-            }))
-        } else {
-          // Forward the completion to the receiver unchanged.
-          Tag()(static_cast<Rcvr &&>(_rcvr), static_cast<As &&>(as)...);
-        }
-      }
-
-      template <class... As>
-      USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(As &&...as) noexcept {
-        _complete(set_value_t(), static_cast<As &&>(as)...);
-      }
-
-      template <class Error>
-      USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
-        _complete(set_error_t(), static_cast<Error &&>(error));
-      }
-
-      USTDEX_HOST_DEVICE USTDEX_INLINE void set_stopped() noexcept {
-        _complete(set_stopped_t());
-      }
-    };
-
-    template <class Fn, class... Env>
+    template <class Fn, class Rcvr>
     struct _completions_fn {
       using _error_non_sender_return = //
         ERROR<
@@ -190,18 +118,102 @@ namespace ustdex {
       using _f = _mtry_invoke_q<
         completion_signatures_of_t,
         _ensure_sender<_call_result<As...>>,
-        Env...>;
+        _rcvr_ref_t<Rcvr &>>;
     };
 
     /// @brief Computes the completion signatures of the
     /// `let_(value|error|stopped)` sender.
-    template <class CvSndr, class Fn, class... Env>
+    template <class CvSndr, class Fn, class Rcvr>
     using _completions = _gather_completion_signatures<
-      completion_signatures_of_t<CvSndr, Env...>,
+      completion_signatures_of_t<CvSndr, Rcvr>,
       SetTag,
-      _completions_fn<Fn, Env...>::template _f,
+      _completions_fn<Fn, Rcvr>::template _f,
       _default_completions,
-      _mbind_front_q<_concat_completion_signatures, _eptr_completion>::_f>;
+      _mbind_front<_mtry_quote<_concat_completion_signatures>, _eptr_completion>::_f>;
+
+    /// @brief The `let_(value|error|stopped)` operation state.
+    /// @tparam CvSndr The cvref-qualified predecessor sender type.
+    /// @tparam Fn The function to be called when the predecessor sender
+    /// completes.
+    /// @tparam Rcvr The receiver connected to the `let_(value|error|stopped)`
+    /// sender.
+    template <class Rcvr, class CvSndr, class Fn>
+    struct _opstate_t {
+      USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
+        get_env(const _opstate_t *self) noexcept {
+        return ustdex::get_env(self->_rcvr);
+      }
+
+      using operation_state_concept = operation_state_t;
+      using completion_signatures = _completions<CvSndr, Fn, Rcvr>;
+
+      // Don't try to compute the type of the variant of operation states
+      // if the computation of the completion signatures failed.
+      using _deferred_opstate_fn =
+        _mbind_back<_mtry_quote<_opstate2_t>, CvSndr, Fn, Rcvr>;
+      using _opstate_variant_fn =
+        _mif<_is_error<completion_signatures>, _malways<_empty>, _deferred_opstate_fn>;
+      using _opstate_variant_t = _mtry_invoke<_opstate_variant_fn>;
+
+      Rcvr _rcvr;
+      Fn _fn;
+      _results<CvSndr, _opstate_t *> _result;
+      connect_result_t<CvSndr, _opstate_t *> _opstate1;
+      _opstate_variant_t _opstate2;
+
+      USTDEX_HOST_DEVICE _opstate_t(CvSndr &&sndr, Fn fn, Rcvr rcvr) noexcept(
+        _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _opstate_t *>)
+        : _rcvr(static_cast<Rcvr &&>(rcvr))
+        , _fn(static_cast<Fn &&>(fn))
+        , _opstate1(ustdex::connect(static_cast<CvSndr &&>(sndr), this)) {
+      }
+
+      USTDEX_HOST_DEVICE void start() noexcept {
+        ustdex::start(_opstate1);
+      }
+
+      template <class Tag, class... As>
+      USTDEX_HOST_DEVICE void _complete(Tag, As &&...as) noexcept {
+        if constexpr (USTDEX_IS_SAME(Tag, SetTag)) {
+          USTDEX_TRY(
+            ({
+              // Store the results so the lvalue refs we pass to the function
+              // will be valid for the duration of the async op.
+              auto &tupl = _result.template emplace<_decayed_tuple<As...>>(
+                static_cast<As &&>(as)...);
+              if constexpr (!_is_error<completion_signatures>) {
+                // Call the function with the results and connect the resulting
+                // sender, storing the operation state in _opstate2.
+                auto &nextop = _opstate2.emplace_from(
+                  ustdex::connect,
+                  tupl.apply(static_cast<Fn &&>(_fn), tupl),
+                  ustdex::_rcvr_ref(_rcvr));
+                ustdex::start(nextop);
+              }
+            }),
+            USTDEX_CATCH(...)({
+              ustdex::set_error(static_cast<Rcvr &&>(_rcvr), std::current_exception());
+            }))
+        } else {
+          // Forward the completion to the receiver unchanged.
+          Tag()(static_cast<Rcvr &&>(_rcvr), static_cast<As &&>(as)...);
+        }
+      }
+
+      template <class... As>
+      USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(As &&...as) noexcept {
+        _complete(set_value_t(), static_cast<As &&>(as)...);
+      }
+
+      template <class Error>
+      USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
+        _complete(set_error_t(), static_cast<Error &&>(error));
+      }
+
+      USTDEX_HOST_DEVICE USTDEX_INLINE void set_stopped() noexcept {
+        _complete(set_stopped_t());
+      }
+    };
 
     /// @brief The `let_(value|error|stopped)` sender.
     /// @tparam Sndr The predecessor sender.
@@ -213,14 +225,6 @@ namespace ustdex {
       USTDEX_NO_UNIQUE_ADDRESS LetTag _tag;
       Fn _fn;
       Sndr _sndr;
-
-      template <class... Env>
-      auto get_completion_signatures(Env &&...) && //
-        -> _completions<Sndr, Fn, Env...>;
-
-      template <class... Env>
-      auto get_completion_signatures(Env &&...) const & //
-        -> _completions<const Sndr &, Fn, Env...>;
 
       template <class Rcvr>
       USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && noexcept(

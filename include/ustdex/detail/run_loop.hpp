@@ -50,6 +50,9 @@ namespace ustdex {
     run_loop *_loop;
     USTDEX_NO_UNIQUE_ADDRESS Rcvr _rcvr;
 
+    using completion_signatures = //
+      ustdex::completion_signatures<set_value_t(), set_error_t(std::exception_ptr), set_stopped_t()>;
+
     USTDEX_HOST_DEVICE static void _execute_impl(_task *_p) noexcept {
       auto &_rcvr = static_cast<_operation *>(_p)->_rcvr;
       USTDEX_TRY(
@@ -92,12 +95,6 @@ namespace ustdex {
         using _t = _schedule_task;
         using _id = _schedule_task;
         using sender_concept = sender_t;
-
-        auto get_completion_signatures(_ignore = {}) const //
-          -> completion_signatures<
-            set_value_t(),
-            set_error_t(std::exception_ptr),
-            set_stopped_t()>;
 
         template <class Rcvr>
         USTDEX_HOST_DEVICE auto

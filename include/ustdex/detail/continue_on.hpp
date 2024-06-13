@@ -39,6 +39,18 @@ namespace ustdex {
 
     using _complete_fn = void (*)(void *) noexcept;
 
+    template <class... Ts>
+    using _set_value_completion = _mif<
+      _nothrow_decay_copyable<Ts...>,
+      completion_signatures<set_value_t(_decay_t<Ts>...)>,
+      completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(std::exception_ptr)>>;
+
+    template <class Error>
+    using _set_error_completion = _mif<
+      _nothrow_decay_copyable<Error>,
+      completion_signatures<set_error_t(_decay_t<Error>)>,
+      completion_signatures<set_error_t(_decay_t<Error>), set_error_t(std::exception_ptr)>>;
+
     template <class Rcvr, class Result>
     struct _rcvr_t {
       using receiver_concept = receiver_t;
@@ -85,7 +97,7 @@ namespace ustdex {
         ustdex::set_stopped(static_cast<Rcvr &&>(_rcvr));
       }
 
-      USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
+      USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept {
         return ustdex::get_env(_rcvr);
       }
     };
@@ -99,11 +111,29 @@ namespace ustdex {
 
       using operation_state_concept = operation_state_t;
       using _result_t = _transform_completion_signatures<
-        completion_signatures_of_t<CvSndr, env_of_t<Rcvr>>,
+        completion_signatures_of_t<CvSndr, _opstate_t *>,
         _set_value_tuple_t,
         _set_error_tuple_t,
         _set_stopped_tuple_t,
         _variant>;
+
+      // The scheduler contributes error and stopped completions.
+      // This causes its set_value_t() completion to be ignored.
+      using _scheduler_completions = //
+        transform_completion_signatures<
+          completion_signatures_of_t<schedule_result_t<Sch>, _rcvr_t<Rcvr, _result_t> *>,
+          ustdex::completion_signatures<>,
+          _malways<ustdex::completion_signatures<>>::_f>;
+
+      // The continue_on completions are the scheduler's error
+      // and stopped completions, plus the sender's completions
+      // with all the result data types decayed.
+      using completion_signatures = //
+        transform_completion_signatures<
+          completion_signatures_of_t<CvSndr, _opstate_t *>,
+          _scheduler_completions,
+          _set_value_completion,
+          _set_error_completion>;
 
       _rcvr_t<Rcvr, _result_t> _rcvr;
       connect_result_t<CvSndr, _opstate_t *> _opstate1;
@@ -138,39 +168,6 @@ namespace ustdex {
         ustdex::start(_opstate2);
       }
     };
-
-    template <class... Ts>
-    using _set_value_completion = _mif<
-      _nothrow_decay_copyable<Ts...>,
-      completion_signatures<set_value_t(_decay_t<Ts>...)>,
-      completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(std::exception_ptr)>>;
-
-
-    template <class Error>
-    using _set_error_completion = _mif<
-      _nothrow_decay_copyable<Error>,
-      completion_signatures<set_error_t(_decay_t<Error>)>,
-      completion_signatures<set_error_t(_decay_t<Error>), set_error_t(std::exception_ptr)>>;
-
-    // The scheduler contributes error and stopped completions.
-    // This causes its set_value_t() completion to be ignored.
-    template <class Sch, class... Env>
-    using _scheduler_completions = //
-      transform_completion_signatures<
-        completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
-        completion_signatures<>,
-        _malways<completion_signatures<>>::_f>;
-
-    // The continue_on completions are the scheduler's error
-    // and stopped completions, plus the sender's completions
-    // with all the result data types decayed.
-    template <class CvSndr, class Sch, class... Env>
-    using _completions = //
-      transform_completion_signatures<
-        completion_signatures_of_t<CvSndr, Env...>,
-        _scheduler_completions<Sch, Env...>,
-        _set_value_completion,
-        _set_error_completion>;
 
     template <class Sndr, class Sch>
     struct _sndr_t;
@@ -221,13 +218,6 @@ namespace ustdex {
         return ustdex::get_env(_sndr->_sndr).query(Query{});
       }
     };
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) && -> _completions<Sndr, Sch, Env...>;
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) const & //
-      -> _completions<const Sndr &, Sch, Env...>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE _opstate_t<Rcvr, Sndr, Sch> connect(Rcvr rcvr) && {

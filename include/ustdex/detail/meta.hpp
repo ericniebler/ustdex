@@ -304,6 +304,9 @@ namespace ustdex {
   template <template <class...> class Fn, class List>
   using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(DECLVAL(List &)));
 
+  template <class Ty, class...>
+  using _mfront = Ty;
+
   template <class Fn>
   struct _mconcat_into {
     template <class... Lists>
@@ -392,7 +395,10 @@ namespace ustdex {
     _minvoke<_midentity_or_error_with_<_is_error<Ty>>, Ty, With...>;
 
   template <bool>
-  struct _mtry_ {
+  struct _mtry_;
+
+  template <>
+  struct _mtry_<false> {
     template <template <class...> class Fn, class... Ts>
     using _g = Fn<Ts...>;
 
@@ -414,6 +420,12 @@ namespace ustdex {
 
   template <template <class...> class Fn, class... Ts>
   using _mtry_invoke_q = typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
+
+  template <class Fn>
+  struct _mtry {
+    template <class... Ts>
+    using _f = _mtry_invoke<Fn, Ts...>;
+  };
 
   template <template <class...> class Fn, class... Default>
   struct _mquote;
