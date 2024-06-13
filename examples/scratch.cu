@@ -50,6 +50,7 @@ struct _inline_scheduler {
   template <class Rcvr>
   struct _opstate_t {
     using operation_state_concept = operation_state_t;
+    using completion_signatures = ustdex::completion_signatures<set_value_t()>;
     Rcvr rcvr;
 
     USTDEX_HOST_DEVICE void start() noexcept {
@@ -59,9 +60,7 @@ struct _inline_scheduler {
 
   struct _sndr_t {
     using sender_concept = sender_t;
-
-    auto get_completion_signatures(_ignore = {}) const
-      -> completion_signatures<set_value_t()>;
+    using completion_signatures = ustdex::completion_signatures<set_value_t()>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept {

@@ -85,4 +85,26 @@ namespace ustdex {
   inline constexpr Ty _decay_copy(Ty &&ty) noexcept(_nothrow_decay_copyable<Ty>) {
     return static_cast<Ty &&>(ty);
   }
+
+  // _ref is for keeping type names short in compiler output.
+  // It has the unfortunate side effect of obfuscating the types.
+#if USTDEX_NVHPC() || USTDEX_EDG()
+  // This version of _ref is for compilers that display the return
+  // type of a monomorphic lambda in the compiler output.
+  inline constexpr auto _ref = [](auto &o) noexcept {
+    return [&o](auto &...p) noexcept -> decltype(auto) {
+      static_assert(sizeof...(p) == 0);
+      return (void(p), ..., (o));
+    };
+  };
+#else
+  inline constexpr auto _ref = [](auto &o) noexcept {
+    return [&o]() noexcept -> decltype(auto) {
+      return (o);
+    };
+  };
+#endif
+
+  template <class Ty>
+  using _ref_t = decltype(_ref(_declval<Ty &>()));
 } // namespace ustdex

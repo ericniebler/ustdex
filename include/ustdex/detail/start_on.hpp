@@ -37,7 +37,8 @@ namespace ustdex {
 #ifndef __CUDACC__
    private:
 #endif
-    template <class Rcvr, class Sch, class Sndr>
+
+    template <class Rcvr, class Sch, class CvSndr>
     struct _opstate_t {
       USTDEX_HOST_DEVICE friend env_of_t<Rcvr>
         get_env(const _opstate_t *self) noexcept {
@@ -45,14 +46,23 @@ namespace ustdex {
       }
 
       using operation_state_concept = operation_state_t;
+
+      using completion_signatures = //
+        transform_completion_signatures<
+          completion_signatures_of_t<CvSndr, _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> *>,
+          transform_completion_signatures<
+            completion_signatures_of_t<schedule_result_t<Sch>, _opstate_t *>,
+            ustdex::completion_signatures<>,
+            _malways<ustdex::completion_signatures<>>::_f>>;
+
       _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> _env_rcvr;
       connect_result_t<schedule_result_t<Sch>, _opstate_t *> _opstate1;
-      connect_result_t<Sndr, _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> *> _opstate2;
+      connect_result_t<CvSndr, _receiver_with_env_t<Rcvr, _sch_env_t<Sch>> *> _opstate2;
 
-      USTDEX_HOST_DEVICE _opstate_t(Sch sch, Rcvr rcvr, Sndr &&sndr)
+      USTDEX_HOST_DEVICE _opstate_t(Sch sch, Rcvr rcvr, CvSndr &&sndr)
         : _env_rcvr{static_cast<Rcvr &&>(rcvr), {sch}}
         , _opstate1{connect(schedule(_env_rcvr._env._sch), this)}
-        , _opstate2{connect(static_cast<Sndr &&>(sndr), &_env_rcvr)} {
+        , _opstate2{connect(static_cast<CvSndr &&>(sndr), &_env_rcvr)} {
       }
 
       USTDEX_IMMOVABLE(_opstate_t);
@@ -91,25 +101,6 @@ namespace ustdex {
     USTDEX_NO_UNIQUE_ADDRESS start_on_t _tag;
     Sch _sch;
     Sndr _sndr;
-
-    template <class Env>
-    using _env_t = env<const _sch_env_t<Sch> &, Env>;
-
-    template <class CvSndr, class... Env>
-    using _completions = transform_completion_signatures<
-      completion_signatures_of_t<CvSndr, _env_t<Env>...>,
-      transform_completion_signatures<
-        completion_signatures_of_t<schedule_result_t<Sch>, Env...>,
-        completion_signatures<>,
-        _malways<completion_signatures<>>::_f>>;
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) && //
-      -> _completions<Sndr, Env...>;
-
-    template <class... Env>
-    auto get_completion_signatures(Env &&...) const & //
-      -> _completions<const Sndr &, Env...>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, Sch, Sndr> {

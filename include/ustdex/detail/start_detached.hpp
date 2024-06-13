@@ -28,6 +28,7 @@ namespace ustdex {
 
     struct _rcvr_t {
       using receiver_concept = receiver_t;
+
       _opstate_base_t *_opstate;
       void (*_destroy)(_opstate_base_t *) noexcept;
 
@@ -49,6 +50,7 @@ namespace ustdex {
     template <class Sndr>
     struct _opstate_t : _opstate_base_t {
       using operation_state_concept = operation_state_t;
+      using completion_signatures = ustdex::completion_signatures_of_t<Sndr, _rcvr_t>;
       connect_result_t<Sndr, _rcvr_t> _op;
 
       static void _destroy(_opstate_base_t *ptr) noexcept {

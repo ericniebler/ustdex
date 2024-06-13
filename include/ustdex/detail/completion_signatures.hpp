@@ -50,6 +50,19 @@ namespace ustdex {
   extern DIAGNOSTIC<Sigs> _transform_completion_signatures_v;
 
   template <
+    class... What,
+    template <class...>
+    class V,
+    template <class...>
+    class E,
+    class S,
+    template <class...>
+    class Variant,
+    class... More>
+  extern ERROR<What...>
+    _transform_completion_signatures_v<ERROR<What...>, V, E, S, Variant, More...>;
+
+  template <
     class... Sigs,
     template <class...>
     class V,
@@ -199,14 +212,14 @@ namespace ustdex {
 
   template <
     class Sndr,
-    class Env,
+    class Rcvr,
     class MoreSigs = completion_signatures<>,
     template <class...> class ValueTransform = _set_value_transform_t,
     template <class> class ErrorTransform = _set_error_transform_t,
     class StoppedSigs = completion_signatures<set_stopped_t()>>
   using transform_completion_signatures_of = //
     transform_completion_signatures<
-      completion_signatures_of_t<Sndr, Env>,
+      completion_signatures_of_t<Sndr, Rcvr>,
       MoreSigs,
       ValueTransform,
       ErrorTransform,
@@ -224,17 +237,17 @@ namespace ustdex {
       _mcompose_q<_mlist_ref, Tuple>::template _f,
       _malways<_mlist_ref<>>::_f,
       _mlist_ref<>,
-      _mconcat_into<_mtry_quote<Variant>>::template _f>;
+      _mtry<_mconcat_into<_mtry_quote<Variant>>>::template _f>;
 
   template <
     class Sndr,
-    class Env,
+    class Rcvr,
     template <class...>
     class Tuple,
     template <class...>
     class Variant>
   using value_types_of_t =
-    _value_types<completion_signatures_of_t<Sndr, Env>, Tuple, Variant>;
+    _value_types<completion_signatures_of_t<Sndr, Rcvr>, Tuple, Variant>;
 
   template <
     class Sigs,
@@ -248,8 +261,8 @@ namespace ustdex {
       _mlist_ref<>,
       _mconcat_into<_mtry_quote<Variant>>::template _f>;
 
-  template <class Sndr, class Env, template <class...> class Variant>
-  using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Variant>;
+  template <class Sndr, class Rcvr, template <class...> class Variant>
+  using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Rcvr>, Variant>;
 
   template <class Sigs>
   USTDEX_DEVICE_CONSTANT constexpr bool _sends_stopped = //
@@ -260,9 +273,9 @@ namespace ustdex {
       _mtrue,
       _mor>::value;
 
-  template <class Sndr, class... Env>
+  template <class Sndr, class Rcvr = receiver_archetype>
   USTDEX_DEVICE_CONSTANT constexpr bool sends_stopped = //
-    _sends_stopped<completion_signatures_of_t<Sndr, Env...>>;
+    _sends_stopped<completion_signatures_of_t<Sndr, Rcvr>>;
 
   using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;
 

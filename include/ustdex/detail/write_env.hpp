@@ -31,6 +31,9 @@ namespace ustdex {
     template <class Rcvr, class Sndr, class Env>
     struct _opstate_t {
       using operation_state_concept = operation_state_t;
+      using completion_signatures =
+        completion_signatures_of_t<Sndr, _receiver_with_env_t<Rcvr, Env> *>;
+
       _receiver_with_env_t<Rcvr, Env> _env_rcvr;
       connect_result_t<Sndr, _receiver_with_env_t<Rcvr, Env> *> _op;
 
@@ -63,17 +66,6 @@ namespace ustdex {
     USTDEX_NO_UNIQUE_ADDRESS write_env_t _tag;
     Env _env;
     Sndr _sndr;
-
-    template <class OtherEnv>
-    using _env_t = env<const Env &, OtherEnv>;
-
-    template <class... OtherEnv>
-    auto get_completion_signatures(OtherEnv &&...) && //
-      -> completion_signatures_of_t<Sndr, _env_t<OtherEnv>...>;
-
-    template <class... OtherEnv>
-    auto get_completion_signatures(OtherEnv &&...) const & //
-      -> completion_signatures_of_t<const Sndr &, _env_t<OtherEnv>...>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, Sndr, Env> {

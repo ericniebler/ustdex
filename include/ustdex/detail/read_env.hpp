@@ -50,6 +50,15 @@ namespace ustdex {
     template <class Rcvr, class Query>
     struct opstate_t {
       using operation_state_concept = operation_state_t;
+      using completion_signatures = //
+        _minvoke<
+          _mif<
+            _callable<Query, env_of_t<Rcvr>>,
+            _completions_fn,
+            _error_env_lacks_query<Query, env_of_t<Rcvr>>>,
+          Query,
+          env_of_t<Rcvr>>;
+
       Rcvr _rcvr;
 
       explicit opstate_t(Rcvr rcvr)
@@ -96,13 +105,6 @@ namespace ustdex {
     using sender_concept = sender_t;
     USTDEX_NO_UNIQUE_ADDRESS read_env_t _tag;
     USTDEX_NO_UNIQUE_ADDRESS Query _query;
-
-    template <class Env>
-    auto get_completion_signatures(Env &&) const //
-      -> _minvoke<
-        _mif<_callable<Query, Env>, _completions_fn, _error_env_lacks_query<Query, Env>>,
-        Query,
-        Env>;
 
     template <class Rcvr>
     USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>)
