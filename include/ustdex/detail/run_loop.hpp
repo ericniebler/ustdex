@@ -51,7 +51,10 @@ namespace ustdex {
     USTDEX_NO_UNIQUE_ADDRESS Rcvr _rcvr;
 
     using completion_signatures = //
-      ustdex::completion_signatures<set_value_t(), set_error_t(std::exception_ptr), set_stopped_t()>;
+      ustdex::completion_signatures<
+        set_value_t(),
+        set_error_t(std::exception_ptr),
+        set_stopped_t()>;
 
     USTDEX_HOST_DEVICE static void _execute_impl(_task *_p) noexcept {
       auto &_rcvr = static_cast<_operation *>(_p)->_rcvr;
