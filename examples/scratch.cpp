@@ -49,6 +49,8 @@ template <class>
 void print() {
 }
 
+static_assert(!_is_non_dependent_sender<decltype(read_env(_empty()))>);
+
 int main() {
   thread_context ctx;
   auto sch = ctx.get_scheduler();
@@ -59,6 +61,7 @@ int main() {
                 return a + b + c;
               });
   auto s = start_on(sch, std::move(work));
+  static_assert(_is_non_dependent_sender<decltype(s)>);
   std::puts("Hello, world!");
   sync_wait(s);
 

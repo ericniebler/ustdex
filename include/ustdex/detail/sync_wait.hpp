@@ -86,8 +86,7 @@ namespace ustdex {
         }
       };
 
-      using _values_t =
-        _value_types<completion_signatures_of_t<Sndr, _rcvr_t>, std::tuple, _midentity::_f>;
+      using _values_t = value_types_of_t<Sndr, _rcvr_t, std::tuple, _midentity::_f>;
 
       std::optional<_values_t>* _values;
       std::exception_ptr _eptr;
@@ -136,11 +135,13 @@ namespace ustdex {
     auto operator()(Sndr&& sndr) const {
       using _rcvr_t = typename _state_t<Sndr>::_rcvr_t;
       using _values_t = typename _state_t<Sndr>::_values_t;
-      static_assert(!_is_error<_values_t>);
+      using _completions = completion_signatures_of_t<Sndr, _rcvr_t>;
+      static_assert(_is_completion_signatures<_completions>);
 
-      if constexpr (_is_error<_values_t>) {
+      if constexpr (!_is_completion_signatures<_completions>) {
         return _invalid_sync_wait{0};
       } else {
+
         std::optional<_values_t> result{};
         _state_t<Sndr> state{&result};
 

@@ -229,6 +229,12 @@ namespace ustdex {
     template <class Sndr, class Fn>
     USTDEX_INLINE USTDEX_HOST_DEVICE auto
       operator()(Sndr sndr, Fn fn) const noexcept {
+      // If the incoming sender is non-dependent, we can check the completion
+      // signatures of the composed sender immediately.
+      if constexpr (_is_non_dependent_sender<Sndr>) {
+        using _completions = completion_signatures_of_t<_sndr_t<Fn, Sndr>>;
+        static_assert(_is_completion_signatures<_completions>);
+      }
       return _sndr_t<Fn, Sndr>{{}, static_cast<Fn &&>(fn), static_cast<Sndr &&>(sndr)};
     }
 

@@ -281,4 +281,19 @@ namespace ustdex {
 
   template <bool NoExcept>
   using _eptr_completion_if = _mif<NoExcept, completion_signatures<>, _eptr_completion>;
+
+  template <class>
+  inline constexpr bool _is_completion_signatures = false;
+
+  template <class... Sigs>
+  inline constexpr bool _is_completion_signatures<completion_signatures<Sigs...>> = true;
+
+  template <class Sndr>
+  using _is_non_dependent_detail_ = //
+    _mif<_is_completion_signatures<completion_signatures_of_t<Sndr>>>;
+
+  template <class Sndr>
+  inline constexpr bool _is_non_dependent_sender =
+    _mvalid_q<_is_non_dependent_detail_, Sndr>;
+
 } // namespace ustdex

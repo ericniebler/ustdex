@@ -615,6 +615,12 @@ namespace ustdex {
   template <class... Sndrs>
   USTDEX_HOST_DEVICE _when_all::_sndr_t<Sndrs...>
     when_all_t::operator()(Sndrs... sndrs) const {
+    // If the incoming sender is non-dependent, we can check the completion
+    // signatures of the composed sender immediately.
+    if constexpr ((_is_non_dependent_sender<Sndrs> &&...)) {
+      using _completions = completion_signatures_of_t<_when_all::_sndr_t<Sndrs...>>;
+      static_assert(_is_completion_signatures<_completions>);
+    }
     return _when_all::_sndr_t<Sndrs...>{{}, {}, {static_cast<Sndrs &&>(sndrs)...}};
   }
 
