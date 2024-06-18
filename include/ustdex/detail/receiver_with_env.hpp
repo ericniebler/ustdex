@@ -21,7 +21,7 @@
 namespace ustdex {
   template <class Rcvr, class Env>
   struct _receiver_with_env_t : Rcvr {
-    using _env_t = _receiver_with_env_t const *;
+    using _env_t = _receiver_with_env_t const &;
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() noexcept -> Rcvr & {
       return *this;
@@ -32,7 +32,7 @@ namespace ustdex {
     }
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return _env_t{this};
+      return _env_t{*this};
     }
 
     template <class Query>
@@ -60,7 +60,7 @@ namespace ustdex {
 
   template <class Rcvr, class Env>
   struct _receiver_with_env_t<Rcvr *, Env> {
-    using _env_t = _receiver_with_env_t const *;
+    using _env_t = _receiver_with_env_t const &;
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto rcvr() const noexcept -> Rcvr * {
       return _rcvr;
@@ -81,7 +81,7 @@ namespace ustdex {
     }
 
     USTDEX_INLINE USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t {
-      return _env_t{this};
+      return _env_t{*this};
     }
 
     template <class Query>
