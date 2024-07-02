@@ -48,8 +48,6 @@ namespace ustdex {
     template <class, class, class>
     struct _opstate_t;
 
-    struct SENDER_HAS_TOO_MANY_SUCCESS_COMPLETIONS;
-
     using _tombstone =
       ERROR<WHERE(IN_ALGORITHM, when_all_t), WHAT(SENDER_HAS_TOO_MANY_SUCCESS_COMPLETIONS)>;
 
@@ -310,7 +308,7 @@ namespace ustdex {
     // Extract the first template parameter of the _state_t specialization.
     // The first template parameter is the receiver type.
     template <class State>
-    using _rcvr_from_state_t = _mapply<_mtry_quote<_mfront>, State>;
+    using _rcvr_from_state_t = _mapply<_mpoly_q<_mfront>, State>;
 
     /// The receivers connected to the when_all's sub-operations expose this as
     /// their environment. Its `get_stop_token` query returns the token from
@@ -318,10 +316,10 @@ namespace ustdex {
     /// receiver's environment.
     template <class StateRef>
     struct _env_t {
-      using _state_t = _call_result_t<StateRef>;
+      using _state_t = _deref_t<StateRef>;
       using _rcvr_t = _rcvr_from_state_t<_state_t>;
 
-      _state_t _state;
+      _state_t& _state;
 
       USTDEX_HOST_DEVICE inplace_stop_token query(get_stop_token_t) const noexcept {
         return _state._stop_token;
@@ -337,9 +335,9 @@ namespace ustdex {
     template <class StateRef, std::size_t Index>
     struct _rcvr_t {
       using receiver_concept = receiver_t;
-      using _state_t = _call_result_t<StateRef>;
+      using _state_t = _deref_t<StateRef>;
 
-      _state_t _state;
+      _state_t& _state;
 
       template <class... Ts>
       USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(Ts &&...ts) noexcept {
@@ -396,7 +394,7 @@ namespace ustdex {
       using _completions_t = _mfirst<_completions_offsets_pair_t>;
       using _indices_t = _mindices<Idx...>;
       using _offsets_t = _msecond<_completions_offsets_pair_t>;
-      using _values_t = _value_types<_completions_t, _lazy_tuple, _msingle_or<_nil>::_f>;
+      using _values_t = _value_types<_completions_t, _lazy_tuple, _mpoly<_msingle_or<_nil>>::_f>;
       using _errors_t = _error_types<_completions_t, _variant>;
 
       using stop_tok_t = stop_token_of_t<env_of_t<Rcvr>>;
@@ -617,7 +615,7 @@ namespace ustdex {
     when_all_t::operator()(Sndrs... sndrs) const {
     // If the incoming sender is non-dependent, we can check the completion
     // signatures of the composed sender immediately.
-    if constexpr ((_is_non_dependent_sender<Sndrs> &&...)) {
+    if constexpr ((_is_non_dependent_sender<Sndrs> && ...)) {
       using _completions = completion_signatures_of_t<_when_all::_sndr_t<Sndrs...>>;
       static_assert(_is_completion_signatures<_completions>);
     }

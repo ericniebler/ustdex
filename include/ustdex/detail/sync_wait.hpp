@@ -30,6 +30,39 @@
 #  include <tuple>
 
 namespace ustdex {
+  struct sync_wait_t;
+
+  namespace _detail {
+    template <bool>
+    struct _exactly_one {
+      template <class Tuple>
+      using _f = Tuple;
+    };
+
+    template <>
+    struct _exactly_one<false> {
+      template <class... Ts>
+      static auto _to_sig(std::tuple<Ts...>*) -> set_value_t (*)(Ts...);
+
+      template <class... Sigs>
+      static auto _collect(Sigs*...) -> WITH_COMPLETIONS<Sigs...>;
+
+      template <class... Tuples>
+      using _f = ERROR<
+        WHERE(IN_ALGORITHM, sync_wait_t),
+        WHAT(SENDER_HAS_TOO_MANY_SUCCESS_COMPLETIONS),
+        decltype(_collect(_to_sig((Tuples*) 0)...))>;
+    };
+  } // namespace _detail
+
+  namespace _sync_wait {
+    template <class>
+    static constexpr bool _ok = false;
+
+    template <class... Ts>
+    static constexpr bool _ok<std::tuple<Ts...>> = true;
+  } // namespace _sync_wait
+
   /// @brief Function object type for synchronously waiting for the result of a
   /// sender.
   struct sync_wait_t {
@@ -48,60 +81,59 @@ namespace ustdex {
       }
     };
 
-    template <class Sndr>
-    struct _state_t {
-      struct _rcvr_t {
-        using receiver_concept = receiver_t;
-        _state_t* _state;
-
-        template <class... As>
-        USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
-          USTDEX_TRY(
-            ({ //
-              _state->_values->emplace(static_cast<As&&>(_as)...);
-            }),                 //
-            USTDEX_CATCH(...)({ //
-              _state->_eptr = std::current_exception();
-            }))
-          _state->_loop.finish();
-        }
-
-        template <class Error>
-        USTDEX_HOST_DEVICE void set_error(Error _err) noexcept {
-          if constexpr (USTDEX_IS_SAME(Error, std::exception_ptr))
-            _state->_eptr = static_cast<Error&&>(_err);
-          else if constexpr (USTDEX_IS_SAME(Error, std::error_code))
-            _state->_eptr = std::make_exception_ptr(std::system_error(_err));
-          else
-            _state->_eptr = std::make_exception_ptr(static_cast<Error&&>(_err));
-          _state->_loop.finish();
-        }
-
-        USTDEX_HOST_DEVICE void set_stopped() noexcept {
-          _state->_loop.finish();
-        }
-
-        _env_t get_env() const noexcept {
-          return _env_t{&_state->_loop};
-        }
-      };
-
-      using _values_t = value_types_of_t<Sndr, _rcvr_t, std::tuple, _midentity::_f>;
-
-      std::optional<_values_t>* _values;
+    struct _rcvr_base {
       std::exception_ptr _eptr;
-      run_loop _loop;
+      mutable run_loop _loop;
+
+      _env_t get_env() const noexcept {
+        return _env_t{&_loop};
+      }
     };
 
+    template <class Tuple>
+    struct _rcvr : _rcvr_base {
+      using receiver_concept = receiver_t;
+
+      template <class... As>
+      USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept {
+        USTDEX_TRY(
+          ({ //
+            _values->emplace(static_cast<As&&>(_as)...);
+          }),                 //
+          USTDEX_CATCH(...)({ //
+            _eptr = std::current_exception();
+          }))
+        _loop.finish();
+      }
+
+      template <class Error>
+      USTDEX_HOST_DEVICE void set_error(Error _err) noexcept {
+        if constexpr (USTDEX_IS_SAME(Error, std::exception_ptr))
+          _eptr = static_cast<Error&&>(_err);
+        else if constexpr (USTDEX_IS_SAME(Error, std::error_code))
+          _eptr = std::make_exception_ptr(std::system_error(_err));
+        else
+          _eptr = std::make_exception_ptr(static_cast<Error&&>(_err));
+        _loop.finish();
+      }
+
+      USTDEX_HOST_DEVICE void set_stopped() noexcept {
+        _loop.finish();
+      }
+
+      std::optional<Tuple>* _values;
+    };
+
+    template <class... Tuples>
+    using _variant_t =
+      _mtry_invoke<_detail::_exactly_one<sizeof...(Tuples) == 1>, Tuples...>;
+
+    template <class Sndr, class Rcvr = _rcvr_base>
+    using _values_t = value_types_of_t<Sndr, Rcvr*, std::tuple, _variant_t>;
+
     struct _invalid_sync_wait {
-      const _invalid_sync_wait& value() const {
-        return *this;
-      }
-
-      const _invalid_sync_wait& operator*() const {
-        return *this;
-      }
-
+      const _invalid_sync_wait& value() const;
+      const _invalid_sync_wait& operator*() const;
       int i;
     };
 
@@ -133,28 +165,30 @@ namespace ustdex {
     // clang-format on
     template <class Sndr>
     auto operator()(Sndr&& sndr) const {
-      using _rcvr_t = typename _state_t<Sndr>::_rcvr_t;
-      using _values_t = typename _state_t<Sndr>::_values_t;
-      using _completions = completion_signatures_of_t<Sndr, _rcvr_t>;
-      static_assert(_is_completion_signatures<_completions>);
+      using _sync_wait::_ok;
+      using _vals_t = _values_t<Sndr>;
+      static_assert(_ok<_vals_t>);
 
-      if constexpr (!_is_completion_signatures<_completions>) {
+      // Avoid cascading errors by skipping the sync_wait logic if the sender
+      // has too many value completions, or is invalid in some other way.
+      if constexpr (!_ok<_vals_t>) {
         return _invalid_sync_wait{0};
       } else {
+        static_assert(USTDEX_IS_SAME(_vals_t, _values_t<Sndr, _rcvr<_vals_t>>));
 
-        std::optional<_values_t> result{};
-        _state_t<Sndr> state{&result};
+        std::optional<_vals_t> result{};
+        _rcvr<_vals_t> rcvr{{}, &result};
 
         // Launch the sender with a continuation that will fill in a variant
-        auto opstate = connect(static_cast<Sndr&&>(sndr), _rcvr_t{&state});
+        auto opstate = connect(static_cast<Sndr&&>(sndr), &rcvr);
         start(opstate);
 
         // Wait for the variant to be filled in, and process any work that
         // may be delegated to this thread.
-        state._loop.run();
+        rcvr._loop.run();
 
-        if (state._eptr)
-          std::rethrow_exception(state._eptr);
+        if (rcvr._eptr)
+          std::rethrow_exception(rcvr._eptr);
 
         return result; // uses NRVO to "return" the result
       }

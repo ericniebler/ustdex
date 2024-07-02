@@ -16,6 +16,8 @@
 #pragma once
 
 #include "detail/config.hpp"
+
+#include "detail/basic_sender.hpp"
 #include "detail/continue_on.hpp"
 #include "detail/cpos.hpp"
 #include "detail/just.hpp"
