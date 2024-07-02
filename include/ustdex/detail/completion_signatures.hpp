@@ -26,13 +26,13 @@ namespace ustdex {
   extern _undefined<Sig> _transform_sig;
 
   template <class... Values, template <class...> class V, template <class...> class E, class S>
-  extern V<Values...> (*_transform_sig<set_value_t(Values...), V, E, S>)();
+  extern _fn_t<V<Values...>>* _transform_sig<set_value_t(Values...), V, E, S>;
 
   template <class Error, template <class...> class V, template <class...> class E, class S>
-  extern E<Error> (*_transform_sig<set_error_t(Error), V, E, S>)();
+  extern _fn_t<E<Error>>* _transform_sig<set_error_t(Error), V, E, S>;
 
   template <template <class...> class V, template <class...> class E, class S>
-  extern S (*_transform_sig<set_stopped_t(), V, E, S>)();
+  extern _fn_t<S>* _transform_sig<set_stopped_t(), V, E, S>;
 
   template <class Sig, template <class...> class V, template <class...> class E, class S>
   using _transform_sig_t = decltype(_transform_sig<Sig, V, E, S>());
@@ -59,8 +59,8 @@ namespace ustdex {
     template <class...>
     class Variant,
     class... More>
-  extern ERROR<What...>
-    (*_transform_completion_signatures_v<ERROR<What...>, V, E, S, Variant, More...>)();
+  extern _fn_t<ERROR<What...>>*
+    _transform_completion_signatures_v<ERROR<What...>, V, E, S, Variant, More...>;
 
   template <
     class... Sigs,
@@ -72,14 +72,14 @@ namespace ustdex {
     template <class...>
     class Variant,
     class... More>
-  extern Variant<_transform_sig_t<Sigs, V, E, S>..., More...>
-    (*_transform_completion_signatures_v<
+  extern _fn_t<Variant<_transform_sig_t<Sigs, V, E, S>..., More...>>*
+    _transform_completion_signatures_v<
       completion_signatures<Sigs...>,
       V,
       E,
       S,
       Variant,
-      More...>)();
+      More...>;
 
   template <
     class Sigs,
