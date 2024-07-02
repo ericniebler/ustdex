@@ -91,20 +91,22 @@ namespace ustdex {
 #if USTDEX_NVHPC() || USTDEX_EDG()
   // This version of _ref is for compilers that display the return
   // type of a monomorphic lambda in the compiler output.
-  inline constexpr auto _ref = [](auto &o) noexcept {
-    return [&o](auto &...p) noexcept -> decltype(auto) {
-      static_assert(sizeof...(p) == 0);
-      return (void(p), ..., (o));
+  inline constexpr auto _ref = [](auto fn) noexcept {
+    return [fn](auto...) noexcept -> decltype(auto) {
+      return fn;
     };
   };
 #else
-  inline constexpr auto _ref = [](auto &o) noexcept {
-    return [&o]() noexcept -> decltype(auto) {
-      return (o);
+  inline constexpr auto _ref = [](auto fn) noexcept {
+    return [fn]() noexcept -> decltype(auto) {
+      return fn;
     };
   };
 #endif
 
   template <class Ty>
-  using _ref_t = decltype(_ref(_declval<Ty &>()));
+  using _ref_t = decltype(_ref(static_cast<Ty (*)()>(nullptr)));
+
+  template <class Ref>
+  using _deref_t = decltype(_declval<Ref>()()());
 } // namespace ustdex

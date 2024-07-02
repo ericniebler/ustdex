@@ -26,16 +26,16 @@ namespace ustdex {
   extern _undefined<Sig> _transform_sig;
 
   template <class... Values, template <class...> class V, template <class...> class E, class S>
-  extern V<Values...> _transform_sig<set_value_t(Values...), V, E, S>;
+  extern V<Values...> (*_transform_sig<set_value_t(Values...), V, E, S>)();
 
   template <class Error, template <class...> class V, template <class...> class E, class S>
-  extern E<Error> _transform_sig<set_error_t(Error), V, E, S>;
+  extern E<Error> (*_transform_sig<set_error_t(Error), V, E, S>)();
 
   template <template <class...> class V, template <class...> class E, class S>
-  extern S _transform_sig<set_stopped_t(), V, E, S>;
+  extern S (*_transform_sig<set_stopped_t(), V, E, S>)();
 
   template <class Sig, template <class...> class V, template <class...> class E, class S>
-  using _transform_sig_t = decltype(_transform_sig<Sig, V, E, S>);
+  using _transform_sig_t = decltype(_transform_sig<Sig, V, E, S>());
 
   template <
     class Sigs,
@@ -60,7 +60,7 @@ namespace ustdex {
     class Variant,
     class... More>
   extern ERROR<What...>
-    _transform_completion_signatures_v<ERROR<What...>, V, E, S, Variant, More...>;
+    (*_transform_completion_signatures_v<ERROR<What...>, V, E, S, Variant, More...>)();
 
   template <
     class... Sigs,
@@ -73,13 +73,13 @@ namespace ustdex {
     class Variant,
     class... More>
   extern Variant<_transform_sig_t<Sigs, V, E, S>..., More...>
-    _transform_completion_signatures_v<
+    (*_transform_completion_signatures_v<
       completion_signatures<Sigs...>,
       V,
       E,
       S,
       Variant,
-      More...>;
+      More...>)();
 
   template <
     class Sigs,
@@ -92,7 +92,7 @@ namespace ustdex {
     class Variant,
     class... More>
   using _transform_completion_signatures =
-    decltype(_transform_completion_signatures_v<Sigs, V, E, S, Variant, More...>);
+    decltype(_transform_completion_signatures_v<Sigs, V, E, S, Variant, More...>());
 
   template <class WantedTag>
   struct _gather_sigs_fn;
@@ -177,20 +177,19 @@ namespace ustdex {
   using _set_error_transform_t = completion_signatures<set_error_t(Ty)>;
 
   template <class... Ts, class... Us>
-  auto operator*(_mset<Ts...> &, completion_signatures<Us...> &)
+  auto operator*(_mset<Ts...> &, _undefined<completion_signatures<Us...>> &)
     -> _mset_insert<_mset<Ts...>, Us...> &;
 
   template <class... Ts, class... What>
-  auto operator*(_mset<Ts...> &, ERROR<What...> &) -> ERROR<What...> &;
+  auto operator*(_mset<Ts...> &, _undefined<ERROR<What...>> &) -> ERROR<What...> &;
 
   template <class... What, class... Us>
-  auto operator*(ERROR<What...> &, completion_signatures<Us...> &) -> ERROR<What...> &;
+  auto operator*(ERROR<What...> &, _undefined<completion_signatures<Us...>> &)
+    -> ERROR<What...> &;
 
   template <class... Sigs>
   using _concat_completion_signatures = //
-    _mapply_q<
-      completion_signatures,
-      decltype(+(DECLVAL(_mset<> &) * ... * DECLVAL(Sigs &)))>;
+    _mapply_q<completion_signatures, _mconcat_into_q<_mmake_set>::_f<Sigs...>>;
 
   template <class Tag, class... Ts>
   using _default_completions = completion_signatures<Tag(Ts...)>;
@@ -207,7 +206,7 @@ namespace ustdex {
       ValueTransform,
       ErrorTransform,
       StoppedSigs,
-      _concat_completion_signatures,
+      _mtry_quote<_concat_completion_signatures>::_f,
       MoreSigs>;
 
   template <
@@ -234,10 +233,10 @@ namespace ustdex {
   using _value_types = //
     _transform_completion_signatures<
       Sigs,
-      _mcompose_q<_mlist_ref, Tuple>::template _f,
-      _malways<_mlist_ref<>>::_f,
-      _mlist_ref<>,
-      _mtry<_mconcat_into<_mtry_quote<Variant>>>::template _f>;
+      _mcompose_q<_mlist, Tuple>::template _f,
+      _malways<_mlist<>>::_f,
+      _mlist<>,
+      _mconcat_into_q<Variant>::template _f>;
 
   template <
     class Sndr,
@@ -247,7 +246,7 @@ namespace ustdex {
     template <class...>
     class Variant>
   using value_types_of_t =
-    _value_types<completion_signatures_of_t<Sndr, Rcvr>, Tuple, Variant>;
+    _value_types<completion_signatures_of_t<Sndr, Rcvr>, Tuple, _mtry_quote<Variant>::template _f>;
 
   template <
     class Sigs,
@@ -256,10 +255,10 @@ namespace ustdex {
   using _error_types = //
     _transform_completion_signatures<
       Sigs,
-      _malways<_mlist_ref<>>::_f,
-      _mlist_ref,
-      _mlist_ref<>,
-      _mconcat_into<_mtry_quote<Variant>>::template _f>;
+      _malways<_mlist<>>::_f,
+      _mlist,
+      _mlist<>,
+      _mconcat_into_q<Variant>::template _f>;
 
   template <class Sndr, class Rcvr, template <class...> class Variant>
   using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Rcvr>, Variant>;
@@ -296,4 +295,43 @@ namespace ustdex {
   inline constexpr bool _is_non_dependent_sender =
     _mvalid_q<_is_non_dependent_detail_, Sndr>;
 
+  namespace _csig {
+    struct _dep { };
+
+    template <class... Sigs>
+    struct _sigs;
+
+    template <class... As, class... Bs>
+    auto operator+(_sigs<As...> &, _sigs<Bs...> &) -> _sigs<As..., Bs...> &;
+
+    template <class... Sigs>
+    auto operator+(_sigs<Sigs...> &) //
+      -> _concat_completion_signatures<completion_signatures<Sigs...>>;
+
+    template <class Other>
+    auto _to_sigs(Other &) -> Other &;
+
+    template <class... Sigs>
+    auto _to_sigs(completion_signatures<Sigs...> &) -> _sigs<Sigs...> &;
+  } // namespace _csig
+
+  using dependent_completions = _csig::_dep;
+
+  namespace meta {
+    template <class... Sigs>
+    using sigs = _csig::_sigs<Sigs...> *;
+
+    template <class Tag, class... Args>
+    auto completion(Tag, Args &&...) -> _csig::_sigs<Tag(Args...)> &;
+
+    template <class Sndr, class Rcvr = receiver_archetype>
+    auto completions_of(Sndr &&, Rcvr = {})
+      -> decltype(_csig::_to_sigs(DECLVAL(completion_signatures_of_t<Sndr, Rcvr> &)));
+
+    template <bool PotentiallyThrowing>
+    auto eptr_completion_if() -> _mif<
+      PotentiallyThrowing,
+      _csig::_sigs<set_error_t(std::exception_ptr)>,
+      _csig::_sigs<>> &;
+  } // namespace meta
 } // namespace ustdex

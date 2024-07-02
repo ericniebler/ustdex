@@ -55,18 +55,6 @@ namespace ustdex {
   template <class... Ts>
   struct _mlist;
 
-  template <class... Ts>
-  using _mlist_ref = _mlist<Ts...> &;
-
-  template <class... Ts>
-  _mlist<Ts...> operator+(_mlist<Ts...> &);
-
-  template <class... Ts, class... Us>
-  _mlist<Ts..., Us...> &operator+(_mlist<Ts...> &, _mlist<Us...> &);
-
-  template <class... Lists>
-  using _mconcat = decltype(+(DECLVAL(_mlist<> &) + ... + DECLVAL(Lists &)));
-
   template <auto Val>
   struct _mvalue {
     static constexpr auto value = Val;
@@ -238,6 +226,11 @@ namespace ustdex {
 
   struct UNKNOWN;
 
+  struct SENDER_HAS_TOO_MANY_SUCCESS_COMPLETIONS;
+
+  template <class... Sigs>
+  struct WITH_COMPLETIONS { };
+
   struct _merror_base {
     constexpr friend bool _ustdex_unhandled_error(void *) noexcept {
       return true;
@@ -293,31 +286,19 @@ namespace ustdex {
   using _minvoke1 = typename Fn::template _f<Ty>;
 
   template <class Fn, template <class...> class C, class... Ts>
-  _minvoke<Fn, Ts...> _apply_fn(C<Ts...> &);
+  _minvoke<Fn, Ts...> _apply_fn(C<Ts...> *);
 
   template <template <class...> class Fn, template <class...> class C, class... Ts>
-  Fn<Ts...> _apply_fn_q(C<Ts...> &);
+  Fn<Ts...> _apply_fn_q(C<Ts...> *);
 
   template <class Fn, class List>
-  using _mapply = decltype(ustdex::_apply_fn<Fn>(DECLVAL(List &)));
+  using _mapply = decltype(ustdex::_apply_fn<Fn>(static_cast<List *>(nullptr)));
 
   template <template <class...> class Fn, class List>
-  using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(DECLVAL(List &)));
+  using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(static_cast<List *>(nullptr)));
 
   template <class Ty, class...>
   using _mfront = Ty;
-
-  template <class Fn>
-  struct _mconcat_into {
-    template <class... Lists>
-    using _f = _mapply<Fn, _mconcat<Lists...>>;
-  };
-
-  template <template <class...> class Fn>
-  struct _mconcat_into_q {
-    template <class... Lists>
-    using _f = _mapply_q<Fn, _mconcat<Lists...>>;
-  };
 
   template <template <class...> class Fn, class List, class Enable = void>
   inline constexpr bool _mvalid_ = false;
@@ -427,6 +408,18 @@ namespace ustdex {
     using _f = _mtry_invoke<Fn, Ts...>;
   };
 
+  template <class Fn>
+  struct _mpoly {
+    template <class... Ts>
+    using _f = typename _mtry_<(sizeof...(Ts) == ~0ul)>::template _f<Fn, Ts...>;
+  };
+
+  template <template <class...> class Fn>
+  struct _mpoly_q {
+    template <class... Ts>
+    using _f = typename _mtry_<(sizeof...(Ts) == ~0ul)>::template _g<Fn, Ts...>;
+  };
+
   template <template <class...> class Fn, class... Default>
   struct _mquote;
 
@@ -465,6 +458,12 @@ namespace ustdex {
   struct _mbind_front {
     template <class... Us>
     using _f = _minvoke<Fn, Ts..., Us...>;
+  };
+
+  template <class Fn, class Ty>
+  struct _mbind_front1 {
+    template <class... Us>
+    using _f = _minvoke<Fn, Ty, Us...>;
   };
 
   template <template <class...> class Fn, class... Ts>
@@ -562,6 +561,48 @@ namespace ustdex {
   struct _mcount {
     template <class... Ts>
     using _f = _mvalue<sizeof...(Ts)>;
+  };
+
+  template <bool>
+  struct _mconcat_
+  {
+    template <class... Ts,
+              template <class...> class Ap = _mlist,
+              class... As,
+              template <class...> class Bp = _mlist,
+              class... Bs,
+              template <class...> class Cp = _mlist,
+              class... Cs,
+              template <class...> class Dp = _mlist,
+              class... Ds,
+              class... Tail>
+    static auto
+    _f(_mlist<Ts...>*, Ap<As...>*, Bp<Bs...>* = nullptr, Cp<Cs...>* = nullptr, Dp<Ds...>* = nullptr, Tail*... _tail)
+      -> decltype(_mconcat_<(sizeof...(Tail) == 0)>::_f(
+        static_cast<_mlist<Ts..., As..., Bs..., Cs..., Ds...>*>(nullptr), _tail...));
+  };
+
+  template <>
+  struct _mconcat_<true>
+  {
+    template <class... As>
+    static auto _f(_mlist<As...>*) -> _mlist<As...>;
+  };
+
+  template <class Continuation = _mquote<_mlist>>
+  struct _mconcat_into
+  {
+    template <class... Args>
+    using _f =
+      _mapply<Continuation, decltype(_mconcat_<(sizeof...(Args) == 0)>::_f({}, static_cast<Args*>(nullptr)...))>;
+  };
+
+  template <template <class...> class Continuation = _mlist>
+  struct _mconcat_into_q
+  {
+    template <class... Args>
+    using _f =
+      _mapply_q<Continuation, decltype(_mconcat_<(sizeof...(Args) == 0)>::_f({}, static_cast<Args*>(nullptr)...))>;
   };
 
   template <class Set, class... Ty>
