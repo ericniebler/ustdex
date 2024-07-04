@@ -1,27 +1,38 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
+
+#include <type_traits>
 
 #include "config.hpp"
 #include "meta.hpp"
 
-namespace ustdex
+#if USTDEX_CUDA()
+#  include <cuda/std/type_traits>
+#  define USTDEX_CUDA_NS cuda::
+#else
+#  define USTDEX_CUDA_NS
+#endif
+
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE::ustd
+{
+using USTDEX_CUDA_NS std::underlying_type_t;
+} // namespace USTDEX_NAMESPACE::ustd
+
+namespace USTDEX_NAMESPACE
 {
 //////////////////////////////////////////////////////////////////////////////////////////////////
-// __decay_t: An efficient implementation for std::decay
+// __decay_t: An efficient implementation for ::std::decay
 #if USTDEX_HAS_BUILTIN(__decay)
 
 template <class Ty>
@@ -30,7 +41,7 @@ using _decay_t = __decay(Ty);
 // #elif STDEXEC_NVHPC()
 
 //   template <class Ty>
-//   using _decay_t = std::decay_t<Ty>;
+//   using _decay_t = ::std::decay_t<Ty>;
 
 #else
 
@@ -99,10 +110,10 @@ extern _decay_default _mdecay<Ty (&)(Us...) noexcept>;
 template <class Ty>
 extern _decay_default _mdecay<Ty[]>;
 
-template <class Ty, std::size_t N>
+template <class Ty, ::std::size_t N>
 extern _decay_default _mdecay<Ty[N]>;
 
-template <class Ty, std::size_t N>
+template <class Ty, ::std::size_t N>
 extern _decay_default _mdecay<Ty (&)[N]>;
 
 template <>
@@ -224,4 +235,6 @@ using _nothrow_copyable_ = _mif<noexcept(Ty(DECLVAL(const Ty&)))>;
 template <class... As>
 inline constexpr bool _nothrow_copyable = (_mvalid_q<_nothrow_copyable_, As> && ...);
 #endif
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include <initializer_list>
@@ -21,14 +15,17 @@
 #include "meta.hpp"
 #include "type_traits.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
-USTDEX_DEVICE_CONSTANT constexpr std::size_t _npos = ~0UL;
+USTDEX_DEVICE_CONSTANT constexpr ::std::size_t _npos = ~0UL;
 
 struct _ignore
 {
   template <class... As>
-  constexpr _ignore(As&&...) noexcept {};
+  USTDEX_HOST_DEVICE constexpr _ignore(As&&...) noexcept {};
 };
 
 template <class...>
@@ -49,9 +46,9 @@ struct _immovable
   USTDEX_IMMOVABLE(_immovable);
 };
 
-inline constexpr std::size_t _max(std::initializer_list<std::size_t> il) noexcept
+USTDEX_HOST_DEVICE constexpr ::std::size_t _max(::std::initializer_list<::std::size_t> il) noexcept
 {
-  std::size_t max = 0;
+  ::std::size_t max = 0;
   for (auto i : il)
   {
     if (i > max)
@@ -62,27 +59,27 @@ inline constexpr std::size_t _max(std::initializer_list<std::size_t> il) noexcep
   return max;
 }
 
-constexpr std::size_t _find_pos(bool const* const begin, bool const* const end) noexcept
+USTDEX_HOST_DEVICE constexpr ::std::size_t _find_pos(bool const* const begin, bool const* const end) noexcept
 {
   for (bool const* where = begin; where != end; ++where)
   {
     if (*where)
     {
-      return static_cast<std::size_t>(where - begin);
+      return static_cast<::std::size_t>(where - begin);
     }
   }
   return _npos;
 }
 
 template <class Ty, class... Ts>
-inline constexpr std::size_t _index_of() noexcept
+USTDEX_HOST_DEVICE constexpr ::std::size_t _index_of() noexcept
 {
   constexpr bool _same[] = {USTDEX_IS_SAME(Ty, Ts)...};
   return ustdex::_find_pos(_same, _same + sizeof...(Ts));
 }
 
 template <class Ty, class Uy = Ty>
-inline constexpr Ty _exchange(Ty& obj, Uy&& new_value) noexcept
+USTDEX_HOST_DEVICE constexpr Ty _exchange(Ty& obj, Uy&& new_value) noexcept
 {
   constexpr bool _nothrow = //
     noexcept(Ty(static_cast<Ty&&>(obj)))&& //
@@ -95,7 +92,20 @@ inline constexpr Ty _exchange(Ty& obj, Uy&& new_value) noexcept
 }
 
 template <class Ty>
-inline constexpr Ty _decay_copy(Ty&& ty) noexcept(_nothrow_decay_copyable<Ty>)
+USTDEX_HOST_DEVICE constexpr void _swap(Ty& left, Ty& right) noexcept
+{
+  constexpr bool _nothrow = //
+    noexcept(Ty(static_cast<Ty&&>(left)))&& //
+    noexcept(left = static_cast<Ty&&>(right)); //
+  static_assert(_nothrow);
+
+  Ty tmp = static_cast<Ty&&>(left);
+  left   = static_cast<Ty&&>(right);
+  right  = static_cast<Ty&&>(tmp);
+}
+
+template <class Ty>
+USTDEX_HOST_DEVICE constexpr Ty _decay_copy(Ty&& ty) noexcept(_nothrow_decay_copyable<Ty>)
 {
   return static_cast<Ty&&>(ty);
 }
@@ -123,4 +133,6 @@ using _ref_t = decltype(_ref(static_cast<Ty (*)()>(nullptr)));
 
 template <class Ref>
 using _deref_t = decltype(_declval<Ref>()()());
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

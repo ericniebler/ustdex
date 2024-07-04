@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include <cstdint>
@@ -30,13 +24,16 @@
 #  include <stop_token>
 #endif
 
+// This must be the last #include
+#include "prologue.hpp"
+
 // warning #20012-D: __device__ annotation is ignored on a
 // function("inplace_stop_source") that is explicitly defaulted on its first
 // declaration
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_EDG(20012)
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 // [stoptoken.inplace], class inplace_stop_token
 class inplace_stop_token;
@@ -196,14 +193,14 @@ public:
   inplace_stop_token(const inplace_stop_token& _other) noexcept = default;
 
   USTDEX_HOST_DEVICE inplace_stop_token(inplace_stop_token&& _other) noexcept
-      : _source(std::exchange(_other._source, {}))
+      : _source(ustdex::_exchange(_other._source, {}))
   {}
 
   auto operator=(const inplace_stop_token& _other) noexcept -> inplace_stop_token& = default;
 
   USTDEX_HOST_DEVICE auto operator=(inplace_stop_token&& _other) noexcept -> inplace_stop_token&
   {
-    _source = std::exchange(_other._source, nullptr);
+    _source = ustdex::_exchange(_other._source, nullptr);
     return *this;
   }
 
@@ -219,7 +216,7 @@ public:
 
   USTDEX_HOST_DEVICE void swap(inplace_stop_token& _other) noexcept
   {
-    std::swap(_source, _other._source);
+    ustdex::_swap(_source, _other._source);
   }
 
   USTDEX_HOST_DEVICE friend bool operator==(const inplace_stop_token& _a, const inplace_stop_token& _b) noexcept
@@ -256,7 +253,7 @@ class inplace_stop_callback : _stok::_inplace_stop_callback_base
 public:
   template <class _Fun2>
   USTDEX_HOST_DEVICE explicit inplace_stop_callback(inplace_stop_token _token, _Fun2&& _fun) noexcept(
-    std::is_nothrow_constructible_v<_Fun, _Fun2>)
+    ::std::is_nothrow_constructible_v<_Fun, _Fun2>)
       : _stok::_inplace_stop_callback_base(_token._source, &inplace_stop_callback::_execute_impl)
       , _fun(static_cast<_Fun2&&>(_fun))
   {
@@ -274,7 +271,7 @@ public:
 private:
   USTDEX_HOST_DEVICE static void _execute_impl(_stok::_inplace_stop_callback_base* cb) noexcept
   {
-    std::move(static_cast<inplace_stop_callback*>(cb)->_fun)();
+    ::std::move(static_cast<inplace_stop_callback*>(cb)->_fun)();
   }
 
   USTDEX_NO_UNIQUE_ADDRESS _Fun _fun;
@@ -475,6 +472,8 @@ struct _on_stop_request
 
 template <class Token, class Callback>
 using stop_callback_for_t = typename Token::template callback_type<Callback>;
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 USTDEX_PRAGMA_POP()
+
+#include "epilogue.hpp"

@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include <cassert>
@@ -20,8 +14,18 @@
 
 #include "preprocessor.hpp"
 
-// Needed by the warning suppression macros
-#define USTDEX_STRINGIZE(_ARG) #_ARG
+#ifndef USTDEX_NAMESPACE
+#  define USTDEX_NAMESPACE ustdex
+#endif
+
+namespace USTDEX_NAMESPACE
+{
+}
+
+// Make ustdex an alias for USTDEX_NAMESPACE if USTDEX_NAMESPACE is not "ustdex"
+#define USTDEX_PP_PROBE_NAMESPACE_DETAIL_ustdex USTDEX_PP_PROBE(~, 1)
+#define USTDEX_HAS_DEFAULT_NAMESPACE() \
+  USTDEX_PP_CHECK(USTDEX_PP_CAT(USTDEX_PP_PROBE_NAMESPACE_DETAIL_, USTDEX_NAMESPACE))
 
 // Compiler detections:
 #if defined(__NVCC__)
@@ -74,18 +78,18 @@
 #if USTDEX_NVCC()
 #  define USTDEX_PRAGMA_PUSH()          _Pragma("nv_diagnostic push")
 #  define USTDEX_PRAGMA_POP()           _Pragma("nv_diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_STRINGIZE(nv_diag_suppress __VA_ARGS__))
+#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(nv_diag_suppress __VA_ARGS__))
 #elif USTDEX_NVHPC() || USTDEX_EDG()
 #  define USTDEX_PRAGMA_PUSH()          _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
 #  define USTDEX_PRAGMA_POP()           _Pragma("diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_STRINGIZE(diag_suppress __VA_ARGS__))
+#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(diag_suppress __VA_ARGS__))
 #elif USTDEX_CLANG() || USTDEX_GCC()
 #  define USTDEX_PRAGMA_PUSH()                                                                                         \
     _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas") \
       USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")            \
         USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
 #  define USTDEX_PRAGMA_POP()           _Pragma("GCC diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_GNU(...) _Pragma(USTDEX_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
+#  define USTDEX_PRAGMA_IGNORE_GNU(...) _Pragma(USTDEX_PP_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
 #else
 #  define USTDEX_PRAGMA_PUSH()
 #  define USTDEX_PRAGMA_POP()
@@ -99,9 +103,25 @@
 #endif
 
 #ifdef __CUDACC__
-#  define USTDEX_DEVICE          __device__
-#  define USTDEX_HOST_DEVICE     __host__ __device__
-#  define USTDEX_DEVICE_CONSTANT __constant__
+#  define USTDEX_CUDA() 1
+#else
+#  define USTDEX_CUDA() 0
+#endif
+
+#if defined(__CUDA_ARCH__)
+#  define USTDEX_HOST_ONLY() 0
+#else
+#  define USTDEX_HOST_ONLY() 1
+#endif
+
+#if USTDEX_CUDA()
+#  define USTDEX_DEVICE      __device__
+#  define USTDEX_HOST_DEVICE __host__ __device__
+#  if USTDEX_HOST_ONLY()
+#    define USTDEX_DEVICE_CONSTANT inline
+#  else
+#    define USTDEX_DEVICE_CONSTANT __constant__
+#  endif
 #else
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE
@@ -153,49 +173,43 @@
 #else
 #  define USTDEX_IS_SAME(...) ustdex::_is_same<__VA_ARGS__>
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class T, class U>
 inline constexpr bool _is_same = false;
 template <class T>
 inline constexpr bool _is_same<T, T> = true;
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 #endif
 
 #if USTDEX_HAS_BUILTIN(__remove_reference)
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class Ty>
 using _remove_reference_t = __remove_reference(Ty);
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
 #elif USTDEX_HAS_BUILTIN(__remove_reference_t)
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class Ty>
 using _remove_reference_t = __remove_reference_t(Ty);
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
 #else
-#  define USTDEX_REMOVE_REFERENCE(...) std::remove_reference_t<__VA_ARGS__>
+#  define USTDEX_REMOVE_REFERENCE(...) ::std::remove_reference_t<__VA_ARGS__>
 #endif
 
 #if USTDEX_HAS_BUILTIN(__is_base_of) || (_MSC_VER >= 1914)
 #  define USTDEX_IS_BASE_OF(...) __is_base_of(__VA_ARGS__)
 #else
-#  define USTDEX_IS_BASE_OF(...) std::is_base_of_v<__VA_ARGS__>
+#  define USTDEX_IS_BASE_OF(...) ::std::is_base_of_v<__VA_ARGS__>
 #endif
 
 #ifndef USTDEX_ASSERT
 #  define USTDEX_ASSERT assert
-#endif
-
-#ifdef USTDEX_CUDA
-#  if USTDEX_CUDA == 0
-#    undef USTDEX_CUDA
-#  endif
 #endif
 
 #if USTDEX_HAS_CPP_ATTRIBUTE(no_unique_address)

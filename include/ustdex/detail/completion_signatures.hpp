@@ -1,24 +1,21 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "cpos.hpp"
 #include "exception.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 template <class... Ts>
 struct completion_signatures
@@ -240,7 +237,7 @@ template <class Sndr, class Rcvr = receiver_archetype>
 USTDEX_DEVICE_CONSTANT constexpr bool sends_stopped = //
   _sends_stopped<completion_signatures_of_t<Sndr, Rcvr>>;
 
-using _eptr_completion = completion_signatures<set_error_t(std::exception_ptr)>;
+using _eptr_completion = completion_signatures<set_error_t(::std::exception_ptr)>;
 
 template <bool NoExcept>
 using _eptr_completion_if = _mif<NoExcept, completion_signatures<>, _eptr_completion>;
@@ -294,6 +291,9 @@ template <class Sndr, class Rcvr = receiver_archetype>
 auto completions_of(Sndr&&, Rcvr = {}) -> decltype(_csig::_to_sigs(DECLVAL(completion_signatures_of_t<Sndr, Rcvr>&)));
 
 template <bool PotentiallyThrowing>
-auto eptr_completion_if() -> _mif<PotentiallyThrowing, _csig::_sigs<set_error_t(std::exception_ptr)>, _csig::_sigs<>>&;
+auto eptr_completion_if()
+  -> _mif<PotentiallyThrowing, _csig::_sigs<set_error_t(::std::exception_ptr)>, _csig::_sigs<>>&;
 } // namespace meta
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

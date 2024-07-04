@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "config.hpp"
@@ -21,7 +15,10 @@
 #include "type_traits.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 struct receiver_t
 {};
@@ -131,7 +128,7 @@ USTDEX_DEVICE_CONSTANT constexpr struct start_t
 USTDEX_DEVICE_CONSTANT constexpr struct connect_t
 {
   template <class Sndr, class Rcvr>
-    USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr&& sndr, Rcvr&& rcvr) const
+  USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr&& sndr, Rcvr&& rcvr) const
     noexcept(noexcept(static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr))))
       -> decltype(static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr)))
   {
@@ -196,4 +193,6 @@ extern _fn_t<set_error_t>* _set_tag<_error, Void>;
 template <class Void>
 extern _fn_t<set_stopped_t>* _set_tag<_stopped, Void>;
 } // namespace _detail
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

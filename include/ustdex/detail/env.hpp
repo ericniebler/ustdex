@@ -1,27 +1,24 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
-
-#include <functional>
 
 #include "meta.hpp"
 #include "queries.hpp"
-#include "tuple.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
+#include "tuple.hpp"
+
+#include <functional>
+
+// Must be the last include
+#include "prologue.hpp"
 
 // warning #20012-D: __device__ annotation is ignored on a
 // function("inplace_stop_source") that is explicitly defaulted on its first
@@ -29,13 +26,13 @@
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_EDG(20012)
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class Ty>
 extern Ty _unwrap_ref;
 
 template <class Ty>
-extern Ty& _unwrap_ref<std::reference_wrapper<Ty>>;
+extern Ty& _unwrap_ref<::std::reference_wrapper<Ty>>;
 
 template <class Ty>
 using _unwrap_reference_t = decltype(_unwrap_ref<Ty>);
@@ -60,8 +57,8 @@ struct env
   template <class Query>
   USTDEX_INLINE USTDEX_HOST_DEVICE constexpr decltype(auto) _get_1st(Query) const noexcept
   {
-    constexpr bool _flags[]    = {_queryable<Envs, Query>..., true};
-    constexpr std::size_t _idx = ustdex::_find_pos(_flags, _flags + sizeof...(Envs));
+    constexpr bool _flags[]      = {_queryable<Envs, Query>..., true};
+    constexpr ::std::size_t _idx = ustdex::_find_pos(_flags, _flags + sizeof...(Envs));
     if constexpr (_idx != _npos)
     {
       return ustdex::_cget<_idx>(_envs);
@@ -72,7 +69,7 @@ struct env
   using _1st_env_t = decltype(DECLVAL(const Env&)._get_1st(Query{}));
 
   template <class Query>
-    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto query(Query query) const
+  USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto query(Query query) const
     noexcept(_nothrow_queryable<_1st_env_t<Query>, Query>) //
     -> _query_result_t<_1st_env_t<Query>, Query>
   {
@@ -104,7 +101,7 @@ struct env<Env0, Env1>
   using _1st_env_t = decltype(DECLVAL(const Env&)._get_1st(Query{}));
 
   template <class Query>
-    USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto query(Query query) const
+  USTDEX_INLINE USTDEX_HOST_DEVICE constexpr auto query(Query query) const
     noexcept(_nothrow_queryable<_1st_env_t<Query>, Query>) //
     -> _query_result_t<_1st_env_t<Query>, Query>
   {
@@ -171,6 +168,8 @@ using namespace _region;
 
 template <class Ty>
 using env_of_t = decltype(get_env(DECLVAL(Ty)));
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 USTDEX_PRAGMA_POP()
+
+#include "epilogue.hpp"

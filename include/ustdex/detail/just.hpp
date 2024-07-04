@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "completion_signatures.hpp"
@@ -21,7 +15,10 @@
 #include "tuple.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// Must be the last include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 // Forward declarations of the just* tag types:
 struct just_t;
@@ -119,4 +116,6 @@ USTDEX_DEVICE_CONSTANT constexpr struct just_error_t : _just<_error>
 USTDEX_DEVICE_CONSTANT constexpr struct just_stopped_t : _just<_stopped>
 {
 } just_stopped{};
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

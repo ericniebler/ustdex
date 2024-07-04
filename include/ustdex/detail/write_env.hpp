@@ -1,29 +1,26 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "config.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
 #include "exception.hpp"
-#include "queries.hpp"
 #include "receiver_with_env.hpp"
+#include "queries.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// Must be the last include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 struct write_env_t
 {
@@ -100,4 +97,6 @@ USTDEX_HOST_DEVICE USTDEX_INLINE constexpr auto write_env_t::operator()(Sndr snd
 
 USTDEX_DEVICE_CONSTANT constexpr write_env_t write_env{};
 
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

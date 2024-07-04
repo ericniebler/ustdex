@@ -1,32 +1,29 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
-#include <utility>
-
 #include "config.hpp"
+
+#include <utility>
 #if __cpp_lib_three_way_comparison
 #  include <compare>
 #endif
+
+// This must be the last #include
+#include "prologue.hpp"
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wgnu-string-literal-operator-template")
 USTDEX_PRAGMA_IGNORE_GNU("-Wnon-template-friend")
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class Ty>
 using _declfn = Ty && (*) () noexcept;
@@ -77,7 +74,7 @@ using _mfalse = _mbool<false>;
 template <auto... Vals>
 struct _mvalues;
 
-template <std::size_t... Vals>
+template <::std::size_t... Vals>
 struct _moffsets;
 
 template <class... Bools>
@@ -87,26 +84,26 @@ template <class... Bools>
 using _mor = _mbool<(Bools::value || ...)>;
 
 #if USTDEX_NVCC()
-template <std::size_t... Idx>
-using _mindices = std::index_sequence<Idx...>;
+template <::std::size_t... Idx>
+using _mindices = ::std::index_sequence<Idx...>;
 
-template <std::size_t Count>
-using _mmake_indices = std::make_index_sequence<Count>;
+template <::std::size_t Count>
+using _mmake_indices = ::std::make_index_sequence<Count>;
 
 template <class... Ts>
-using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)>;
+using _mmake_indices_for = ::std::make_index_sequence<sizeof...(Ts)>;
 #else
-template <std::size_t... Idx>
-using _mindices = std::index_sequence<Idx...>*;
+template <::std::size_t... Idx>
+using _mindices = ::std::index_sequence<Idx...>*;
 
-template <std::size_t Count>
-using _mmake_indices = std::make_index_sequence<Count>*;
+template <::std::size_t Count>
+using _mmake_indices = ::std::make_index_sequence<Count>*;
 
 template <class... Ts>
-using _mmake_indices_for = std::make_index_sequence<sizeof...(Ts)>*;
+using _mmake_indices_for = ::std::make_index_sequence<sizeof...(Ts)>*;
 #endif
 
-constexpr std::size_t _mpow2(std::size_t _size) noexcept
+constexpr ::std::size_t _mpow2(::std::size_t _size) noexcept
 {
   --_size;
   _size |= _size >> 1;
@@ -136,30 +133,30 @@ constexpr int _mcompare(Ty _lhs, Ty _rhs) noexcept
   return _lhs < _rhs ? -1 : _lhs > _rhs ? 1 : 0;
 }
 
-template <std::size_t Len>
+template <::std::size_t Len>
 struct _mstring
 {
-  template <std::size_t Ny, std::size_t... Is>
+  template <::std::size_t Ny, ::std::size_t... Is>
   constexpr _mstring(const char (&_str)[Ny], _mindices<Is...>) noexcept
       : len_{Ny}
       , what_{(Is < Ny ? _str[Is] : '\0')...}
   {}
 
-  template <std::size_t Ny>
+  template <::std::size_t Ny>
   constexpr _mstring(const char (&_str)[Ny], int = 0) noexcept
       : _mstring{_str, _mmake_indices<Len>{}}
   {}
 
-  constexpr auto length() const noexcept -> std::size_t
+  constexpr auto length() const noexcept -> ::std::size_t
   {
     return len_;
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr int compare(const _mstring<OtherLen>& other) const noexcept
   {
-    std::size_t const len = _mmin(len_, other.len_);
-    for (std::size_t i = 0; i < len; ++i)
+    ::std::size_t const len = _mmin(len_, other.len_);
+    for (::std::size_t i = 0; i < len; ++i)
     {
       if (auto const cmp = _mcompare(what_[i], other.what_[i]))
       {
@@ -169,50 +166,50 @@ struct _mstring
     return _mcompare(len_, other.len_);
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator==(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return len_ == other.len_ && compare(other) == 0;
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator!=(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return !operator==(other);
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator<(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return compare(other) < 0;
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator>(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return compare(other) > 0;
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator<=(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return compare(other) <= 0;
   }
 
-  template <std::size_t OtherLen>
+  template <::std::size_t OtherLen>
   constexpr auto operator>=(const _mstring<OtherLen>& other) const noexcept -> bool
   {
     return compare(other) >= 0;
   }
 
-  std::size_t len_;
+  ::std::size_t len_;
   char what_[Len];
 };
 
-template <std::size_t Len>
+template <::std::size_t Len>
 _mstring(const char (&_str)[Len]) -> _mstring<Len>;
 
-template <std::size_t Len>
+template <::std::size_t Len>
 _mstring(const char (&_str)[Len], int) -> _mstring<_mpow2(Len)>;
 
 template <class T>
@@ -350,7 +347,7 @@ template <bool Value>
 inline constexpr auto _v<_mbool<Value>> = Value;
 
 template <class Tp, Tp Value>
-inline constexpr auto _v<std::integral_constant<Tp, Value>> = Value;
+inline constexpr auto _v<::std::integral_constant<Tp, Value>> = Value;
 
 struct _midentity
 {
@@ -539,17 +536,17 @@ struct _m_at_
 template <class Np, class... Ts>
 using _m_at = _minvoke<_m_at_<_v<Np> == ~0ul>, Np, Ts...>;
 
-template <std::size_t Np, class... Ts>
+template <::std::size_t Np, class... Ts>
 using _m_at_c = _minvoke<_m_at_<Np == ~0ul>, _mvalue<Np>, Ts...>;
 
-template <std::size_t Idx>
+template <::std::size_t Idx>
 struct _mget
 {
   template <class... Ts>
   using _f = _m_at<_mvalue<Idx>, Ts...>;
 };
 #else
-template <std::size_t Idx>
+template <::std::size_t Idx>
 struct _mget
 {
   template <class, class, class, class, class... Ts>
@@ -587,7 +584,7 @@ struct _mget<3>
 template <class Np, class... Ts>
 using _m_at = _minvoke<_mget<_v<Np>>, Ts...>;
 
-template <std::size_t Np, class... Ts>
+template <::std::size_t Np, class... Ts>
 using _m_at_c = _minvoke<_mget<Np>, Ts...>;
 #endif
 
@@ -686,7 +683,7 @@ auto operator%(_inherit<Set...>&, _mtype<Ty>&) //
 template <class ExpectedSet>
 struct _eq
 {
-  static constexpr std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
+  static constexpr ::std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
 
   template <class... Ts>
   using _f = _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
@@ -718,6 +715,8 @@ struct _msingle_or
   template <class Uy = Ty>
   using _f = Uy;
 };
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 USTDEX_PRAGMA_POP()
+
+#include "epilogue.hpp"
