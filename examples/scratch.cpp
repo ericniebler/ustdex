@@ -20,7 +20,7 @@
 
 #include "ustdex/ustdex.hpp"
 
-using namespace ustdex;
+using namespace USTDEX_NAMESPACE;
 
 struct sink
 {

@@ -27,7 +27,7 @@
 #include <catch2/catch_all.hpp>
 #include <ustdex/ustdex.hpp>
 
-namespace ex = ustdex;
+namespace ex = USTDEX_NAMESPACE;
 
 namespace
 {

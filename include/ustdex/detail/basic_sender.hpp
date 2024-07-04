@@ -20,6 +20,9 @@
 #include "cpos.hpp"
 #include "utility.hpp"
 
+// This must be the last #include
+#include "prologue.hpp"
+
 namespace ustdex
 {
 template <class Data, class Rcvr>
@@ -233,3 +236,5 @@ template <class Data, class... Sndrs>
 basic_sender(_ignore, Data, Sndrs...) -> basic_sender<Data, Sndrs...>;
 
 } // namespace ustdex
+
+#include "epilogue.hpp"
