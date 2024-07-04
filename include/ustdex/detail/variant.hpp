@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include <cstddef>
@@ -23,13 +17,24 @@
 #include "type_traits.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
+namespace _detail
+{
+template <class Ty>
+USTDEX_HOST_DEVICE void _destroy(Ty& ty) noexcept
+{
+  ty.~Ty();
+}
+} // namespace _detail
 template <class Idx, class... Ts>
 class _variant_impl;
 
 template <>
-class _variant_impl<std::index_sequence<>>
+class _variant_impl<::std::index_sequence<>>
 {
 public:
   template <class Fn, class... Us>
@@ -37,15 +42,15 @@ public:
   {}
 };
 
-template <std::size_t... Idx, class... Ts>
-class _variant_impl<std::index_sequence<Idx...>, Ts...>
+template <::std::size_t... Idx, class... Ts>
+class _variant_impl<::std::index_sequence<Idx...>, Ts...>
 {
-  static constexpr std::size_t _max_size = _max({sizeof(Ts)...});
+  static constexpr ::std::size_t _max_size = _max({sizeof(Ts)...});
   static_assert(_max_size != 0);
-  std::size_t _index{_npos};
+  ::std::size_t _index{_npos};
   alignas(Ts...) unsigned char _storage[_max_size];
 
-  template <std::size_t Ny>
+  template <::std::size_t Ny>
   using _at = _m_at_c<Ny, Ts...>;
 
   USTDEX_HOST_DEVICE void _destroy() noexcept
@@ -57,10 +62,13 @@ class _variant_impl<std::index_sequence<Idx...>, Ts...>
 #if USTDEX_NVHPC()
       // Unknown nvc++ name lookup bug
       ((Idx == index ? static_cast<_at<Idx>*>(_ptr())->Ts::~Ts() : void(0)), ...);
+#elif USTDEX_NVCC()
+      // Unknown nvcc name lookup bug
+      ((Idx == index ? _detail::_destroy(*static_cast<_at<Idx>*>(_ptr())) : void(0)), ...);
 #else
       // casting the destructor expression to void is necessary for MSVC in
       // /permissive- mode.
-      ((Idx == index ? void(static_cast<_at<Idx>*>(_ptr())->~Ts()) : void(0)), ...);
+      ((Idx == index ? void((*static_cast<_at<Idx>*>(_ptr())).~Ts()) : void(0)), ...);
 #endif
     }
   }
@@ -80,7 +88,7 @@ public:
     return _storage;
   }
 
-  USTDEX_HOST_DEVICE USTDEX_INLINE std::size_t index() const noexcept
+  USTDEX_HOST_DEVICE USTDEX_INLINE ::std::size_t index() const noexcept
   {
     return _index;
   }
@@ -89,7 +97,7 @@ public:
   USTDEX_HOST_DEVICE Ty& emplace(As&&... as) //
     noexcept(_nothrow_constructible<Ty, As...>)
   {
-    constexpr std::size_t _new_index = ustdex::_index_of<Ty, Ts...>();
+    constexpr ::std::size_t _new_index = ustdex::_index_of<Ty, Ts...>();
     static_assert(_new_index != _npos, "Type not in variant");
 
     _destroy();
@@ -98,7 +106,7 @@ public:
     return *static_cast<Ty*>(_ptr());
   }
 
-  template <std::size_t Ny, class... As>
+  template <::std::size_t Ny, class... As>
   USTDEX_HOST_DEVICE _at<Ny>& emplace_at(As&&... as) //
     noexcept(_nothrow_constructible<_at<Ny>, As...>)
   {
@@ -111,11 +119,11 @@ public:
   }
 
   template <class Fn, class... As>
-    USTDEX_HOST_DEVICE auto emplace_from(Fn&& fn, As&&... as) //
+  USTDEX_HOST_DEVICE auto emplace_from(Fn&& fn, As&&... as) //
     noexcept(_nothrow_callable<Fn, As...>) -> _call_result_t<Fn, As...>&
   {
     using _result_t                  = _call_result_t<Fn, As...>;
-    constexpr std::size_t _new_index = ustdex::_index_of<_result_t, Ts...>();
+    constexpr ::std::size_t _new_index = ustdex::_index_of<_result_t, Ts...>();
     static_assert(_new_index != _npos, "Type not in variant");
 
     _destroy();
@@ -136,21 +144,21 @@ public:
      ...);
   }
 
-  template <std::size_t Ny>
+  template <::std::size_t Ny>
   USTDEX_HOST_DEVICE _at<Ny>&& get() && noexcept
   {
     USTDEX_ASSERT(Ny == _index);
     return static_cast<_at<Ny>&&>(*static_cast<_at<Ny>*>(_ptr()));
   }
 
-  template <std::size_t Ny>
+  template <::std::size_t Ny>
   USTDEX_HOST_DEVICE _at<Ny>& get() & noexcept
   {
     USTDEX_ASSERT(Ny == _index);
     return *static_cast<_at<Ny>*>(_ptr());
   }
 
-  template <std::size_t Ny>
+  template <::std::size_t Ny>
   USTDEX_HOST_DEVICE const _at<Ny>& get() const& noexcept
   {
     USTDEX_ASSERT(Ny == _index);
@@ -159,8 +167,10 @@ public:
 };
 
 template <class... Ts>
-using _variant = _variant_impl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
+using _variant = _variant_impl<::std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
 template <class... Ts>
 using _decayed_variant = _variant<_decay_t<Ts>...>;
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

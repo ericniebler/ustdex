@@ -1,28 +1,25 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
-
-#include <memory>
 
 #include "meta.hpp"
 #include "stop_token.hpp"
 #include "type_traits.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+#include <memory>
+
+// Must be the last include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 template <class Ty, class Query>
 auto _query_result_() -> decltype(DECLVAL(Ty).query(Query()));
@@ -54,7 +51,7 @@ USTDEX_DEVICE_CONSTANT constexpr struct get_allocator_t
     return env.query(*this);
   }
 
-  USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> std::allocator<void>
+  USTDEX_HOST_DEVICE auto operator()(_ignore) const noexcept -> ::std::allocator<void>
   {
     return {};
   }
@@ -152,4 +149,6 @@ USTDEX_DEVICE_CONSTANT constexpr struct get_domain_t
 template <class Sch>
 using domain_of_t = _call_result_t<get_domain_t, Sch>;
 
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

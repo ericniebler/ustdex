@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "config.hpp"
@@ -22,7 +16,10 @@
 #include "queries.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 struct THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY;
 
@@ -44,7 +41,7 @@ private:
     template <class Query, class Env>
     using _f = _mif<_nothrow_callable<Query, Env>,
                     completion_signatures<set_value_t(_call_result_t<Query, Env>)>,
-                    completion_signatures<set_value_t(_call_result_t<Query, Env>), set_error_t(std::exception_ptr)>>;
+                    completion_signatures<set_value_t(_call_result_t<Query, Env>), set_error_t(::std::exception_ptr)>>;
   };
 
   template <class Rcvr, class Query>
@@ -77,8 +74,13 @@ private:
       }
       else
       {
-        USTDEX_TRY(({ ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr))); }),
-                   USTDEX_CATCH(...)({ ustdex::set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); }))
+        USTDEX_TRY( //
+          ( //
+            { ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr))); }),
+          USTDEX_CATCH(...)( //
+            { //
+              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+            }))
       }
     }
   };
@@ -109,12 +111,13 @@ struct read_env_t::_sndr_t
 };
 
 template <class Query>
-USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::_sndr_t<Query>
-read_env_t::operator()(Query query) const noexcept
+USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::_sndr_t<Query> read_env_t::operator()(Query query) const noexcept
 {
   return _sndr_t<Query>{{}, query};
 }
 
 USTDEX_DEVICE_CONSTANT constexpr read_env_t read_env{};
 
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include <type_traits>
@@ -24,7 +18,10 @@
 #include "tuple.hpp"
 #include "utility.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 // Forward-declate the let_* algorithm tag types:
 struct then_t;
@@ -50,14 +47,14 @@ template <bool IsVoid, bool Nothrow>
 struct _completion_fn
 { // non-void, potentially throwing case
   template <class Result>
-  using _f = completion_signatures<set_value_t(Result), set_error_t(std::exception_ptr)>;
+  using _f = completion_signatures<set_value_t(Result), set_error_t(::std::exception_ptr)>;
 };
 
 template <>
 struct _completion_fn<true, false>
 { // void, potentially throwing case
   template <class>
-  using _f = completion_signatures<set_value_t(), set_error_t(std::exception_ptr)>;
+  using _f = completion_signatures<set_value_t(), set_error_t(::std::exception_ptr)>;
 };
 
 template <>
@@ -159,10 +156,12 @@ private:
       }
       else
       {
-        USTDEX_TRY(({ //
-                     _set<true>(static_cast<Ts&&>(ts)...); //
-                   }), //
-                   USTDEX_CATCH(...)({ ustdex::set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); }))
+        USTDEX_TRY( //
+          ({ //
+            _set<true>(static_cast<Ts&&>(ts)...); //
+          }), //
+          USTDEX_CATCH(...)( //
+            { ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception()); }))
       }
     }
 
@@ -275,4 +274,6 @@ USTDEX_DEVICE_CONSTANT constexpr struct upon_error_t : _upon_t<_error>
 USTDEX_DEVICE_CONSTANT constexpr struct upon_stopped_t : _upon_t<_stopped>
 {
 } upon_stopped{};
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

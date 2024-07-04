@@ -1,35 +1,32 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "config.hpp"
 
 // libcu++ does not have <cuda/std/mutex> or <cuda/std/condition_variable>
-#ifndef USTDEX_CUDA
+#if USTDEX_HOST_ONLY()
 
 #  include <condition_variable>
 #  include <mutex>
-#  include <utility>
 
 #  include "completion_signatures.hpp"
 #  include "env.hpp"
 #  include "exception.hpp"
 #  include "queries.hpp"
+#  include "utility.hpp"
 
-namespace ustdex
+// Must be the last include
+#  include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 class run_loop;
 
@@ -56,22 +53,26 @@ struct _operation : _task
   USTDEX_NO_UNIQUE_ADDRESS Rcvr _rcvr;
 
   using completion_signatures = //
-    ustdex::completion_signatures<set_value_t(), set_error_t(std::exception_ptr), set_stopped_t()>;
+    ustdex::completion_signatures<set_value_t(), set_error_t(::std::exception_ptr), set_stopped_t()>;
 
   USTDEX_HOST_DEVICE static void _execute_impl(_task* _p) noexcept
   {
     auto& _rcvr = static_cast<_operation*>(_p)->_rcvr;
-    USTDEX_TRY(({
-                 if (get_stop_token(get_env(_rcvr)).stop_requested())
-                 {
-                   set_stopped(static_cast<Rcvr&&>(_rcvr));
-                 }
-                 else
-                 {
-                   set_value(static_cast<Rcvr&&>(_rcvr));
-                 }
-               }),
-               USTDEX_CATCH(...)({ set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); }))
+    USTDEX_TRY( //
+      ({ //
+        if (get_stop_token(get_env(_rcvr)).stop_requested())
+        {
+          set_stopped(static_cast<Rcvr&&>(_rcvr));
+        }
+        else
+        {
+          set_value(static_cast<Rcvr&&>(_rcvr));
+        }
+      }),
+      USTDEX_CATCH(...)( //
+        { //
+          set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+        }))
   }
 
   USTDEX_HOST_DEVICE explicit _operation(_task* _tail) noexcept
@@ -98,6 +99,11 @@ class run_loop
   friend struct _operation;
 
 public:
+  run_loop() noexcept
+  {
+    _head._next = _head._tail = &_head;
+  }
+
   class _scheduler
   {
     struct _schedule_task
@@ -183,20 +189,22 @@ private:
   USTDEX_HOST_DEVICE void _push_back(_task* _task);
   USTDEX_HOST_DEVICE auto _pop_front() -> _task*;
 
-  std::mutex _mutex;
-  std::condition_variable _cv;
-  _task _head{{}, &_head, &_head};
+  ::std::mutex _mutex{};
+  ::std::condition_variable _cv{};
+  _task _head{};
   bool _stop = false;
 };
 
 template <class Rcvr>
 USTDEX_HOST_DEVICE inline void _operation<Rcvr>::start() & noexcept {
-  USTDEX_TRY(({ //
-               _loop->_push_back(this); //
-             }), //
-             USTDEX_CATCH(...)({ //
-               set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); //
-             })) //
+  USTDEX_TRY( //
+    ({ //
+      _loop->_push_back(this); //
+    }), //
+    USTDEX_CATCH(...)( //
+      { //
+        set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception()); //
+      })) //
 }
 
 USTDEX_HOST_DEVICE inline void run_loop::run()
@@ -209,14 +217,14 @@ USTDEX_HOST_DEVICE inline void run_loop::run()
 
 USTDEX_HOST_DEVICE inline void run_loop::finish()
 {
-  std::unique_lock _lock{_mutex};
+  ::std::unique_lock _lock{_mutex};
   _stop = true;
   _cv.notify_all();
 }
 
 USTDEX_HOST_DEVICE inline void run_loop::_push_back(_task* _task)
 {
-  std::unique_lock _lock{_mutex};
+  ::std::unique_lock _lock{_mutex};
   _task->_next = &_head;
   _head._tail = _head._tail->_next = _task;
   _cv.notify_one();
@@ -224,7 +232,7 @@ USTDEX_HOST_DEVICE inline void run_loop::_push_back(_task* _task)
 
 USTDEX_HOST_DEVICE inline auto run_loop::_pop_front() -> _task*
 {
-  std::unique_lock _lock{_mutex};
+  ::std::unique_lock _lock{_mutex};
   _cv.wait(_lock, [this] {
     return _head._next != &_head || _stop;
   });
@@ -232,8 +240,10 @@ USTDEX_HOST_DEVICE inline auto run_loop::_pop_front() -> _task*
   {
     _head._tail = &_head;
   }
-  return std::exchange(_head._next, _head._next->_next);
+  return ustdex::_exchange(_head._next, _head._next->_next);
 }
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
-#endif // USTDEX_CUDA
+#  include "epilogue.hpp"
+
+#endif // USTDEX_HOST_ONLY()

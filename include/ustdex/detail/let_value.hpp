@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "completion_signatures.hpp"
@@ -22,7 +16,10 @@
 #include "tuple.hpp"
 #include "variant.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 // Declare types to use for diagnostics:
 struct FUNCTION_MUST_RETURN_A_SENDER;
@@ -165,20 +162,24 @@ private:
     {
       if constexpr (USTDEX_IS_SAME(Tag, SetTag))
       {
-        USTDEX_TRY(({
-                     // Store the results so the lvalue refs we pass to the function
-                     // will be valid for the duration of the async op.
-                     auto& tupl = _result.template emplace<_decayed_tuple<As...>>(static_cast<As&&>(as)...);
-                     if constexpr (!_is_error<completion_signatures>)
-                     {
-                       // Call the function with the results and connect the resulting
-                       // sender, storing the operation state in _opstate2.
-                       auto& nextop = _opstate2.emplace_from(
-                         ustdex::connect, tupl.apply(static_cast<Fn&&>(_fn), tupl), ustdex::_rcvr_ref(_rcvr));
-                       ustdex::start(nextop);
-                     }
-                   }),
-                   USTDEX_CATCH(...)({ ustdex::set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); }))
+        USTDEX_TRY( //
+          ({ //
+            // Store the results so the lvalue refs we pass to the function
+            // will be valid for the duration of the async op.
+            auto& tupl = _result.template emplace<_decayed_tuple<As...>>(static_cast<As&&>(as)...);
+            if constexpr (!_is_error<completion_signatures>)
+            {
+              // Call the function with the results and connect the resulting
+              // sender, storing the operation state in _opstate2.
+              auto& nextop = _opstate2.emplace_from(
+                ustdex::connect, tupl.apply(static_cast<Fn&&>(_fn), tupl), ustdex::_rcvr_ref(_rcvr));
+              ustdex::start(nextop);
+            }
+          }),
+          USTDEX_CATCH(...)( //
+            { //
+              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+            }))
       }
       else
       {
@@ -287,4 +288,6 @@ USTDEX_DEVICE_CONSTANT constexpr struct let_error_t : _let<_error>
 USTDEX_DEVICE_CONSTANT constexpr struct let_stopped_t : _let<_stopped>
 {
 } let_stopped{};
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

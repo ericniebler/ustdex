@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "atomic.hpp"
@@ -28,11 +22,14 @@
 #include "utility.hpp"
 #include "variant.hpp"
 
+// This must be the last #include
+#include "prologue.hpp"
+
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_EDG(expr_has_no_effect)
 USTDEX_PRAGMA_IGNORE_GNU("-Wunused-value")
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 // Forward declare the when_all tag type:
 struct when_all_t;
@@ -43,7 +40,7 @@ namespace _when_all
 template <class>
 struct _env_t;
 
-template <class, std::size_t>
+template <class, ::std::size_t>
 struct _rcvr_t;
 
 template <class, class, class>
@@ -96,7 +93,7 @@ template <class ValsOK, class ErrsOK, class Offsets, class... Sigs>
 struct _reduce_completions<_completion_metadata<ValsOK, ErrsOK, Offsets, Sigs...>&>
 {
   using type = _mpair< //
-    _concat_completion_signatures<completion_signatures<Sigs..., set_error_t(std::exception_ptr)>>,
+    _concat_completion_signatures<completion_signatures<Sigs..., set_error_t(::std::exception_ptr)>>,
     Offsets>;
 };
 
@@ -225,10 +222,10 @@ extern _completion_metadata<_mtrue, // There will be no value completion, so val
   _merge_metadata<_completion_metadata<LeftValsOK, LeftErrsOK, Offsets, LeftSigs...>,
                   _completion_metadata<RightValsOK, RightErrsOK, _moffsets<>, set_value_t(As...), RightSigs...>>;
 
-template <std::size_t... Offsets>
-inline constexpr std::size_t _last_offset = (0, ..., Offsets);
+template <::std::size_t... Offsets>
+inline constexpr ::std::size_t _last_offset = (0, ..., Offsets);
 
-template <std::size_t Count, std::size_t... Offsets>
+template <::std::size_t Count, ::std::size_t... Offsets>
 using _append_offset = _moffsets<Offsets..., Count + _last_offset<Offsets...>>;
 
 // This overload is selected when both metadata structs are for senders with
@@ -296,7 +293,7 @@ struct _env_t
   }
 };
 
-template <class StateRef, std::size_t Index>
+template <class StateRef, ::std::size_t Index>
 struct _rcvr_t
 {
   using receiver_concept = receiver_t;
@@ -331,17 +328,17 @@ struct _rcvr_t
   }
 };
 
-template <class CvSndr, std::size_t Idx, class StateRef>
+template <class CvSndr, ::std::size_t Idx, class StateRef>
 using _inner_completions_ = //
   _mapply_q<_collect_inner, completion_signatures_of_t<CvSndr, _rcvr_t<StateRef, Idx>>>;
 
-template <class CvSndr, std::size_t Idx, class StateRef>
+template <class CvSndr, ::std::size_t Idx, class StateRef>
 using _inner_completions = //
   _midentity_or_error_with< //
     _inner_completions_<CvSndr, Idx, StateRef>, //
     WITH_SENDER(CvSndr)>;
 
-enum _estate_t
+enum _estate_t : int
 {
   _started,
   _error,
@@ -356,8 +353,8 @@ enum _estate_t
 template <class Rcvr, class CvFn, class Sndrs>
 struct _state_t;
 
-template <class Rcvr, class CvFn, std::size_t... Idx, class... Sndrs>
-struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
+template <class Rcvr, class CvFn, ::std::size_t... Idx, class... Sndrs>
+struct _state_t<Rcvr, CvFn, _tupl<::std::index_sequence<Idx...>, Sndrs...>>
 {
   using _completions_offsets_pair_t = //
     _collect_outer< //
@@ -371,17 +368,17 @@ struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
   using stop_tok_t      = stop_token_of_t<env_of_t<Rcvr>>;
   using stop_callback_t = stop_callback_for_t<stop_tok_t, _on_stop_request>;
 
-  template <std::size_t Index, std::size_t... Offsets>
-  static constexpr std::size_t _offset_for(_moffsets<Offsets...>*) noexcept
+  template <::std::size_t Index, ::std::size_t... Offsets>
+  static constexpr ::std::size_t _offset_for(_moffsets<Offsets...>*) noexcept
   {
-    constexpr std::size_t offsets[] = {Offsets..., 0};
+    constexpr ::std::size_t offsets[] = {Offsets..., 0};
     return offsets[Index];
   }
 
-  template <std::size_t Index, std::size_t... Jdx, class... Ts>
+  template <::std::size_t Index, ::std::size_t... Jdx, class... Ts>
   USTDEX_HOST_DEVICE void _set_value(_mindices<Jdx...>, Ts&&... ts) noexcept
   {
-    constexpr std::size_t Offset = _offset_for<Index>(static_cast<_offsets_t*>(nullptr));
+    constexpr ::std::size_t Offset = _offset_for<Index>(static_cast<_offsets_t*>(nullptr));
     if constexpr (!USTDEX_IS_SAME(_values_t, _nil))
     {
       if constexpr (_nothrow_decay_copyable<Ts...>)
@@ -390,10 +387,14 @@ struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
       }
       else
       {
-        USTDEX_TRY(({ (_values.template _emplace<Jdx + Offset>(static_cast<Ts&&>(ts)), ...); }),
-                   USTDEX_CATCH(...)({ //
-                     _set_error(std::current_exception());
-                   }))
+        USTDEX_TRY( //
+          ({ //
+            (_values.template _emplace<Jdx + Offset>(static_cast<Ts&&>(ts)), ...);
+          }),
+          USTDEX_CATCH(...)( //
+            { //
+              _set_error(::std::current_exception());
+            }))
       }
     }
   }
@@ -413,19 +414,25 @@ struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
       }
       else
       {
-        USTDEX_TRY(({ _errors.template emplace<_decay_t<Error>>(static_cast<Error&&>(_err)); }),
-                   USTDEX_CATCH(...)({ _errors.template emplace<std::exception_ptr>(std::current_exception()); }))
+        USTDEX_TRY( //
+          ({ //
+            _errors.template emplace<_decay_t<Error>>(static_cast<Error&&>(_err));
+          }),
+          USTDEX_CATCH(...)( //
+            { //
+              _errors.template emplace<::std::exception_ptr>(::std::current_exception());
+            }))
       }
     }
   }
 
   USTDEX_HOST_DEVICE void _set_stopped() noexcept
   {
-    _estate_t expected = _started;
+    ustd::underlying_type_t<_estate_t> expected = _started;
     // Transition to the "stopped" state if and only if we're in the
     // "started" state. (If this fails, it's because we're in an
     // error state, which trumps cancellation.)
-    if (_state.compare_exchange_strong(expected, _stopped))
+    if (_state.compare_exchange_strong(expected, static_cast<ustd::underlying_type_t<_estate_t>>(_stopped)))
     {
       _stop_source.request_stop();
     }
@@ -465,22 +472,22 @@ struct _state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
   }
 
   Rcvr _rcvr;
-  ustd::atomic<std::size_t> _count;
+  ustd::atomic<::std::size_t> _count;
   inplace_stop_source _stop_source;
   inplace_stop_token _stop_token{_stop_source.get_token()};
-  ustd::atomic<_estate_t> _state{_started};
+  ustd::atomic<ustd::underlying_type_t<_estate_t>> _state{_started};
   _errors_t _errors;
   _values_t _values;
   _lazy<stop_callback_t> _on_stop;
 };
 
 /// The operation state for when_all
-template <class Rcvr, class CvFn, std::size_t... Idx, class... Sndrs>
-struct _opstate_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>
+template <class Rcvr, class CvFn, ::std::size_t... Idx, class... Sndrs>
+struct _opstate_t<Rcvr, CvFn, _tupl<::std::index_sequence<Idx...>, Sndrs...>>
 {
   using operation_state_concept = operation_state_t;
   using _sndrs_t                = _minvoke<CvFn, _tuple<Sndrs...>>;
-  using _state_t                = _when_all::_state_t<Rcvr, CvFn, _tupl<std::index_sequence<Idx...>, Sndrs...>>;
+  using _state_t                = _when_all::_state_t<Rcvr, CvFn, _tupl<::std::index_sequence<Idx...>, Sndrs...>>;
 
   using completion_signatures = typename _state_t::_completions_t;
   using _offsets_t            = typename _state_t::_offsets_t;
@@ -605,6 +612,8 @@ USTDEX_HOST_DEVICE _when_all::_sndr_t<Sndrs...> when_all_t::operator()(Sndrs... 
 
 USTDEX_DEVICE_CONSTANT constexpr when_all_t when_all{};
 
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 USTDEX_PRAGMA_POP()
+
+#include "epilogue.hpp"

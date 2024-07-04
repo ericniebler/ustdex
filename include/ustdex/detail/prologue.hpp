@@ -7,32 +7,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
 //
 //===----------------------------------------------------------------------===//
-#pragma once
+#include "config.hpp"
 
-#include "cpos.hpp"
-#include "meta.hpp"
+#if defined(USTDEX_PROLOGUE_INCLUDED)
+#  error multiple inclusion of prologue.hpp
+#endif
 
-// Must be the last include
-#include "prologue.hpp"
+#define USTDEX_PROLOGUE_INCLUDED
 
-namespace USTDEX_NAMESPACE
-{
-
-template <class Rcvr>
-constexpr Rcvr* _rcvr_ref(Rcvr& rcvr) noexcept
-{
-  return &rcvr;
-}
-
-template <class Rcvr>
-constexpr Rcvr* _rcvr_ref(Rcvr* rcvr) noexcept
-{
-  return rcvr;
-}
-
-template <class Rcvr>
-using _rcvr_ref_t = decltype(ustdex::_rcvr_ref(DECLVAL(Rcvr)));
-
-} // namespace USTDEX_NAMESPACE
-
-#include "epilogue.hpp"
+#if !USTDEX_HAS_DEFAULT_NAMESPACE()
+#  if defined(ustdex)
+#    pragma push_macro("ustdex")
+#    define USTDEX_POP_USTDEX_MACRO
+#    undef ustdex
+#  endif
+// This will be undefined in the epilogue
+#  define ustdex USTDEX_NAMESPACE
+#endif

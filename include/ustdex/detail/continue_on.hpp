@@ -1,18 +1,12 @@
-/*
- * Copyright (c) 2024 NVIDIA Corporation
- *
- * Licensed under the Apache License Version 2.0 with LLVM Exceptions
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *   https://llvm.org/LICENSE.txt
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//===----------------------------------------------------------------------===//
+//
+// Part of CUDA Experimental in CUDA C++ Core Libraries,
+// under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+//
+//===----------------------------------------------------------------------===//
 #pragma once
 
 #include "completion_signatures.hpp"
@@ -24,7 +18,10 @@
 #include "utility.hpp"
 #include "variant.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 struct continue_on_t
 {
@@ -46,13 +43,13 @@ private:
   using _set_value_completion =
     _mif<_nothrow_decay_copyable<Ts...>,
          completion_signatures<set_value_t(_decay_t<Ts>...)>,
-         completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(std::exception_ptr)>>;
+         completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(::std::exception_ptr)>>;
 
   template <class Error>
   using _set_error_completion =
     _mif<_nothrow_decay_copyable<Error>,
          completion_signatures<set_error_t(_decay_t<Error>)>,
-         completion_signatures<set_error_t(_decay_t<Error>), set_error_t(std::exception_ptr)>>;
+         completion_signatures<set_error_t(_decay_t<Error>), set_error_t(::std::exception_ptr)>>;
 
   template <class Rcvr, class Result>
   struct _rcvr_t
@@ -78,10 +75,14 @@ private:
       }
       else
       {
-        USTDEX_TRY(({ //
-                     _result.template emplace<_tupl_t>(Tag(), static_cast<As&&>(as)...);
-                   }),
-                   USTDEX_CATCH(...)({ ustdex::set_error(static_cast<Rcvr&&>(_rcvr), std::current_exception()); }))
+        USTDEX_TRY( //
+          ({ //
+            _result.template emplace<_tupl_t>(Tag(), static_cast<As&&>(as)...);
+          }),
+          USTDEX_CATCH(...)( //
+            { //
+              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+            }))
       }
       _complete = +[](void* ptr) noexcept {
         auto& self = *static_cast<_rcvr_t*>(ptr);
@@ -266,4 +267,6 @@ USTDEX_HOST_DEVICE USTDEX_INLINE continue_on_t::_closure_t<Sch> continue_on_t::o
 }
 
 USTDEX_DEVICE_CONSTANT constexpr continue_on_t continue_on{};
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"
