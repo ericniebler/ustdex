@@ -28,7 +28,7 @@
 #include "ustdex/detail/when_all.hpp"
 #include <catch2/catch_all.hpp>
 
-namespace ex = ustdex;
+namespace ex = USTDEX_NAMESPACE;
 
 namespace
 {
