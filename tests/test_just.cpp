@@ -15,9 +15,9 @@
  */
 
 #include "ustdex/ustdex.hpp"
-
 #include <catch2/catch_all.hpp>
 
-TEST_CASE("this is a dummy test", "[just]") {
+TEST_CASE("this is a dummy test", "[just]")
+{
   REQUIRE(1 == 1);
 }

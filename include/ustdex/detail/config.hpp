@@ -15,10 +15,10 @@
  */
 #pragma once
 
-#include "preprocessor.hpp"
-
 #include <cassert>
 #include <type_traits>
+
+#include "preprocessor.hpp"
 
 // Needed by the warning suppression macros
 #define USTDEX_STRINGIZE(_ARG) #_ARG
@@ -72,26 +72,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // warning push/pop portability macros
 #if USTDEX_NVCC()
-#  define USTDEX_PRAGMA_PUSH() _Pragma("nv_diagnostic push")
-#  define USTDEX_PRAGMA_POP()  _Pragma("nv_diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_EDG(...)                                                  \
-    _Pragma(USTDEX_STRINGIZE(nv_diag_suppress __VA_ARGS__))
+#  define USTDEX_PRAGMA_PUSH()          _Pragma("nv_diagnostic push")
+#  define USTDEX_PRAGMA_POP()           _Pragma("nv_diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_STRINGIZE(nv_diag_suppress __VA_ARGS__))
 #elif USTDEX_NVHPC() || USTDEX_EDG()
-#  define USTDEX_PRAGMA_PUSH()                                                           \
-    _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
-#  define USTDEX_PRAGMA_POP() _Pragma("diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_EDG(...)                                                  \
-    _Pragma(USTDEX_STRINGIZE(diag_suppress __VA_ARGS__))
+#  define USTDEX_PRAGMA_PUSH()          _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
+#  define USTDEX_PRAGMA_POP()           _Pragma("diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_STRINGIZE(diag_suppress __VA_ARGS__))
 #elif USTDEX_CLANG() || USTDEX_GCC()
-#  define USTDEX_PRAGMA_PUSH()                                                           \
-    _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas")                 \
-      USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas")                                      \
-        USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option")                             \
-          USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")                               \
-            USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
-#  define USTDEX_PRAGMA_POP() _Pragma("GCC diagnostic pop")
-#  define USTDEX_PRAGMA_IGNORE_GNU(...)                                                  \
-    _Pragma(USTDEX_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
+#  define USTDEX_PRAGMA_PUSH()                                                                                         \
+    _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas") \
+      USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")            \
+        USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
+#  define USTDEX_PRAGMA_POP()           _Pragma("GCC diagnostic pop")
+#  define USTDEX_PRAGMA_IGNORE_GNU(...) _Pragma(USTDEX_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
 #else
 #  define USTDEX_PRAGMA_PUSH()
 #  define USTDEX_PRAGMA_POP()
@@ -150,8 +144,7 @@
 #  define USTDEX_ATTR_ALWAYS_INLINE
 #endif
 
-#define USTDEX_INLINE                                                                    \
-  USTDEX_ATTR_ALWAYS_INLINE USTDEX_ATTR_ARTIFICIAL USTDEX_ATTR_NODEBUG inline
+#define USTDEX_INLINE USTDEX_ATTR_ALWAYS_INLINE USTDEX_ATTR_ARTIFICIAL USTDEX_ATTR_NODEBUG inline
 
 #if USTDEX_HAS_BUILTIN(__is_same)
 #  define USTDEX_IS_SAME(...) __is_same(__VA_ARGS__)
@@ -160,25 +153,28 @@
 #else
 #  define USTDEX_IS_SAME(...) ustdex::_is_same<__VA_ARGS__>
 
-namespace ustdex {
-  template <class T, class U>
-  inline constexpr bool _is_same = false;
-  template <class T>
-  inline constexpr bool _is_same<T, T> = true;
+namespace ustdex
+{
+template <class T, class U>
+inline constexpr bool _is_same = false;
+template <class T>
+inline constexpr bool _is_same<T, T> = true;
 } // namespace ustdex
 #endif
 
 #if USTDEX_HAS_BUILTIN(__remove_reference)
-namespace ustdex {
-  template <class Ty>
-  using _remove_reference_t = __remove_reference(Ty);
+namespace ustdex
+{
+template <class Ty>
+using _remove_reference_t = __remove_reference(Ty);
 } // namespace ustdex
 
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
 #elif USTDEX_HAS_BUILTIN(__remove_reference_t)
-namespace ustdex {
-  template <class Ty>
-  using _remove_reference_t = __remove_reference_t(Ty);
+namespace ustdex
+{
+template <class Ty>
+using _remove_reference_t = __remove_reference_t(Ty);
 } // namespace ustdex
 
 #  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>

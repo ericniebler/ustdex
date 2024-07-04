@@ -18,19 +18,22 @@
 #include "cpos.hpp"
 #include "meta.hpp"
 
-namespace ustdex {
+namespace ustdex
+{
 
-  template <class Rcvr>
-  constexpr Rcvr *_rcvr_ref(Rcvr &rcvr) noexcept {
-    return &rcvr;
-  }
+template <class Rcvr>
+constexpr Rcvr* _rcvr_ref(Rcvr& rcvr) noexcept
+{
+  return &rcvr;
+}
 
-  template <class Rcvr>
-  constexpr Rcvr *_rcvr_ref(Rcvr *rcvr) noexcept {
-    return rcvr;
-  }
+template <class Rcvr>
+constexpr Rcvr* _rcvr_ref(Rcvr* rcvr) noexcept
+{
+  return rcvr;
+}
 
-  template <class Rcvr>
-  using _rcvr_ref_t = decltype(ustdex::_rcvr_ref(DECLVAL(Rcvr)));
+template <class Rcvr>
+using _rcvr_ref_t = decltype(ustdex::_rcvr_ref(DECLVAL(Rcvr)));
 
 } // namespace ustdex

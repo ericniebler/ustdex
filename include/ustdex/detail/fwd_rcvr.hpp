@@ -19,37 +19,45 @@
 #include "cpos.hpp"
 #include "env.hpp"
 
-namespace ustdex {
-  template <class Rcvr>
-  struct _fwd_rcvr : Rcvr {
-    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
-      // TODO: only forward the "forwarding" queries:
-      return ustdex::get_env(static_cast<Rcvr const &>(*this));
-    }
-  };
+namespace ustdex
+{
+template <class Rcvr>
+struct _fwd_rcvr : Rcvr
+{
+  USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept
+  {
+    // TODO: only forward the "forwarding" queries:
+    return ustdex::get_env(static_cast<Rcvr const&>(*this));
+  }
+};
 
-  template <class Rcvr>
-  struct _fwd_rcvr<Rcvr *> {
-    using receiver_concept = receiver_t;
-    Rcvr *_rcvr;
+template <class Rcvr>
+struct _fwd_rcvr<Rcvr*>
+{
+  using receiver_concept = receiver_t;
+  Rcvr* _rcvr;
 
-    template <class... As>
-    USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(As &&...as) noexcept {
-      ustdex::set_value(_rcvr);
-    }
+  template <class... As>
+  USTDEX_HOST_DEVICE USTDEX_INLINE void set_value(As&&... as) noexcept
+  {
+    ustdex::set_value(_rcvr);
+  }
 
-    template <class Error>
-    USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error &&error) noexcept {
-      ustdex::set_error(_rcvr, static_cast<Error &&>(error));
-    }
+  template <class Error>
+  USTDEX_HOST_DEVICE USTDEX_INLINE void set_error(Error&& error) noexcept
+  {
+    ustdex::set_error(_rcvr, static_cast<Error&&>(error));
+  }
 
-    USTDEX_HOST_DEVICE USTDEX_INLINE void set_stopped() noexcept {
-      ustdex::set_stopped(_rcvr);
-    }
+  USTDEX_HOST_DEVICE USTDEX_INLINE void set_stopped() noexcept
+  {
+    ustdex::set_stopped(_rcvr);
+  }
 
-    USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept {
-      // TODO: only forward the "forwarding" queries:
-      return ustdex::get_env(_rcvr);
-    }
-  };
+  USTDEX_HOST_DEVICE decltype(auto) get_env() const noexcept
+  {
+    // TODO: only forward the "forwarding" queries:
+    return ustdex::get_env(_rcvr);
+  }
+};
 } // namespace ustdex

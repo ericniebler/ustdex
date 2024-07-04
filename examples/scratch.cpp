@@ -14,44 +14,44 @@
  * limitations under the License.
  */
 
-#include "ustdex/ustdex.hpp"
-
 #include <cstdio>
 #include <iostream>
 #include <string>
 
+#include "ustdex/ustdex.hpp"
+
 using namespace ustdex;
 
-struct sink {
+struct sink
+{
   using receiver_concept = receiver_t;
 
-  void set_value() noexcept {
-  }
+  void set_value() noexcept {}
 
-  void set_value(int a) noexcept {
+  void set_value(int a) noexcept
+  {
     std::printf("%d\n", a);
   }
 
   template <class... As>
-  void set_value(As &&...) noexcept {
+  void set_value(As&&...) noexcept
+  {
     std::puts("In sink::set_value(auto&&...)");
   }
 
-  void set_error(std::exception_ptr) noexcept {
-  }
+  void set_error(std::exception_ptr) noexcept {}
 
-  void set_stopped() noexcept {
-  }
+  void set_stopped() noexcept {}
 };
 
 template <class>
-[[deprecated]]
-void print() {
-}
+[[deprecated]] void print()
+{}
 
 static_assert(!_is_non_dependent_sender<decltype(read_env(_empty()))>);
 
-int main() {
+int main()
+{
   thread_context ctx;
   auto sch = ctx.get_scheduler();
 
@@ -73,7 +73,7 @@ int main() {
 
   auto [sch2] = sync_wait(read_env(get_scheduler)).value();
 
-  auto [i1,i2] = sync_wait(when_all(just(42), just(43))).value();
+  auto [i1, i2] = sync_wait(when_all(just(42), just(43))).value();
   std::cout << i1 << ' ' << i2 << '\n';
 
   auto s4 = just(42) | then([](int) {}) | upon_error([](auto) { /*return 42;*/ });

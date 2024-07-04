@@ -15,9 +15,9 @@
  */
 #pragma once
 
-#include "config.hpp"
-
 #include <atomic>
+
+#include "config.hpp"
 
 #if defined(__CUDACC__)
 #  include <cuda/std/atomic>
@@ -26,15 +26,16 @@
 #  define USTDEX_CUDA_NS
 #endif
 
-namespace ustdex::ustd {
-  template <class Ty>
-  using atomic = USTDEX_CUDA_NS std::atomic<Ty>;
+namespace ustdex::ustd
+{
+template <class Ty>
+using atomic = USTDEX_CUDA_NS std::atomic<Ty>;
 
-  using USTDEX_CUDA_NS std::memory_order;
-  using USTDEX_CUDA_NS std::memory_order_relaxed;
-  using USTDEX_CUDA_NS std::memory_order_consume;
-  using USTDEX_CUDA_NS std::memory_order_acquire;
-  using USTDEX_CUDA_NS std::memory_order_release;
-  using USTDEX_CUDA_NS std::memory_order_acq_rel;
-  using USTDEX_CUDA_NS std::memory_order_seq_cst;
+using USTDEX_CUDA_NS std::memory_order;
+using USTDEX_CUDA_NS std::memory_order_relaxed;
+using USTDEX_CUDA_NS std::memory_order_consume;
+using USTDEX_CUDA_NS std::memory_order_acquire;
+using USTDEX_CUDA_NS std::memory_order_release;
+using USTDEX_CUDA_NS std::memory_order_acq_rel;
+using USTDEX_CUDA_NS std::memory_order_seq_cst;
 } // namespace ustdex::ustd
