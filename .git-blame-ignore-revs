@@ -1,0 +1,5 @@
+# Run this command to always ignore formatting commits in `git blame`
+# git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Adopt the .clang-format of the cccl project
+dcf395e78f5073fb33dda541c2c9274e458c5894
