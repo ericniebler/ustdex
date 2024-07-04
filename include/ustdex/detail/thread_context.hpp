@@ -19,37 +19,43 @@
 
 #ifndef USTDEX_CUDA
 
-#  include "run_loop.hpp"
-
 #  include <thread>
 
-namespace ustdex {
-  struct thread_context {
-    thread_context() noexcept
+#  include "run_loop.hpp"
+
+namespace ustdex
+{
+struct thread_context
+{
+  thread_context() noexcept
       : _thread{[this] {
         _loop.run();
-      }} {
-    }
+      }}
+  {}
 
-    ~thread_context() noexcept {
-      join();
-    }
+  ~thread_context() noexcept
+  {
+    join();
+  }
 
-    void join() noexcept {
-      if (_thread.joinable()) {
-        _loop.finish();
-        _thread.join();
-      }
+  void join() noexcept
+  {
+    if (_thread.joinable())
+    {
+      _loop.finish();
+      _thread.join();
     }
+  }
 
-    auto get_scheduler() {
-      return _loop.get_scheduler();
-    }
+  auto get_scheduler()
+  {
+    return _loop.get_scheduler();
+  }
 
-   private:
-    run_loop _loop;
-    std::thread _thread;
-  };
+private:
+  run_loop _loop;
+  std::thread _thread;
+};
 } // namespace ustdex
 
 #endif // USTDEX_CUDA

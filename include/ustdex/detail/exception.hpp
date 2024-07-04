@@ -15,26 +15,27 @@
  */
 #pragma once
 
+#include <exception>
+
 #include "config.hpp"
 #include "preprocessor.hpp"
-
-#include <exception>
 
 #if defined(__CUDACC__)
 #  include <nv/target>
 #  define USTDEX_CATCH(...)
-#  define USTDEX_TRY(TRY, CATCH)                                                         \
-    NV_IF_TARGET(                                                                        \
-      NV_IS_HOST,                                                                        \
-      (try { USTDEX_PP_EXPAND TRY } catch (...){USTDEX_PP_EXPAND CATCH}),                \
-      ({USTDEX_PP_EXPAND TRY}))
+#  define USTDEX_TRY(TRY, CATCH) \
+    NV_IF_TARGET(                \
+      NV_IS_HOST, (try { USTDEX_PP_EXPAND TRY } catch (...){USTDEX_PP_EXPAND CATCH}), ({USTDEX_PP_EXPAND TRY}))
 #else
 #  define USTDEX_CATCH(...)
-#  define USTDEX_TRY(TRY, CATCH)                                                         \
-    try {                                                                                \
-      USTDEX_PP_EXPAND TRY                                                               \
-    } catch (...) {                                                                      \
-      USTDEX_PP_EXPAND CATCH                                                             \
+#  define USTDEX_TRY(TRY, CATCH) \
+    try                          \
+    {                            \
+      USTDEX_PP_EXPAND TRY       \
+    }                            \
+    catch (...)                  \
+    {                            \
+      USTDEX_PP_EXPAND CATCH     \
     }
 #endif
 

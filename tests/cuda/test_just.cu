@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
+#include "ustdex/cuda/stream_context.cuh"
 #include "ustdex/ustdex.hpp"
-
 #include <catch2/catch_all.hpp>
 
-#include "ustdex/cuda/stream_context.cuh"
-
-TEST_CASE("this is a dummy cuda test", "[cuda][just]") {
+TEST_CASE("this is a dummy cuda test", "[cuda][just]")
+{
   REQUIRE(1 == 1);
 }

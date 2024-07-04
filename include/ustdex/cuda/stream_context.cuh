@@ -36,40 +36,48 @@
 // from the CUDA Toolkit:
 #include <cuda_runtime.h>
 
+namespace ustdex
+{
 
-namespace ustdex {
+struct stream_scheduler
+{};
 
-  struct stream_scheduler {};
+enum class stream_priority
+{
+  low,
+  normal,
+  high
+};
 
-  enum class stream_priority { low, normal, high };
-
-  struct stream_context {
-   public:
-    stream_context()
+struct stream_context
+{
+public:
+  stream_context()
       : _dev_id(_get_device())
-      //, _hub(dev_id_, _pinned.get())
-    {
-    }
+  //, _hub(dev_id_, _pinned.get())
+  {}
 
-    stream_scheduler get_scheduler(stream_priority priority = stream_priority::normal) const {
-      // return {context_state_t(
-      //   _pinned.get(), _managed.get(), &_stream_pools, &_hub, priority)};
-      return {};
-    }
+  stream_scheduler get_scheduler(stream_priority priority = stream_priority::normal) const
+  {
+    // return {context_state_t(
+    //   _pinned.get(), _managed.get(), &_stream_pools, &_hub, priority)};
+    return {};
+  }
 
-   private:
-    // resource_storage<pinned_resource> _pinned{};
-    // resource_storage<managed_resource> _managed{};
-    // stream_pools_t stream_pools_{};
+private:
+  // resource_storage<pinned_resource> _pinned{};
+  // resource_storage<managed_resource> _managed{};
+  // stream_pools_t stream_pools_{};
 
-    static int _get_device() noexcept {
-      int dev_id{};
-      cudaGetDevice(&dev_id);
-      return dev_id;
-    }
+  static int _get_device() noexcept
+  {
+    int dev_id{};
+    cudaGetDevice(&dev_id);
+    return dev_id;
+  }
 
-    int _dev_id{};
-    // queue::task_hub_t hub_;
-  };
+  int _dev_id{};
+  // queue::task_hub_t hub_;
+};
 
 } // namespace ustdex
