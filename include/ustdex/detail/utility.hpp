@@ -110,29 +110,43 @@ USTDEX_HOST_DEVICE constexpr Ty _decay_copy(Ty&& ty) noexcept(_nothrow_decay_cop
   return static_cast<Ty&&>(ty);
 }
 
+#if __cplusplus >= 202002L
 // _ref is for keeping type names short in compiler output.
 // It has the unfortunate side effect of obfuscating the types.
 #if USTDEX_NVHPC() || USTDEX_EDG()
 // This version of _ref is for compilers that display the return
 // type of a monomorphic lambda in the compiler output.
-inline constexpr auto _ref = [](auto fn) noexcept {
-  return [fn](auto...) noexcept -> decltype(auto) {
-    return fn;
-  };
-};
-#else
-inline constexpr auto _ref = [](auto fn) noexcept {
-  return [fn]() noexcept -> decltype(auto) {
-    return fn;
-  };
-};
-#endif
+template <class T,
+          auto Fn =
+            [](auto&&...) {
+              return static_cast<T (*)()>(nullptr);
+            }>
+inline constexpr auto _ref = Fn;
+#  else
+template <class T,
+          auto Fn =
+            [] {
+              return static_cast<T (*)()>(nullptr);
+            }>
+inline constexpr auto _ref = Fn;
+#  endif
 
 template <class Ty>
-using _ref_t = decltype(_ref(static_cast<Ty (*)()>(nullptr)));
+using _ref_t = decltype(_ref<Ty>);
 
 template <class Ref>
 using _deref_t = decltype(_declval<Ref>()()());
+
+#else
+
+template <class Ty>
+using _ref_t = Ty;
+
+template <class Ref>
+using _deref_t = Ref;
+
+#endif
+
 } // namespace USTDEX_NAMESPACE
 
 #include "epilogue.hpp"

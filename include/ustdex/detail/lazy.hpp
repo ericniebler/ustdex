@@ -31,6 +31,13 @@ struct _lazy
     return value;
   }
 
+  template <class Fn, class... Ts>
+  USTDEX_HOST_DEVICE Ty& construct_from(Fn&& fn, Ts&&... ts) noexcept(_nothrow_callable<Fn, Ts...>)
+  {
+    ::new (static_cast<void*>(::std::addressof(value))) Ty(static_cast<Fn&&>(fn)(static_cast<Ts&&>(ts)...));
+    return value;
+  }
+
   USTDEX_HOST_DEVICE void destroy() noexcept
   {
     value.~Ty();
