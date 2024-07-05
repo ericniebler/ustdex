@@ -46,7 +46,7 @@ struct _seq
         _sndr1_t,
         _opstate*,
         completion_signatures_of_t<_sndr2_t, _rcvr_ref_t<_rcvr_t&>>,
-        _malways<completion_signatures<>>::_f>; // swallow the first sender's value completions
+        _malways<ustdex::completion_signatures<>>::_f>; // swallow the first sender's value completions
 
     USTDEX_HOST_DEVICE friend env_of_t<_rcvr_t> get_env(const _opstate* self) noexcept
     {
