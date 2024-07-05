@@ -82,4 +82,12 @@ int main()
   // print<X>();
   auto [i, j, k] = sync_wait(std::move(s5)).value();
   std::cout << i << ' ' << j << ' ' << k << '\n';
+
+  auto s6 = sequence(just(42) | then([](int) {
+                       std::cout << "sequence sender 1\n";
+                     }),
+                     just(42) | then([](int) {
+                       std::cout << "sequence sender 2\n";
+                     }));
+  sync_wait(std::move(s6));
 }
