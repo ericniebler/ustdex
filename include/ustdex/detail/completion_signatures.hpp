@@ -17,10 +17,25 @@
 
 namespace USTDEX_NAMESPACE
 {
+// A typelist for completion signatures
 template <class... Ts>
 struct completion_signatures
 {};
 
+// A metafunction to determine if a type is a completion signature
+template <class>
+inline constexpr bool _is_valid_signature = false;
+
+template <class... Ts>
+inline constexpr bool _is_valid_signature<set_value_t(Ts...)> = true;
+
+template <class Error>
+inline constexpr bool _is_valid_signature<set_error_t(Error)> = true;
+
+template <>
+inline constexpr bool _is_valid_signature<set_stopped_t()> = true;
+
+// The implementation of transform_completion_signatures starts here
 template <class Sig, template <class...> class V, template <class...> class E, class S>
 extern _undefined<Sig> _transform_sig;
 

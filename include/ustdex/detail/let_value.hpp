@@ -250,9 +250,17 @@ private:
     Fn _fn;
 
     template <class Sndr>
-    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t&& _self)
+    USTDEX_HOST_DEVICE USTDEX_INLINE auto operator()(Sndr sndr) const //
+      -> _call_result_t<LetTag, Sndr, Fn>
     {
-      return LetTag()(static_cast<Sndr&&>(sndr), static_cast<Fn&&>(_self._fn));
+      return LetTag()(static_cast<Sndr&&>(sndr), _fn);
+    }
+
+    template <class Sndr>
+    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, const _closure_t& _self) //
+      -> _call_result_t<LetTag, Sndr, Fn>
+    {
+      return LetTag()(static_cast<Sndr&&>(sndr), _self._fn);
     }
   };
 

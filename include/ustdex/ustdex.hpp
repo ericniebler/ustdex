@@ -16,10 +16,12 @@
 #pragma once
 
 #include "detail/basic_sender.hpp"
+#include "detail/conditional.hpp"
 #include "detail/config.hpp"
 #include "detail/continue_on.hpp"
 #include "detail/cpos.hpp"
 #include "detail/just.hpp"
+#include "detail/just_from.hpp"
 #include "detail/let_value.hpp"
 #include "detail/queries.hpp"
 #include "detail/read_env.hpp"

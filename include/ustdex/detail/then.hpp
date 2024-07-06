@@ -23,7 +23,7 @@
 
 namespace USTDEX_NAMESPACE
 {
-// Forward-declate the let_* algorithm tag types:
+// Forward-declate the then and upon_* algorithm tag types:
 struct then_t;
 struct upon_error_t;
 struct upon_stopped_t;
@@ -120,7 +120,7 @@ private:
     }
 
     using operation_state_concept = operation_state_t;
-    using completion_signatures   = _completions<CvSndr, Fn, Rcvr>;
+    using completion_signatures   = _completions<CvSndr, Fn, _opstate_t*>;
 
     Rcvr _rcvr;
     Fn _fn;
@@ -129,7 +129,7 @@ private:
     USTDEX_HOST_DEVICE _opstate_t(CvSndr&& sndr, Rcvr rcvr, Fn fn)
         : _rcvr{static_cast<Rcvr&&>(rcvr)}
         , _fn{static_cast<Fn&&>(fn)}
-        , _opstate{connect(static_cast<CvSndr&&>(sndr), this)}
+        , _opstate{ustdex::connect(static_cast<CvSndr&&>(sndr), this)}
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
@@ -161,7 +161,9 @@ private:
             _set<true>(static_cast<Ts&&>(ts)...); //
           }), //
           USTDEX_CATCH(...)( //
-            { ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception()); }))
+            { //
+              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+            }))
       }
     }
 
@@ -236,7 +238,14 @@ private:
     Fn _fn;
 
     template <class Sndr>
-    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t&& _self)
+    USTDEX_HOST_DEVICE USTDEX_INLINE auto operator()(Sndr sndr) -> _call_result_t<UponTag, Sndr, Fn>
+    {
+      return UponTag()(static_cast<Sndr&&>(sndr), static_cast<Fn&&>(_fn));
+    }
+
+    template <class Sndr>
+    USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t&& _self) //
+      -> _call_result_t<UponTag, Sndr, Fn>
     {
       return UponTag()(static_cast<Sndr&&>(sndr), static_cast<Fn&&>(_self._fn));
     }
@@ -244,7 +253,8 @@ private:
 
 public:
   template <class Sndr, class Fn>
-  USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr sndr, Fn fn) const noexcept
+  USTDEX_INLINE USTDEX_HOST_DEVICE auto operator()(Sndr sndr, Fn fn) const noexcept //
+    -> _sndr_t<Fn, Sndr>
   {
     // If the incoming sender is non-dependent, we can check the completion
     // signatures of the composed sender immediately.

@@ -168,8 +168,8 @@ public:
       _state_t<Sndr> state{&result};
 
       // Launch the sender with a continuation that will fill in a variant
-      auto opstate = connect(static_cast<Sndr&&>(sndr), _rcvr_t{&state});
-      start(opstate);
+      auto opstate = ustdex::connect(static_cast<Sndr&&>(sndr), _rcvr_t{&state});
+      ustdex::start(opstate);
 
       // Wait for the variant to be filled in, and process any work that
       // may be delegated to this thread.

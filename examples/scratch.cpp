@@ -90,4 +90,18 @@ int main()
                        std::cout << "sequence sender 2\n";
                      }));
   sync_wait(std::move(s6));
+
+  auto s7 =
+    just(42)
+    | conditional(
+      [](int i) {
+        return i % 2 == 0;
+      },
+      then([](int) {
+        std::cout << "even\n";
+      }),
+      then([](int) {
+        std::cout << "odd\n";
+      }));
+  sync_wait(std::move(s7));
 }

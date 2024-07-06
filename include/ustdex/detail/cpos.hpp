@@ -132,6 +132,10 @@ USTDEX_DEVICE_CONSTANT constexpr struct connect_t
     noexcept(noexcept(static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr))))
       -> decltype(static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr)))
   {
+    // using opstate_t     = decltype(static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr)));
+    // using completions_t = typename opstate_t::completion_signatures;
+    // static_assert(_is_completion_signatures<completions_t>);
+
     return static_cast<Sndr&&>(sndr).connect(static_cast<Rcvr&&>(rcvr));
   }
 } connect{};
