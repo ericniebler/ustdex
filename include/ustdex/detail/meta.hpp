@@ -242,6 +242,9 @@ struct WITH_QUERY;
 
 struct WITH_ENVIRONMENT;
 
+template <class>
+struct WITH_COMPLETION_SIGNATURE;
+
 struct FUNCTION_IS_NOT_CALLABLE;
 
 struct UNKNOWN;
