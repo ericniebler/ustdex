@@ -163,6 +163,9 @@ using _zip = _slot<Val>;
 
 template <class Id>
 using _unzip = decltype(_slot_allocated(Id())());
+
+// burn the first slot
+using _ignore_this_typedef [[maybe_unused]] = _zip<void>;
 } // namespace
 
 USTDEX_PRAGMA_POP()
