@@ -13,7 +13,7 @@
 
 #include "config.hpp"
 
-#if USTDEX_CUDA()
+#if USTDEX_CUDA
 #  include <cuda/std/atomic>
 #  define USTDEX_CUDA_NS cuda::
 #else

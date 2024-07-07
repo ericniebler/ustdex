@@ -24,3 +24,6 @@
 // This will be undefined in the epilogue
 #  define ustdex USTDEX_NAMESPACE
 #endif
+
+USTDEX_PRAGMA_PUSH()
+USTDEX_PRAGMA_IGNORE_GNU("-Wsubobject-linkage")
