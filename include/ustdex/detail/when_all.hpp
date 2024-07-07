@@ -273,10 +273,10 @@ using _rcvr_from_state_t = _mapply<_mpoly_q<_mfront>, State>;
 /// their environment. Its `get_stop_token` query returns the token from
 /// when_all's stop source. All other queries are forwarded to the outer
 /// receiver's environment.
-template <class StateRef>
+template <class StateZip>
 struct _env_t
 {
-  using _state_t = _deref_t<StateRef>;
+  using _state_t = _unzip<StateZip>;
   using _rcvr_t  = _rcvr_from_state_t<_state_t>;
 
   _state_t& _state;
@@ -293,11 +293,11 @@ struct _env_t
   }
 };
 
-template <class StateRef, ::std::size_t Index>
+template <class StateZip, ::std::size_t Index>
 struct _rcvr_t
 {
   using receiver_concept = receiver_t;
-  using _state_t         = _deref_t<StateRef>;
+  using _state_t         = _unzip<StateZip>;
 
   _state_t& _state;
 
@@ -322,20 +322,20 @@ struct _rcvr_t
     _state._arrive();
   }
 
-  USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t<StateRef>
+  USTDEX_HOST_DEVICE auto get_env() const noexcept -> _env_t<StateZip>
   {
     return {_state};
   }
 };
 
-template <class CvSndr, ::std::size_t Idx, class StateRef>
+template <class CvSndr, ::std::size_t Idx, class StateZip>
 using _inner_completions_ = //
-  _mapply_q<_collect_inner, completion_signatures_of_t<CvSndr, _rcvr_t<StateRef, Idx>>>;
+  _mapply_q<_collect_inner, completion_signatures_of_t<CvSndr, _rcvr_t<StateZip, Idx>>>;
 
-template <class CvSndr, ::std::size_t Idx, class StateRef>
+template <class CvSndr, ::std::size_t Idx, class StateZip>
 using _inner_completions = //
   _midentity_or_error_with< //
-    _inner_completions_<CvSndr, Idx, StateRef>, //
+    _inner_completions_<CvSndr, Idx, StateZip>, //
     WITH_SENDER(CvSndr)>;
 
 enum _estate_t : int
@@ -358,7 +358,7 @@ struct _state_t<Rcvr, CvFn, _tupl<::std::index_sequence<Idx...>, Sndrs...>>
 {
   using _completions_offsets_pair_t = //
     _collect_outer< //
-      _inner_completions<_minvoke1<CvFn, Sndrs>, Idx, _ref_t<_state_t>>...>;
+      _inner_completions<_minvoke1<CvFn, Sndrs>, Idx, _zip<_state_t>>...>;
   using _completions_t = _mfirst<_completions_offsets_pair_t>;
   using _indices_t     = _mindices<Idx...>;
   using _offsets_t     = _msecond<_completions_offsets_pair_t>;
@@ -500,7 +500,7 @@ struct _opstate_t<Rcvr, CvFn, _tupl<::std::index_sequence<Idx...>, Sndrs...>>
     template <class... CvSndrs>
     USTDEX_HOST_DEVICE auto operator()(_state_t& state, CvSndrs&&... sndrs) const
     {
-      using _state_ref_t = _ref_t<_state_t>;
+      using _state_ref_t = _zip<_state_t>;
       if constexpr (USTDEX_IS_SAME(_offsets_t, _moffsets<>))
       {
         // When there are no offsets, the when_all sender has no value

@@ -34,7 +34,9 @@ namespace USTDEX_NAMESPACE
 #  define USTDEX_NVHPC() 1
 #elif defined(__EDG__)
 #  define USTDEX_EDG() 1
-#elif defined(__clang__)
+#endif
+
+#if defined(__clang__)
 #  define USTDEX_CLANG() 1
 #  if defined(_MSC_VER)
 #    define USTDEX_CLANG_CL() 1
@@ -44,7 +46,9 @@ namespace USTDEX_NAMESPACE
 #  endif
 #elif defined(__GNUC__)
 #  define USTDEX_GCC() 1
-#elif defined(_MSC_VER)
+#endif
+
+#if defined(_MSC_VER)
 #  define USTDEX_MSVC() 1
 #endif
 
@@ -76,36 +80,50 @@ namespace USTDEX_NAMESPACE
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // warning push/pop portability macros
 #if USTDEX_NVCC()
-#  define USTDEX_PRAGMA_PUSH()          _Pragma("nv_diagnostic push")
-#  define USTDEX_PRAGMA_POP()           _Pragma("nv_diagnostic pop")
+#  define USTDEX_PRAGMA_PUSH_EDG()      _Pragma("nv_diagnostic push")
+#  define USTDEX_PRAGMA_POP_EDG()       _Pragma("nv_diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(nv_diag_suppress __VA_ARGS__))
 #elif USTDEX_NVHPC() || USTDEX_EDG()
-#  define USTDEX_PRAGMA_PUSH()          _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
-#  define USTDEX_PRAGMA_POP()           _Pragma("diagnostic pop")
+#  define USTDEX_PRAGMA_PUSH_EDG()      _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
+#  define USTDEX_PRAGMA_POP_EDG()       _Pragma("diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(diag_suppress __VA_ARGS__))
-#elif USTDEX_CLANG() || USTDEX_GCC()
-#  define USTDEX_PRAGMA_PUSH()                                                                                         \
+#endif
+
+#if USTDEX_CLANG() || USTDEX_GCC()
+#  define USTDEX_PRAGMA_PUSH_GNU()                                                                                     \
     _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas") \
       USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")            \
         USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
-#  define USTDEX_PRAGMA_POP()           _Pragma("GCC diagnostic pop")
+#  define USTDEX_PRAGMA_POP_GNU()       _Pragma("GCC diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_GNU(...) _Pragma(USTDEX_PP_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
-#else
-#  define USTDEX_PRAGMA_PUSH()
-#  define USTDEX_PRAGMA_POP()
 #endif
 
-#ifndef USTDEX_PRAGMA_IGNORE_GNU
-#  define USTDEX_PRAGMA_IGNORE_GNU(...)
-#endif
-#ifndef USTDEX_PRAGMA_IGNORE_EDG
+#ifndef USTDEX_PRAGMA_PUSH_EDG
+#  define USTDEX_PRAGMA_PUSH_EDG()
+#  define USTDEX_PRAGMA_POP_EDG()
 #  define USTDEX_PRAGMA_IGNORE_EDG(...)
 #endif
 
-#ifdef __CUDACC__
-#  define USTDEX_CUDA() 1
-#else
-#  define USTDEX_CUDA() 0
+#ifndef USTDEX_PRAGMA_PUSH_GNU
+#  define USTDEX_PRAGMA_PUSH_GNU()
+#  define USTDEX_PRAGMA_POP_GNU()
+#  define USTDEX_PRAGMA_IGNORE_GNU(...)
+#endif
+
+#define USTDEX_PRAGMA_PUSH() \
+  USTDEX_PRAGMA_PUSH_EDG()   \
+  USTDEX_PRAGMA_PUSH_GNU()
+
+#define USTDEX_PRAGMA_POP() \
+  USTDEX_PRAGMA_POP_GNU()   \
+  USTDEX_PRAGMA_POP_EDG()
+
+#ifndef USTDEX_CUDA
+#  ifdef __CUDACC__
+#    define USTDEX_CUDA 1
+#  else
+#    define USTDEX_CUDA 0
+#  endif
 #endif
 
 #if defined(__CUDA_ARCH__)
@@ -114,14 +132,10 @@ namespace USTDEX_NAMESPACE
 #  define USTDEX_HOST_ONLY() 1
 #endif
 
-#if USTDEX_CUDA()
-#  define USTDEX_DEVICE      __device__
-#  define USTDEX_HOST_DEVICE __host__ __device__
-#  if USTDEX_HOST_ONLY()
-#    define USTDEX_DEVICE_CONSTANT inline
-#  else
-#    define USTDEX_DEVICE_CONSTANT __constant__
-#  endif
+#if USTDEX_CUDA
+#  define USTDEX_DEVICE          __device__
+#  define USTDEX_HOST_DEVICE     __host__ __device__
+#  define USTDEX_DEVICE_CONSTANT __constant__
 #else
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE

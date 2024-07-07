@@ -31,12 +31,12 @@ struct _seq
     using _sndr2_t = Sndr2;
   };
 
-  template <class Ref>
+  template <class Zip>
   struct _opstate
   {
     using operation_state_concept = operation_state_t;
 
-    using _args_t  = _deref_t<Ref>; // _deref_t<Ref> is _args<Rcvr, Sndr1, Sndr2>
+    using _args_t  = _unzip<Zip>; // _unzip<Zip> is _args<Rcvr, Sndr1, Sndr2>
     using _rcvr_t  = typename _args_t::_rcvr_t;
     using _sndr1_t = typename _args_t::_sndr1_t;
     using _sndr2_t = typename _args_t::_sndr2_t;
@@ -103,14 +103,14 @@ struct _seq::_sndr
   template <class Rcvr>
   USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&
   {
-    using _opstate_t = _opstate<_ref_t<_args<Rcvr, Sndr1, Sndr2>>>;
+    using _opstate_t = _opstate<_zip<_args<Rcvr, Sndr1, Sndr2>>>;
     return _opstate_t{static_cast<Sndr1&&>(_sndr1), static_cast<Sndr2>(_sndr2), static_cast<Rcvr&&>(rcvr)};
   }
 
   template <class Rcvr>
   USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const&
   {
-    using _opstate_t = _opstate<_ref_t<_args<Rcvr, const Sndr1&, const Sndr2&>>>;
+    using _opstate_t = _opstate<_zip<_args<Rcvr, const Sndr1&, const Sndr2&>>>;
     return _opstate_t{_sndr1, _sndr2, static_cast<Rcvr&&>(rcvr)};
   }
 

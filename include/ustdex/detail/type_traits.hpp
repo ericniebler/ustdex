@@ -14,7 +14,7 @@
 #include "config.hpp"
 #include "meta.hpp"
 
-#if USTDEX_CUDA()
+#if USTDEX_CUDA
 #  include <cuda/std/type_traits>
 #  define USTDEX_CUDA_NS cuda::
 #else
