@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 #pragma once
 
+#include "completion_signatures.hpp"
 #include "config.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
@@ -85,6 +86,16 @@ private:
             }))
       }
     }
+  };
+
+  // This makes read_env a dependent sender:
+  template <class Query>
+  struct opstate_t<receiver_archetype, Query>
+  {
+    using operation_state_concept = operation_state_t;
+    using completion_signatures = dependent_completions;
+    USTDEX_HOST_DEVICE explicit opstate_t(receiver_archetype);
+    USTDEX_HOST_DEVICE void start() noexcept;
   };
 
   template <class Query>

@@ -18,10 +18,14 @@
 #include "completion_signatures.hpp"
 #include "config.hpp"
 #include "just_from.hpp"
+#include "meta.hpp"
 #include "type_traits.hpp"
 #include "variant.hpp"
 
-namespace ustdex
+// This must be the last #include
+#include "prologue.hpp"
+
+namespace USTDEX_NAMESPACE
 {
 struct _cond_t
 {
@@ -34,7 +38,7 @@ struct _cond_t
   };
 
   template <class... Args>
-  static auto _mk_complete_fn(Args&&... args) noexcept
+  USTDEX_HOST_DEVICE static auto _mk_complete_fn(Args&&... args) noexcept
   {
     return [&](auto sink) noexcept {
       return sink(static_cast<Args&&>(args)...);
@@ -49,7 +53,7 @@ struct _cond_t
   {
     using operation_state_concept = operation_state_t;
 
-    friend env_of_t<Rcvr> get_env(const _opstate* self) noexcept
+    USTDEX_HOST_DEVICE friend env_of_t<Rcvr> get_env(const _opstate* self) noexcept
     {
       return get_env(self->_rcvr);
     }
@@ -69,19 +73,19 @@ struct _cond_t
     using completion_signatures = //
       transform_completion_signatures_of<Sndr, _opstate*, ustdex::completion_signatures<>, _value_t>;
 
-    _opstate(Sndr&& sndr, Rcvr&& rcvr, _data<Pred, Then, Else>&& data)
+    USTDEX_HOST_DEVICE _opstate(Sndr&& sndr, Rcvr&& rcvr, _data<Pred, Then, Else>&& data)
         : _rcvr{static_cast<Rcvr&&>(rcvr)}
         , _data{static_cast<_cond_t::_data<Pred, Then, Else>>(data)}
         , _op{ustdex::connect(static_cast<Sndr&&>(sndr), this)}
     {}
 
-    void start() noexcept
+    USTDEX_HOST_DEVICE void start() noexcept
     {
       ustdex::start(_op);
     }
 
     template <class... Args>
-    void set_value(Args&&... args) noexcept
+    USTDEX_HOST_DEVICE void set_value(Args&&... args) noexcept
     {
       if (static_cast<Pred&&>(_data.pred_)(args...))
       {
@@ -102,12 +106,12 @@ struct _cond_t
     }
 
     template <class Error>
-    void set_error(Error&& err) noexcept
+    USTDEX_HOST_DEVICE void set_error(Error&& err) noexcept
     {
       ustdex::set_error(static_cast<Rcvr&&>(_rcvr), static_cast<Error&&>(err));
     }
 
-    void set_stopped() noexcept
+    USTDEX_HOST_DEVICE void set_stopped() noexcept
     {
       ustdex::set_stopped(static_cast<Rcvr&&>(_rcvr));
     }
@@ -156,9 +160,6 @@ struct _cond_t
       {static_cast<Pred&&>(pred), static_cast<Then&&>(then), static_cast<Else&&>(_else)}};
   }
 };
-
-using conditional_t = _cond_t;
-USTDEX_DEVICE_CONSTANT constexpr conditional_t conditional{};
 
 template <class Sndr, class Pred, class Then, class Else>
 struct _cond_t::_sndr
@@ -214,4 +215,9 @@ USTDEX_HOST_DEVICE USTDEX_INLINE auto _cond_t::_closure<Pred, Then, Else>::_mk_s
   return _sndr<Sndr, Pred, Then, Else>{
     {}, static_cast<_cond_t::_data<Pred, Then, Else>&&>(_data), static_cast<Sndr&&>(sndr)};
 }
-} // namespace ustdex
+
+using conditional_t = _cond_t;
+USTDEX_DEVICE_CONSTANT constexpr conditional_t conditional{};
+} // namespace USTDEX_NAMESPACE
+
+#include "epilogue.hpp"

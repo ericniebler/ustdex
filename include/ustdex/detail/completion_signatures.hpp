@@ -245,11 +245,11 @@ template <class Sndr, class Rcvr, template <class...> class Variant>
 using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Rcvr>, Variant>;
 
 template <class Sigs>
-USTDEX_DEVICE_CONSTANT constexpr bool _sends_stopped = //
+inline constexpr bool _sends_stopped = //
   _transform_completion_signatures<Sigs, _malways<_mfalse>::_f, _malways<_mfalse>::_f, _mtrue, _mor>::value;
 
 template <class Sndr, class Rcvr = receiver_archetype>
-USTDEX_DEVICE_CONSTANT constexpr bool sends_stopped = //
+inline constexpr bool sends_stopped = //
   _sends_stopped<completion_signatures_of_t<Sndr, Rcvr>>;
 
 using _eptr_completion = completion_signatures<set_error_t(::std::exception_ptr)>;

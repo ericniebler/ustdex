@@ -42,13 +42,13 @@ template <class Ty>
 using _scheduler_concept_t = typename USTDEX_REMOVE_REFERENCE(Ty)::scheduler_concept;
 
 template <class Ty>
-USTDEX_DEVICE_CONSTANT constexpr bool _is_sender = _mvalid_q<_sender_concept_t, Ty>;
+inline constexpr bool _is_sender = _mvalid_q<_sender_concept_t, Ty>;
 
 template <class Ty>
-USTDEX_DEVICE_CONSTANT constexpr bool _is_receiver = _mvalid_q<_receiver_concept_t, Ty>;
+inline constexpr bool _is_receiver = _mvalid_q<_receiver_concept_t, Ty>;
 
 template <class Ty>
-USTDEX_DEVICE_CONSTANT constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept_t, Ty>;
+inline constexpr bool _is_scheduler = _mvalid_q<_scheduler_concept_t, Ty>;
 
 USTDEX_DEVICE_CONSTANT constexpr struct set_value_t
 {
@@ -176,7 +176,7 @@ template <class Sch>
 using schedule_result_t = decltype(schedule(DECLVAL(Sch)));
 
 template <class Sndr, class Rcvr>
-USTDEX_DEVICE_CONSTANT constexpr bool _nothrow_connectable = noexcept(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
+inline constexpr bool _nothrow_connectable = noexcept(connect(DECLVAL(Sndr), DECLVAL(Rcvr)));
 
 // handy enumerations for keeping type names readable
 enum _disposition_t

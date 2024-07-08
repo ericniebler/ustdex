@@ -271,7 +271,7 @@ public:
 private:
   USTDEX_HOST_DEVICE static void _execute_impl(_stok::_inplace_stop_callback_base* cb) noexcept
   {
-    ::std::move(static_cast<inplace_stop_callback*>(cb)->_fun)();
+    std::move(static_cast<inplace_stop_callback*>(cb)->_fun)();
   }
 
   USTDEX_NO_UNIQUE_ADDRESS _Fun _fun;
