@@ -23,7 +23,7 @@
 // This must be the last #include
 #include "prologue.hpp"
 
-namespace ustdex
+namespace USTDEX_NAMESPACE
 {
 template <class Data, class Rcvr>
 struct state
@@ -107,11 +107,11 @@ struct _mk_completions
 
   template <class... Args>
   using _set_value_t =
-    decltype(+*_rcvr_t::set_value(std::declval<Data&>(), std::declval<receiver_archetype&>(), std::declval<Args>()...));
+    decltype(+*_rcvr_t::set_value(_declval<Data&>(), _declval<receiver_archetype&>(), _declval<Args>()...));
 
   template <class Error>
   using _set_error_t =
-    decltype(+*_rcvr_t::set_error(std::declval<Data&>(), std::declval<receiver_archetype&>(), std::declval<Error>()));
+    decltype(+*_rcvr_t::set_error(_declval<Data&>(), _declval<receiver_archetype&>(), _declval<Error>()));
 
   using _set_stopped_t = ustdex::completion_signatures<>;
 };
@@ -121,7 +121,7 @@ struct _mk_completions<true, Data, Rcvr> : _mk_completions<false, Data, Rcvr>
 {
   using _rcvr_t = typename Data::receiver_tag;
 
-  using _set_stopped_t = decltype(+*_rcvr_t::set_stopped(std::declval<Data&>(), std::declval<receiver_archetype&>()));
+  using _set_stopped_t = decltype(+*_rcvr_t::set_stopped(_declval<Data&>(), _declval<receiver_archetype&>()));
 };
 
 template <class...>
@@ -143,7 +143,7 @@ void set_current_exception_if(Rcvr& rcvr) noexcept
 {
   if constexpr (PotentiallyThrowing)
   {
-    ustdex::set_error(std::move(rcvr), std::current_exception());
+    ustdex::set_error(std::move(rcvr), ::std::current_exception());
   }
 }
 
@@ -235,6 +235,6 @@ struct basic_sender<Data, Sndr>
 template <class Data, class... Sndrs>
 basic_sender(_ignore, Data, Sndrs...) -> basic_sender<Data, Sndrs...>;
 
-} // namespace ustdex
+} // namespace USTDEX_NAMESPACE
 
 #include "epilogue.hpp"

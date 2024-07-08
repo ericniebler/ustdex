@@ -20,10 +20,6 @@
 // Then include the test helpers
 #include "common/catch2.hpp"
 #include "common/checked_receiver.hpp"
-#include "common/error_scheduler.hpp"
-#include "common/impulse_scheduler.hpp"
-#include "common/inline_scheduler.hpp"
-#include "common/stopped_scheduler.hpp"
 #include "common/utility.hpp"
 
 namespace ex = USTDEX_NAMESPACE;

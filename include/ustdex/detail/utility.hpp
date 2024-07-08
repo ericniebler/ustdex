@@ -134,31 +134,33 @@ struct _allocate_slot : _slot<N>
   }
 };
 
-inline constexpr struct adl_t
-{
-}* adl = nullptr;
+template <class Type, ::std::size_t Id = 0, ::std::size_t Pow2 = 0>
+constexpr ::std::size_t _next(long);
 
-// If _slot_allocated(_slot<I>) has NOT been defined, then SFINAE will keep this function out of the overload set...
-template <typename Type, ::std::size_t I = 0, ::std::size_t P = 0, bool = !_slot_allocated(_slot<I + (1 << P) - 1>())>
-constexpr ::std::size_t _next(adl_t*)
+// If _slot_allocated(_slot<Id>) has NOT been defined, then SFINAE will keep this function out of the overload set...
+template <class Type, //
+          ::std::size_t Id   = 0,
+          ::std::size_t Pow2 = 0,
+          bool               = !_slot_allocated(_slot<Id + (1 << Pow2) - 1>())>
+constexpr ::std::size_t _next(int)
 {
-  return _next<Type, I, P + 1>(adl);
+  return ustdex::_next<Type, Id, Pow2 + 1>(0);
 }
 
-template <class Type, ::std::size_t I = 0, ::std::size_t P = 0>
-constexpr ::std::size_t _next(void*)
+template <class Type, ::std::size_t Id, ::std::size_t Pow2>
+constexpr ::std::size_t _next(long)
 {
-  if constexpr (P == 0)
+  if constexpr (Pow2 == 0)
   {
-    return _allocate_slot<Type, I>::value;
+    return _allocate_slot<Type, Id>::value;
   }
   else
   {
-    return _next<Type, I + (1 << (P - 1)), 0>(adl);
+    return ustdex::_next<Type, Id + (1 << (Pow2 - 1)), 0>(0);
   }
 }
 
-template <class Type, std::size_t Val = _next<Type>(adl)>
+template <class Type, ::std::size_t Val = ustdex::_next<Type>(0)>
 using _zip = _slot<Val>;
 
 template <class Id>

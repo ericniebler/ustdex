@@ -90,7 +90,7 @@ struct _seq
   struct _sndr;
 
   template <class Sndr1, class Sndr2>
-  auto operator()(Sndr1 sndr1, Sndr2 sndr2) const;
+  USTDEX_HOST_DEVICE auto operator()(Sndr1 sndr1, Sndr2 sndr2) const -> _sndr<Sndr1, Sndr2>;
 };
 
 template <class Sndr1, class Sndr2>
@@ -126,13 +126,13 @@ struct _seq::_sndr
 };
 
 template <class Sndr1, class Sndr2>
-auto _seq::operator()(Sndr1 sndr1, Sndr2 sndr2) const
+USTDEX_HOST_DEVICE auto _seq::operator()(Sndr1 sndr1, Sndr2 sndr2) const -> _sndr<Sndr1, Sndr2>
 {
   return _sndr<Sndr1, Sndr2>{{}, {}, static_cast<Sndr1&&>(sndr1), static_cast<Sndr2&&>(sndr2)};
 }
 
 using sequence_t = _seq;
-inline constexpr sequence_t sequence{};
+USTDEX_DEVICE_CONSTANT constexpr sequence_t sequence{};
 } // namespace USTDEX_NAMESPACE
 
 #include "epilogue.hpp"
