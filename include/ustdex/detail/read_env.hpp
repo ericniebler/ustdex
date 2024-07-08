@@ -55,7 +55,7 @@ private:
 
     Rcvr _rcvr;
 
-    explicit opstate_t(Rcvr rcvr)
+    USTDEX_HOST_DEVICE explicit opstate_t(Rcvr rcvr)
         : _rcvr(static_cast<Rcvr&&>(rcvr))
     {}
 
@@ -76,7 +76,9 @@ private:
       {
         USTDEX_TRY( //
           ( //
-            { ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr))); }),
+            { //
+              ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
+            }),
           USTDEX_CATCH(...)( //
             { //
               ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
