@@ -47,6 +47,8 @@ struct prop
   {
     return _value;
   }
+
+  prop& operator=(const prop&) = delete;
 };
 
 template <class... Envs>
@@ -75,6 +77,8 @@ struct env
   {
     return _get_1st(query).query(query);
   }
+
+  env& operator=(const env&) = delete;
 };
 
 // partial specialization for two environments
@@ -107,6 +111,8 @@ struct env<Env0, Env1>
   {
     return _get_1st(query).query(query);
   }
+
+  env& operator=(const env&) = delete;
 };
 
 template <class... Envs>

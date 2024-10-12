@@ -75,7 +75,7 @@ private:
     template <class... Ts>
     USTDEX_HOST_DEVICE auto operator()(Ts&&... ts) const noexcept
     {
-      SetTag()(static_cast<Rcvr&>(_rcvr), static_cast<Ts&&>(ts)...);
+      SetTag()(static_cast<Rcvr&&>(_rcvr), static_cast<Ts&&>(ts)...);
     }
   };
 
