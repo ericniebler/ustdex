@@ -1,127 +1,132 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include "config.hpp"
+#ifndef USTDEX_ASYNC_DETAIL_SYNC_WAIT
+#define USTDEX_ASYNC_DETAIL_SYNC_WAIT
 
 // run_loop isn't supported on-device yet, so neither can sync_wait be.
-#if USTDEX_HOST_ONLY()
-
-#  include <optional>
-#  include <system_error>
-#  include <tuple>
+#if !defined(__CUDA_ARCH__)
 
 #  include "exception.hpp"
 #  include "meta.hpp"
 #  include "run_loop.hpp"
 #  include "utility.hpp"
+#  include "write_env.hpp"
 
-// Must be the last include
+#  include <optional>
+#  include <system_error>
+#  include <tuple> // IWYU pragma: keep
+#  include <type_traits>
+
 #  include "prologue.hpp"
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
 /// @brief Function object type for synchronously waiting for the result of a
 /// sender.
 struct sync_wait_t
 {
-#  ifndef __CUDACC__
-
 private:
-#  endif
   struct _env_t
   {
-    run_loop* _loop;
+    run_loop* _loop_;
 
-    USTDEX_HOST_DEVICE auto query(get_scheduler_t) const noexcept
+    USTDEX_API auto query(get_scheduler_t) const noexcept
     {
-      return _loop->get_scheduler();
+      return _loop_->get_scheduler();
     }
 
-    USTDEX_HOST_DEVICE auto query(get_delegatee_scheduler_t) const noexcept
+    USTDEX_API auto query(get_delegation_scheduler_t) const noexcept
     {
-      return _loop->get_scheduler();
+      return _loop_->get_scheduler();
     }
   };
 
-  template <class Sndr>
+  template <class Values>
   struct _state_t
   {
-    struct _rcvr_t
+    struct USTDEX_TYPE_VISIBILITY_DEFAULT _rcvr_t
     {
       using receiver_concept = receiver_t;
-      _state_t* _state;
+      _state_t* _state_;
 
       template <class... As>
-      USTDEX_HOST_DEVICE void set_value(As&&... _as) noexcept
+      USTDEX_API void set_value(As&&... _as) noexcept
       {
         USTDEX_TRY( //
           ({ //
-            _state->_values->emplace(static_cast<As&&>(_as)...);
+            _state_->_values_->emplace(static_cast<As&&>(_as)...);
           }), //
-          USTDEX_CATCH(...)( //
-            { //
-              _state->_eptr = ::std::current_exception();
-            }))
-        _state->_loop.finish();
+          USTDEX_CATCH(...) //
+          ({ //
+            _state_->_eptr_ = ::std::current_exception();
+          }) //
+        )
+        _state_->_loop_.finish();
       }
 
       template <class Error>
-      USTDEX_HOST_DEVICE void set_error(Error _err) noexcept
+      USTDEX_API void set_error(Error _err) noexcept
       {
-        if constexpr (USTDEX_IS_SAME(Error, ::std::exception_ptr))
+        if constexpr (std::is_same_v<Error, ::std::exception_ptr>)
         {
-          _state->_eptr = static_cast<Error&&>(_err);
+          _state_->_eptr_ = static_cast<Error&&>(_err);
         }
-        else if constexpr (USTDEX_IS_SAME(Error, ::std::error_code))
+        else if constexpr (std::is_same_v<Error, ::std::error_code>)
         {
-          _state->_eptr = ::std::make_exception_ptr(::std::system_error(_err));
+          _state_->_eptr_ = ::std::make_exception_ptr(::std::system_error(_err));
         }
         else
         {
-          _state->_eptr = ::std::make_exception_ptr(static_cast<Error&&>(_err));
+          _state_->_eptr_ = ::std::make_exception_ptr(static_cast<Error&&>(_err));
         }
-        _state->_loop.finish();
+        _state_->_loop_.finish();
       }
 
-      USTDEX_HOST_DEVICE void set_stopped() noexcept
+      USTDEX_API void set_stopped() noexcept
       {
-        _state->_loop.finish();
+        _state_->_loop_.finish();
       }
 
       _env_t get_env() const noexcept
       {
-        return _env_t{&_state->_loop};
+        return _env_t{&_state_->_loop_};
       }
     };
 
-    using _values_t = value_types_of_t<Sndr, _rcvr_t, ::std::tuple, _midentity::_f>;
-
-    ::std::optional<_values_t>* _values;
-    ::std::exception_ptr _eptr;
-    run_loop _loop;
+    std::optional<Values>* _values_;
+    ::std::exception_ptr _eptr_;
+    run_loop _loop_;
   };
 
-  struct _invalid_sync_wait
+  template <class Type>
+  struct __always_false : std::false_type
+  {};
+
+  template <class Diagnostic>
+  struct _bad_sync_wait
   {
-    const _invalid_sync_wait& value() const
-    {
-      return *this;
-    }
+    static_assert(__always_false<Diagnostic>(), "sync_wait cannot compute the completions of the sender passed to it.");
+    static _bad_sync_wait _result();
 
-    const _invalid_sync_wait& operator*() const
-    {
-      return *this;
-    }
+    const _bad_sync_wait& value() const;
+    const _bad_sync_wait& operator*() const;
 
-    int i;
+    int i{}; // so that structured bindings kinda work
   };
 
 public:
@@ -132,7 +137,7 @@ public:
     /// `sync_wait` connects and starts the given sender, and then drives a
     ///         `run_loop` instance until the sender completes. Additional work
     ///         can be delegated to the `run_loop` by scheduling work on the
-    ///         scheduler returned by calling `get_delegatee_scheduler` on the
+    ///         scheduler returned by calling `get_delegation_scheduler` on the
     ///         receiver's environment.
     ///
     /// @pre The sender must have a exactly one value completion signature. That
@@ -151,43 +156,50 @@ public:
     /// @throws error otherwise
   // clang-format on
   template <class Sndr>
-  auto operator()(Sndr&& sndr) const
+  auto operator()(Sndr&& _sndr) const
   {
-    using _rcvr_t      = typename _state_t<Sndr>::_rcvr_t;
-    using _values_t    = typename _state_t<Sndr>::_values_t;
-    using _completions = completion_signatures_of_t<Sndr, _rcvr_t>;
-    static_assert(_is_completion_signatures<_completions>);
+    using _completions = completion_signatures_of_t<Sndr, _env_t>;
 
-    if constexpr (!_is_completion_signatures<_completions>)
+    if constexpr (!_valid_completion_signatures<_completions>)
     {
-      return _invalid_sync_wait{0};
+      return _bad_sync_wait<_completions>::_result();
     }
     else
     {
-      ::std::optional<_values_t> result{};
-      _state_t<Sndr> state{&result};
+      using _values = _value_types<_completions, std::tuple, _identity_t>;
+      std::optional<_values> _result{};
+      _state_t<_values> _state{&_result, {}, {}};
 
       // Launch the sender with a continuation that will fill in a variant
-      auto opstate = ustdex::connect(static_cast<Sndr&&>(sndr), _rcvr_t{&state});
-      ustdex::start(opstate);
+      using _rcvr   = typename _state_t<_values>::_rcvr_t;
+      auto _opstate = ustdex::connect(static_cast<Sndr&&>(_sndr), _rcvr{&_state});
+      ustdex::start(_opstate);
 
       // Wait for the variant to be filled in, and process any work that
       // may be delegated to this thread.
-      state._loop.run();
+      _state._loop_.run();
 
-      if (state._eptr)
+      if (_state._eptr_)
       {
-        ::std::rethrow_exception(state._eptr);
+        ::std::rethrow_exception(_state._eptr_);
       }
 
-      return result; // uses NRVO to "return" the result
+      return _result; // uses NRVO to "return" the result
     }
+  }
+
+  template <class Sndr, class Env>
+  auto operator()(Sndr&& _sndr, Env&& _env) const
+  {
+    return (*this)(ustdex::write_env(static_cast<Sndr&&>(_sndr), static_cast<Env&&>(_env)));
   }
 };
 
 inline constexpr sync_wait_t sync_wait{};
-} // namespace USTDEX_NAMESPACE
+} // namespace ustdex
 
 #  include "epilogue.hpp"
 
-#endif // USTDEX_HOST_ONLY()
+#endif // !defined(__CUDA_ARCH__)
+
+#endif

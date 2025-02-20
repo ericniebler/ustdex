@@ -1,102 +1,116 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+#ifndef USTDEX_ASYNC_DETAIL_WRITE_ENV
+#define USTDEX_ASYNC_DETAIL_WRITE_ENV
+
+#include "completion_signatures.hpp"
 #include "config.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
 #include "exception.hpp"
-#include "receiver_with_env.hpp"
 #include "queries.hpp"
+#include "rcvr_with_env.hpp"
 #include "utility.hpp"
 
-// Must be the last include
 #include "prologue.hpp"
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
 struct write_env_t
 {
-#ifndef __CUDACC__
-
 private:
-#endif
   template <class Rcvr, class Sndr, class Env>
-  struct _opstate_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
     using operation_state_concept = operation_state_t;
-    using completion_signatures   = completion_signatures_of_t<Sndr, _receiver_with_env_t<Rcvr, Env>*>;
 
-    _receiver_with_env_t<Rcvr, Env> _env_rcvr;
-    connect_result_t<Sndr, _receiver_with_env_t<Rcvr, Env>*> _op;
+    _rcvr_with_env_t<Rcvr, Env> _env_rcvr_;
+    connect_result_t<Sndr, _rcvr_with_env_t<Rcvr, Env>*> _opstate_;
 
-    USTDEX_HOST_DEVICE explicit _opstate_t(Sndr&& sndr, Env env, Rcvr rcvr)
-        : _env_rcvr(static_cast<Env&&>(env), static_cast<Rcvr&&>(rcvr))
-        , _op(ustdex::connect(static_cast<Sndr&&>(sndr), &_env_rcvr))
+    USTDEX_API explicit _opstate_t(Sndr&& _sndr, Env _env, Rcvr _rcvr)
+        : _env_rcvr_{static_cast<Rcvr&&>(_rcvr), static_cast<Env&&>(_env)}
+        , _opstate_(ustdex::connect(static_cast<Sndr&&>(_sndr), &_env_rcvr_))
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
 
-    USTDEX_HOST_DEVICE void start() noexcept
+    USTDEX_API void start() noexcept
     {
-      ustdex::start(_op);
+      ustdex::start(_opstate_);
     }
   };
 
   template <class Sndr, class Env>
-  struct _sndr_t;
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
 public:
   /// @brief Wraps one sender in another that modifies the execution
   /// environment by merging in the environment specified.
   template <class Sndr, class Env>
-  USTDEX_HOST_DEVICE USTDEX_INLINE constexpr auto operator()(Sndr, Env) const //
+  USTDEX_TRIVIAL_API constexpr auto operator()(Sndr, Env) const //
     -> _sndr_t<Sndr, Env>;
 };
 
 template <class Sndr, class Env>
-struct write_env_t::_sndr_t
+struct USTDEX_TYPE_VISIBILITY_DEFAULT write_env_t::_sndr_t
 {
   using sender_concept = sender_t;
-  USTDEX_NO_UNIQUE_ADDRESS write_env_t _tag;
-  Env _env;
-  Sndr _sndr;
+  USTDEX_NO_UNIQUE_ADDRESS write_env_t _tag_;
+  Env _env_;
+  Sndr _sndr_;
 
-  template <class Rcvr>
-  USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) && -> _opstate_t<Rcvr, Sndr, Env>
+  template <class Self, class... Env2>
+  USTDEX_API static constexpr auto get_completion_signatures()
   {
-    return _opstate_t<Rcvr, Sndr, Env>{static_cast<Sndr&&>(_sndr), static_cast<Env&&>(_env), static_cast<Rcvr&&>(rcvr)};
+    using Child = _copy_cvref_t<Self, Sndr>;
+    return ustdex::get_completion_signatures<Child, env<const Env&, FWD_ENV_T<Env2>>...>();
   }
 
   template <class Rcvr>
-  USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const& //
-    -> _opstate_t<Rcvr, const Sndr&, Env>
+  USTDEX_API auto connect(Rcvr _rcvr) && -> _opstate_t<Rcvr, Sndr, Env>
   {
-    return _opstate_t<Rcvr, const Sndr&, Env>{_sndr, _env, static_cast<Rcvr&&>(rcvr)};
+    return _opstate_t<Rcvr, Sndr, Env>{
+      static_cast<Sndr&&>(_sndr_), static_cast<Env&&>(_env_), static_cast<Rcvr&&>(_rcvr)};
   }
 
-  USTDEX_HOST_DEVICE env_of_t<Sndr> get_env() const noexcept
+  template <class Rcvr>
+  USTDEX_API auto connect(Rcvr _rcvr) const& -> _opstate_t<Rcvr, const Sndr&, Env>
   {
-    return ustdex::get_env(_sndr);
+    return _opstate_t<Rcvr, const Sndr&, Env>{_sndr_, _env_, static_cast<Rcvr&&>(_rcvr)};
+  }
+
+  USTDEX_API auto get_env() const noexcept -> env_of_t<Sndr>
+  {
+    return ustdex::get_env(_sndr_);
   }
 };
 
 template <class Sndr, class Env>
-USTDEX_HOST_DEVICE USTDEX_INLINE constexpr auto write_env_t::operator()(Sndr sndr, Env env) const //
+USTDEX_TRIVIAL_API constexpr auto write_env_t::operator()(Sndr _sndr, Env _env) const //
   -> write_env_t::_sndr_t<Sndr, Env>
 {
-  return write_env_t::_sndr_t<Sndr, Env>{{}, static_cast<Env&&>(env), static_cast<Sndr&&>(sndr)};
+  return write_env_t::_sndr_t<Sndr, Env>{{}, static_cast<Env&&>(_env), static_cast<Sndr&&>(_sndr)};
 }
 
-USTDEX_DEVICE_CONSTANT constexpr write_env_t write_env{};
+inline constexpr write_env_t write_env{};
 
-} // namespace USTDEX_NAMESPACE
+} // namespace ustdex
 
 #include "epilogue.hpp"
+
+#endif

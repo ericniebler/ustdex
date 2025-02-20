@@ -1,226 +1,206 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef USTDEX_ASYNC_DETAIL_META
+#define USTDEX_ASYNC_DETAIL_META
 
 #include "config.hpp"
+#include "preprocessor.hpp"
 
-#include <utility>
+#include <utility> // IWYU pragma: keep
 #if __cpp_lib_three_way_comparison
 #  include <compare>
 #endif
 
-// This must be the last #include
+// Include last
 #include "prologue.hpp"
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wgnu-string-literal-operator-template")
 USTDEX_PRAGMA_IGNORE_GNU("-Wnon-template-friend")
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
-template <class Ty>
-using _declfn = Ty && (*) () noexcept;
-
-template <class Ty>
-Ty&& _declval() noexcept;
-
-#define DECLVAL(...) _declval<__VA_ARGS__>()
-
 template <class Ret, class... Args>
-using _fn_t = Ret(Args...);
+using _fn_t USTDEX_ATTR_NODEBUG_ALIAS = Ret(Args...);
 
-template <class Ret, class... Args>
-using _nothrow_fn_t = Ret(Args...) noexcept;
+template <class Ty>
+Ty&& declval() noexcept;
+
+template <class Ty>
+struct _m_type
+{
+  using type USTDEX_ATTR_NODEBUG_ALIAS = Ty;
+};
 
 template <class...>
-using _mvoid = void;
-
-template <class Ty>
-struct _mtype
-{
-  using type = Ty;
-};
-
-template <class Ty>
-using _t = typename Ty::type;
+struct _m_list;
 
 template <class... Ts>
-struct _mlist;
+using _m_list_ptr = _m_list<Ts...>*;
 
-template <auto Val>
-struct _mvalue
+template <class... Ty>
+struct _m_undefined;
+
+template <class... Ty>
+using _m_undefined_ptr = _m_undefined<Ty...>*;
+
+template <std::size_t Np>
+using _m_size_t USTDEX_ATTR_NODEBUG_ALIAS = std::integral_constant<std::size_t, Np>;
+
+struct _m_size
 {
-  static constexpr auto value = Val;
+  template <class... Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_size_t<sizeof...(Ts)>;
 };
 
-// A separate _mbool template is needed in addition to _mvalue
-// because of an EDG bug in the handling of auto template parameters.
-template <bool Val>
-struct _mbool
+template <template <class...> class Fn>
+struct _m_quote
 {
-  static constexpr auto value = Val;
+  template <class... Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Fn<Ts...>;
 };
 
-using _mtrue  = _mbool<true>;
-using _mfalse = _mbool<false>;
+template <template <class> class Fn>
+struct _m_quote1
+{
+  template <class Ty>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Fn<Ty>;
+};
 
-template <auto... Vals>
-struct _mvalues;
+template <class Fn, class... Ts>
+using _m_call USTDEX_ATTR_NODEBUG_ALIAS = typename Fn::template call<Ts...>;
 
-template <::std::size_t... Vals>
-struct _moffsets;
+template <class Fn, class Ty>
+using _m_call1 USTDEX_ATTR_NODEBUG_ALIAS = typename Fn::template call<Ty>;
 
-template <class... Bools>
-using _mand = _mbool<(Bools::value && ...)>;
+template <class Fn, class... Ts>
+struct _m_bind_front
+{
+  template <class... Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Fn, Ts..., Us...>;
+};
 
-template <class... Bools>
-using _mor = _mbool<(Bools::value || ...)>;
+template <template <class...> class Fn, class... Ts>
+struct _m_bind_front_q
+{
+  template <class... Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Fn<Ts..., Us...>;
+};
 
-#if USTDEX_NVCC()
-template <::std::size_t... Idx>
-using _mindices = ::std::index_sequence<Idx...>;
+template <class Fn, class... Ts>
+struct _m_bind_back
+{
+  template <class... Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Fn, Us..., Ts...>;
+};
 
-template <::std::size_t Count>
-using _mmake_indices = ::std::make_index_sequence<Count>;
+template <template <class...> class Fn, class... Ts>
+struct _m_bind_back_q
+{
+  template <class... Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Fn<Us..., Ts...>;
+};
 
-template <class... Ts>
-using _mmake_indices_for = ::std::make_index_sequence<sizeof...(Ts)>;
+namespace detail
+{
+template <std::size_t DependentValue>
+struct _m_call_indirect_fn
+{
+  template <template <class...> class _Fn, class... _Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _Fn<_Ts...>;
+};
+} // namespace detail
+
+// Adds an indirection to a meta-callable to avoid the dreaded "pack expansion
+// argument for non-pack parameter" error.
+template <class _Fn>
+struct _m_indirect
+{
+  template <class... _Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS =
+    typename detail::_m_call_indirect_fn<sizeof(_m_list<_Ts...>*)>::template call<_Fn::template call, _Ts...>;
+};
+
+template <template <class...> class _Fn>
+struct _m_indirect_q
+{
+  template <class... _Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS =
+    typename detail::_m_call_indirect_fn<sizeof(_m_list<_Ts...>*)>::template call<_Fn, _Ts...>;
+};
+
+template <bool>
+struct _m_if_
+{
+  template <class Then, class...>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Then;
+};
+
+template <>
+struct _m_if_<false>
+{
+  template <class, class Else>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Else;
+};
+
+template <bool Cond, class Then = void, class... Else>
+using _m_if USTDEX_ATTR_NODEBUG_ALIAS = _m_call<_m_if_<Cond>, Then, Else...>;
+
+#if defined(__cpp_pack_indexing)
+
+USTDEX_PRAGMA_PUSH()
+USTDEX_PRAGMA_IGNORE_CLANG("-Wc++26-extensions")
+
+template <size_t _Ip, class... _Ts>
+using _m_index = _Ts...[_Ip];
+
+USTDEX_PRAGMA_POP()
+
+#elif USTDEX_HAS_BUILTIN(_type_pack_element)
+
+namespace detail
+{
+// On some versions of gcc, _type_pack_element cannot be mangled so
+// hide it behind a named template.
+template <std::size_t _Ip>
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_index_fn
+{
+  template <class... _Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _type_pack_element<_Ip, _Ts...>;
+};
+} // namespace detail
+
+template <std::size_t _Ip, class... _Ts>
+using _m_index USTDEX_ATTR_NODEBUG_ALIAS = _m_call<detail::_m_index_fn<_Ip>, _Ts...>;
+
 #else
-template <::std::size_t... Idx>
-using _mindices = ::std::index_sequence<Idx...>*;
 
-template <::std::size_t Count>
-using _mmake_indices = ::std::make_index_sequence<Count>*;
+template <std::size_t _Ip, class... _Ts>
+using _m_index USTDEX_ATTR_NODEBUG_ALIAS = std::tuple_element_t<_Ip, std::tuple<_Ts...>>;
 
-template <class... Ts>
-using _mmake_indices_for = ::std::make_index_sequence<sizeof...(Ts)>*;
 #endif
 
-constexpr ::std::size_t _mpow2(::std::size_t _size) noexcept
+template <std::size_t Ip>
+struct _m_at
 {
-  --_size;
-  _size |= _size >> 1;
-  _size |= _size >> 2;
-  _size |= _size >> 4;
-  _size |= _size >> 8;
-  if constexpr (sizeof(_size) >= 4)
-  {
-    _size |= _size >> 16;
-  }
-  if constexpr (sizeof(_size) >= 8)
-  {
-    _size |= _size >> 32;
-  }
-  return ++_size;
-}
-
-template <class Ty>
-constexpr Ty _mmin(Ty _lhs, Ty _rhs) noexcept
-{
-  return _lhs < _rhs ? _lhs : _rhs;
-}
-
-template <class Ty>
-constexpr int _mcompare(Ty _lhs, Ty _rhs) noexcept
-{
-  return _lhs < _rhs ? -1 : _lhs > _rhs ? 1 : 0;
-}
-
-template <::std::size_t Len>
-struct _mstring
-{
-  template <::std::size_t Ny, ::std::size_t... Is>
-  constexpr _mstring(const char (&_str)[Ny], _mindices<Is...>) noexcept
-      : len_{Ny}
-      , what_{(Is < Ny ? _str[Is] : '\0')...}
-  {}
-
-  template <::std::size_t Ny>
-  constexpr _mstring(const char (&_str)[Ny], int = 0) noexcept
-      : _mstring{_str, _mmake_indices<Len>{}}
-  {}
-
-  constexpr auto length() const noexcept -> ::std::size_t
-  {
-    return len_;
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr int compare(const _mstring<OtherLen>& other) const noexcept
-  {
-    ::std::size_t const len = _mmin(len_, other.len_);
-    for (::std::size_t i = 0; i < len; ++i)
-    {
-      if (auto const cmp = _mcompare(what_[i], other.what_[i]))
-      {
-        return cmp;
-      }
-    }
-    return _mcompare(len_, other.len_);
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator==(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return len_ == other.len_ && compare(other) == 0;
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator!=(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return !operator==(other);
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator<(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return compare(other) < 0;
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator>(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return compare(other) > 0;
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator<=(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return compare(other) <= 0;
-  }
-
-  template <::std::size_t OtherLen>
-  constexpr auto operator>=(const _mstring<OtherLen>& other) const noexcept -> bool
-  {
-    return compare(other) >= 0;
-  }
-
-  ::std::size_t len_;
-  char what_[Len];
+  template <class... Ts>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_index<Ip, Ts...>;
 };
-
-template <::std::size_t Len>
-_mstring(const char (&_str)[Len]) -> _mstring<Len>;
-
-template <::std::size_t Len>
-_mstring(const char (&_str)[Len], int) -> _mstring<_mpow2(Len)>;
-
-template <class T>
-constexpr auto _mnameof() noexcept
-{
-#if USTDEX_MSVC()
-  return _mstring{__FUNCSIG__, 0};
-#else
-  return _mstring{__PRETTY_FUNCTION__, 0};
-#endif
-}
 
 // The following must be left undefined
 template <class...>
@@ -232,6 +212,8 @@ struct IN_ALGORITHM;
 
 struct WHAT;
 
+struct WHY;
+
 struct WITH_FUNCTION;
 
 struct WITH_SENDER;
@@ -242,6 +224,8 @@ struct WITH_QUERY;
 
 struct WITH_ENVIRONMENT;
 
+struct WITH_SIGNATURES;
+
 template <class>
 struct WITH_COMPLETION_SIGNATURE;
 
@@ -251,475 +235,414 @@ struct UNKNOWN;
 
 struct SENDER_HAS_TOO_MANY_SUCCESS_COMPLETIONS;
 
+struct ARGUMENTS_ARE_NOT_DECAY_COPYABLE;
+
 template <class... Sigs>
 struct WITH_COMPLETIONS
 {};
 
 struct _merror_base
 {
-  constexpr friend bool _ustdex_unhandled_error(void*) noexcept
+  // virtual ~_merror_base() = default;
+
+  USTDEX_HOST_DEVICE constexpr friend bool _ustdex_unhandled_error(void*) noexcept
   {
     return true;
   }
 };
 
 template <class... What>
-struct ERROR : _merror_base
+struct USTDEX_TYPE_VISIBILITY_DEFAULT ERROR : _merror_base
 {
+  // The following aliases are to simplify error propagation
+  // in the completion signatures meta-programming.
   template <class...>
-  using _f = ERROR;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
 
-  ERROR operator+();
+  using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+
+  template <template <class...> class, template <class...> class>
+  using _value_types USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+
+  template <template <class...> class>
+  using _error_types USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+
+  using _sends_stopped USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+
+  // The following operator overloads also simplify error propagation.
+  USTDEX_HOST_DEVICE ERROR operator+();
 
   template <class Ty>
-  ERROR& operator,(Ty&);
+  USTDEX_HOST_DEVICE ERROR& operator,(Ty&);
 
   template <class... With>
-  ERROR<What..., With...>& with(ERROR<With...>&);
+  USTDEX_HOST_DEVICE ERROR<What..., With...>& with(ERROR<With...>&);
 };
 
-constexpr bool _ustdex_unhandled_error(...) noexcept
+USTDEX_HOST_DEVICE constexpr bool _ustdex_unhandled_error(...) noexcept
 {
   return false;
 }
 
 template <class Ty>
-inline constexpr bool _is_error = false;
+inline constexpr bool _m_is_error = false;
 
 template <class... What>
-inline constexpr bool _is_error<ERROR<What...>> = true;
+inline constexpr bool _m_is_error<ERROR<What...>> = true;
 
 template <class... What>
-inline constexpr bool _is_error<ERROR<What...>&> = true;
+inline constexpr bool _m_is_error<ERROR<What...>&> = true;
 
 // True if any of the types in Ts... are errors; false otherwise.
 template <class... Ts>
-inline constexpr bool _contains_error =
+inline constexpr bool _m_contains_error =
 #if USTDEX_MSVC()
-  (_is_error<Ts> || ...);
+  (_m_is_error<Ts> || ...);
 #else
-  _ustdex_unhandled_error(static_cast<_mlist<Ts...>*>(nullptr));
+  _ustdex_unhandled_error(static_cast<_m_list<Ts...>*>(nullptr));
 #endif
 
 template <class... Ts>
-using _find_error = decltype(+(DECLVAL(Ts&), ..., DECLVAL(ERROR<UNKNOWN>&)));
+using _m_find_error USTDEX_ATTR_NODEBUG_ALIAS = decltype(+(declval<Ts&>(), ..., declval<ERROR<UNKNOWN>&>()));
+
+template <template <class...> class Fn, class... Ts, class = Fn<Ts...>>
+USTDEX_API auto _m_callable_q_(int) -> std::true_type;
 
 template <template <class...> class Fn, class... Ts>
-using _minvoke_q = Fn<Ts...>;
-
-template <class Fn, class... Ts>
-using _minvoke = typename Fn::template _f<Ts...>;
-
-template <class Fn, class Ty>
-using _minvoke1 = typename Fn::template _f<Ty>;
-
-template <class Fn, template <class...> class C, class... Ts>
-_minvoke<Fn, Ts...> _apply_fn(C<Ts...>*);
-
-template <template <class...> class Fn, template <class...> class C, class... Ts>
-Fn<Ts...> _apply_fn_q(C<Ts...>*);
-
-template <class Fn, class List>
-using _mapply = decltype(ustdex::_apply_fn<Fn>(static_cast<List*>(nullptr)));
-
-template <template <class...> class Fn, class List>
-using _mapply_q = decltype(ustdex::_apply_fn_q<Fn>(static_cast<List*>(nullptr)));
-
-template <class Ty, class...>
-using _mfront = Ty;
-
-template <template <class...> class Fn, class List, class Enable = void>
-inline constexpr bool _mvalid_ = false;
+USTDEX_API auto _m_callable_q_(long) -> std::false_type;
 
 template <template <class...> class Fn, class... Ts>
-inline constexpr bool _mvalid_<Fn, _mlist<Ts...>, _mvoid<Fn<Ts...>>> = true;
-
-template <template <class...> class Fn, class... Ts>
-inline constexpr bool _mvalid_q = _mvalid_<Fn, _mlist<Ts...>>;
-
-template <class Fn, class... Ts>
-inline constexpr bool _mvalid = _mvalid_<Fn::template _f, _mlist<Ts...>>;
-
-template <class Tp>
-inline constexpr auto _v = Tp::value;
-
-template <auto Value>
-inline constexpr auto _v<_mvalue<Value>> = Value;
-
-template <bool Value>
-inline constexpr auto _v<_mbool<Value>> = Value;
-
-template <class Tp, Tp Value>
-inline constexpr auto _v<::std::integral_constant<Tp, Value>> = Value;
-
-struct _midentity
-{
-  template <class Ty>
-  using _f = Ty;
-};
-
-template <class Ty>
-struct _malways
-{
-  template <class...>
-  using _f = Ty;
-};
-
-template <class Ty>
-struct _malways1
-{
-  template <class>
-  using _f = Ty;
-};
-
-template <bool>
-struct _mif_
-{
-  template <class Then, class...>
-  using _f = Then;
-};
-
-template <>
-struct _mif_<false>
-{
-  template <class Then, class Else>
-  using _f = Else;
-};
-
-template <bool If, class Then = void, class... Else>
-using _mif = typename _mif_<If>::template _f<Then, Else...>;
-
-template <class If, class Then = void, class... Else>
-using _mif_t = typename _mif_<_v<If>>::template _f<Then, Else...>;
+USTDEX_CONCEPT _m_callable_q = decltype(ustdex::_m_callable_q_<Fn, Ts...>(0))::value;
 
 template <bool Error>
-struct _midentity_or_error_with_
+struct _m_self_or_error_with_
 {
   template <class Ty, class... With>
-  using _f = Ty;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Ty;
 };
 
 template <>
-struct _midentity_or_error_with_<true>
+struct _m_self_or_error_with_<true>
 {
   template <class Ty, class... With>
-  using _f = decltype(DECLVAL(Ty&).with(DECLVAL(ERROR<With...>&)));
+  using call USTDEX_ATTR_NODEBUG_ALIAS = decltype(declval<Ty&>().with(declval<ERROR<With...>&>()));
 };
 
 template <class Ty, class... With>
-using _midentity_or_error_with = _minvoke<_midentity_or_error_with_<_is_error<Ty>>, Ty, With...>;
+using _m_self_or_error_with USTDEX_ATTR_NODEBUG_ALIAS = _m_call<_m_self_or_error_with_<_m_is_error<Ty>>, Ty, With...>;
+
+template <class Ty>
+struct _m_always
+{
+  template <class...>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Ty;
+};
 
 template <bool>
-struct _mtry_;
+struct _m_try_;
 
 template <>
-struct _mtry_<false>
+struct _m_try_<false>
 {
   template <template <class...> class Fn, class... Ts>
-  using _g = Fn<Ts...>;
+  using _call_q USTDEX_ATTR_NODEBUG_ALIAS = Fn<Ts...>;
 
   template <class Fn, class... Ts>
-  using _f = typename Fn::template _f<Ts...>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = typename Fn::template call<Ts...>;
 };
 
 template <>
-struct _mtry_<true>
+struct _m_try_<true>
 {
   template <template <class...> class Fn, class... Ts>
-  using _g = _find_error<Ts...>;
+  using _call_q USTDEX_ATTR_NODEBUG_ALIAS = _m_find_error<Ts...>;
 
   template <class Fn, class... Ts>
-  using _f = _find_error<Fn, Ts...>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_find_error<Fn, Ts...>;
 };
 
 template <class Fn, class... Ts>
-using _mtry_invoke = typename _mtry_<_contains_error<Ts...>>::template _f<Fn, Ts...>;
+using _m_try_call USTDEX_ATTR_NODEBUG_ALIAS = typename _m_try_<_m_contains_error<Fn, Ts...>>::template call<Fn, Ts...>;
 
 template <template <class...> class Fn, class... Ts>
-using _mtry_invoke_q = typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
+using _m_try_call_q USTDEX_ATTR_NODEBUG_ALIAS = typename _m_try_<_m_contains_error<Ts...>>::template _call_q<Fn, Ts...>;
 
+// wraps a meta-callable such that if any of the arguments are errors, the
+// result is an error.
 template <class Fn>
-struct _mtry
+struct _m_try
 {
   template <class... Ts>
-  using _f = _mtry_invoke<Fn, Ts...>;
-};
-
-template <class Fn>
-struct _mpoly
-{
-  template <class... Ts>
-  using _f = typename _mtry_<(sizeof...(Ts) == ~0ul)>::template _f<Fn, Ts...>;
-};
-
-template <template <class...> class Fn>
-struct _mpoly_q
-{
-  template <class... Ts>
-  using _f = typename _mtry_<(sizeof...(Ts) == ~0ul)>::template _g<Fn, Ts...>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_try_call<Fn, Ts...>;
 };
 
 template <template <class...> class Fn, class... Default>
-struct _mquote;
+struct _m_try_q;
 
+// equivalent to _m_try<_m_quote<Fn>>
 template <template <class...> class Fn>
-struct _mquote<Fn>
+struct _m_try_q<Fn>
 {
   template <class... Ts>
-  using _f = Fn<Ts...>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = typename _m_try_<_m_contains_error<Ts...>>::template _call_q<Fn, Ts...>;
 };
 
+// equivalent to _m_try<_m_quote<Fn, Default>>
 template <template <class...> class Fn, class Default>
-struct _mquote<Fn, Default>
+struct _m_try_q<Fn, Default>
 {
   template <class... Ts>
-  using _f = typename _mif<_mvalid_q<Fn, Ts...>, _mquote<Fn>, _malways<Default>>::template _f<Ts...>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS =
+    typename _m_if<_m_callable_q<Fn, Ts...>, //
+                   _m_try_q<Fn>,
+                   _m_always<Default>>::template call<Ts...>;
 };
 
-template <template <class...> class Fn, class... Default>
-struct _mtry_quote;
-
-template <template <class...> class Fn>
-struct _mtry_quote<Fn>
+template <class Return>
+struct _m_quote_f
 {
-  template <class... Ts>
-  using _f = typename _mtry_<_contains_error<Ts...>>::template _g<Fn, Ts...>;
+  template <class... Args>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Return(Args...);
 };
-
-template <template <class...> class Fn, class Default>
-struct _mtry_quote<Fn, Default>
-{
-  template <class... Ts>
-  using _f = typename _mif<_mvalid_q<Fn, Ts...>, _mtry_quote<Fn>, _malways<Default>>::template _f<Ts...>;
-};
-
-template <class Fn, class... Ts>
-struct _mbind_front
-{
-  template <class... Us>
-  using _f = _minvoke<Fn, Ts..., Us...>;
-};
-
-template <class Fn, class Ty>
-struct _mbind_front1
-{
-  template <class... Us>
-  using _f = _minvoke<Fn, Ty, Us...>;
-};
-
-template <template <class...> class Fn, class... Ts>
-struct _mbind_front_q
-{
-  template <class... Us>
-  using _f = _minvoke_q<Fn, Ts..., Us...>;
-};
-
-template <class Fn, class... Ts>
-struct _mbind_back
-{
-  template <class... Us>
-  using _f = _minvoke<Fn, Us..., Ts...>;
-};
-
-template <template <class...> class Fn, class... Ts>
-struct _mbind_back_q
-{
-  template <class... Us>
-  using _f = _minvoke_q<Fn, Us..., Ts...>;
-};
-
-#if USTDEX_HAS_BUILTIN(__type_pack_element)
-template <bool>
-struct _m_at_
-{
-  template <class Np, class... Ts>
-  using _f = __type_pack_element<_v<Np>, Ts...>;
-};
-
-template <class Np, class... Ts>
-using _m_at = _minvoke<_m_at_<_v<Np> == ~0ul>, Np, Ts...>;
-
-template <::std::size_t Np, class... Ts>
-using _m_at_c = _minvoke<_m_at_<Np == ~0ul>, _mvalue<Np>, Ts...>;
-
-template <::std::size_t Idx>
-struct _mget
-{
-  template <class... Ts>
-  using _f = _m_at<_mvalue<Idx>, Ts...>;
-};
-#else
-template <::std::size_t Idx>
-struct _mget
-{
-  template <class, class, class, class, class... Ts>
-  using _f = _minvoke<_mtry_<sizeof...(Ts) == ~0ull>, _mget<Idx - 4>, Ts...>;
-};
-
-template <>
-struct _mget<0>
-{
-  template <class T, class...>
-  using _f = T;
-};
-
-template <>
-struct _mget<1>
-{
-  template <class, class T, class...>
-  using _f = T;
-};
-
-template <>
-struct _mget<2>
-{
-  template <class, class, class T, class...>
-  using _f = T;
-};
-
-template <>
-struct _mget<3>
-{
-  template <class, class, class, class T, class...>
-  using _f = T;
-};
-
-template <class Np, class... Ts>
-using _m_at = _minvoke<_mget<_v<Np>>, Ts...>;
-
-template <::std::size_t Np, class... Ts>
-using _m_at_c = _minvoke<_mget<Np>, Ts...>;
-#endif
 
 template <class First, class Second>
-struct _mpair
+struct _m_pair
 {
-  using first  = First;
-  using second = Second;
+  using first                            = First;
+  using second USTDEX_ATTR_NODEBUG_ALIAS = Second;
 };
 
 template <class Pair>
-using _mfirst = typename Pair::first;
+using _m_first USTDEX_ATTR_NODEBUG_ALIAS = typename Pair::first;
 
 template <class Pair>
-using _msecond = typename Pair::second;
+using _m_second USTDEX_ATTR_NODEBUG_ALIAS = typename Pair::second;
 
 template <template <class...> class Second, template <class...> class First>
-struct _mcompose_q
+struct _m_compose_q
 {
   template <class... Ts>
-  using _f = Second<First<Ts...>>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Second<First<Ts...>>;
 };
 
-struct _mcount
+template <class Second, class First>
+struct _m_compose : _m_compose_q<Second::template call, First::template call>
+{};
+
+struct _m_self
+{
+  template <class Ty>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Ty;
+};
+
+struct _m_count
 {
   template <class... Ts>
-  using _f = _mvalue<sizeof...(Ts)>;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = std::integral_constant<std::size_t, sizeof...(Ts)>;
 };
 
-template <bool>
-struct _mconcat_
+template <class...>
+using _m_void USTDEX_ATTR_NODEBUG_ALIAS = void;
+
+template <template <class...> class Fn, class List, class = void>
+extern _m_undefined<List> _m_apply_q_;
+
+template <template <class...> class Fn, template <class...> class List, class... Ts>
+extern _fn_t<Fn<Ts...>>* _m_apply_q_<Fn, List<Ts...>, _m_void<Fn<Ts...>>>;
+
+template <template <class...> class Fn, class Ret, class... As>
+extern _fn_t<Fn<Ret, As...>>* _m_apply_q_<Fn, Ret(As...), _m_void<Fn<Ret, As...>>>;
+
+template <template <class...> class Fn, class List>
+using _m_apply_q USTDEX_ATTR_NODEBUG_ALIAS = decltype(_m_apply_q_<Fn, List>());
+
+template <class Fn, class List>
+using _m_apply USTDEX_ATTR_NODEBUG_ALIAS = decltype(_m_apply_q_<Fn::template call, List>());
+
+template <std::size_t Count>
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_maybe_concat_fn
 {
+  using _next_t USTDEX_ATTR_NODEBUG_ALIAS = _m_maybe_concat_fn<(Count < 8 ? 0 : Count - 8)>;
+
   template <class... Ts,
-            template <class...> class Ap = _mlist,
+            template <class...> class A = _m_list,
             class... As,
-            template <class...> class Bp = _mlist,
+            template <class...> class B = _m_list,
             class... Bs,
-            template <class...> class Cp = _mlist,
+            template <class...> class C = _m_list,
             class... Cs,
-            template <class...> class Dp = _mlist,
+            template <class...> class D = _m_list,
             class... Ds,
+            template <class...> class E = _m_list,
+            class... Es,
+            template <class...> class F = _m_list,
+            class... Fs,
+            template <class...> class G = _m_list,
+            class... Gs,
+            template <class...> class H = _m_list,
+            class... Hs,
             class... Tail>
-  static auto
-  _f(_mlist<Ts...>*, Ap<As...>*, Bp<Bs...>* = nullptr, Cp<Cs...>* = nullptr, Dp<Ds...>* = nullptr, Tail*... _tail)
-    -> decltype(_mconcat_<(sizeof...(Tail) == 0)>::_f(static_cast<_mlist<Ts..., As..., Bs..., Cs..., Ds...>*>(nullptr),
-                                                      _tail...));
+  USTDEX_API static auto call(
+    _m_list_ptr<Ts...>, // state
+    _m_undefined_ptr<A<As...>>, // 1
+    _m_undefined_ptr<B<Bs...>>, // 2
+    _m_undefined_ptr<C<Cs...>>, // 3
+    _m_undefined_ptr<D<Ds...>>, // 4
+    _m_undefined_ptr<E<Es...>>, // 5
+    _m_undefined_ptr<F<Fs...>>, // 6
+    _m_undefined_ptr<G<Gs...>>, // 7
+    _m_undefined_ptr<H<Hs...>>, // 8
+    Tail*... _tail) // rest
+    -> decltype(_next_t::call(
+      _m_list_ptr<Ts..., As..., Bs..., Cs..., Ds..., Es..., Fs..., Gs..., Hs...>{nullptr},
+      _tail...,
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr},
+      _m_undefined_ptr<_m_list<>>{nullptr}));
 };
 
 template <>
-struct _mconcat_<true>
-{
-  template <class... As>
-  static auto _f(_mlist<As...>*) -> _mlist<As...>;
-};
-
-template <class Continuation = _mquote<_mlist>>
-struct _mconcat_into
-{
-  template <class... Args>
-  using _f = _mapply<Continuation, decltype(_mconcat_<(sizeof...(Args) == 0)>::_f({}, static_cast<Args*>(nullptr)...))>;
-};
-
-template <template <class...> class Continuation = _mlist>
-struct _mconcat_into_q
-{
-  template <class... Args>
-  using _f =
-    _mapply_q<Continuation, decltype(_mconcat_<(sizeof...(Args) == 0)>::_f({}, static_cast<Args*>(nullptr)...))>;
-};
-
-template <class Set, class... Ty>
-inline constexpr bool _mset_contains = (USTDEX_IS_BASE_OF(_mtype<Ty>, Set) && ...);
-
-namespace _set
-{
-template <class... Ts>
-struct _inherit
-{};
-
-template <class Ty, class... Ts>
-struct _inherit<Ty, Ts...>
-    : _mtype<Ty>
-    , _inherit<Ts...>
-{};
-
-template <class... Set>
-auto operator+(_inherit<Set...>&) -> _inherit<Set...>;
-
-template <class... Set, class Ty>
-auto operator%(_inherit<Set...>&, _mtype<Ty>&) //
-  -> _mif< //
-    _mset_contains<_inherit<Set...>, Ty>,
-    _inherit<Set...>,
-    _inherit<Ty, Set...>>&;
-
-template <class ExpectedSet>
-struct _eq
-{
-  static constexpr ::std::size_t count = _v<_mapply<_mcount, ExpectedSet>>;
-
-  template <class... Ts>
-  using _f = _mbool<sizeof...(Ts) == count && _mset_contains<ExpectedSet, Ts...>>;
-};
-} // namespace _set
-
-template <class... Ts>
-using _mset = _set::_inherit<Ts...>;
-
-template <class Set, class... Ts>
-using _mset_insert = decltype(+(DECLVAL(Set&) % ... % DECLVAL(_mtype<Ts>&)));
-
-template <class... Ts>
-using _mmake_set = _mset_insert<_mset<>, Ts...>;
-
-template <class Set1, class Set2>
-inline constexpr bool _mset_eq = _v<_mapply<_set::_eq<Set1>, Set2>>;
-
-template <class Fn>
-struct _munique
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_maybe_concat_fn<0>
 {
   template <class... Ts>
-  using _f = _minvoke<_mmake_set<Ts...>, Fn>;
+  USTDEX_API static auto call(_m_list_ptr<Ts...>, ...) -> _fn_t<_m_list<Ts...>>*;
+};
+
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_concat
+{
+  template <class... Lists>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = decltype(_m_maybe_concat_fn<sizeof...(Lists)>::call(
+    _m_list_ptr<>{nullptr},
+    static_cast<_m_undefined_ptr<Lists>>(nullptr)...,
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr},
+    _m_undefined_ptr<_m_list<>>{nullptr})());
+};
+
+template <class Continuation>
+struct _m_concat_into
+{
+  template <class... Args>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_apply<Continuation, _m_call<_m_concat, Args...>>;
+};
+
+template <template <class...> class Continuation>
+struct _m_concat_into_q
+{
+  template <class... Args>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _m_apply_q<Continuation, _m_call<_m_concat, Args...>>;
 };
 
 template <class Ty>
-struct _msingle_or
+struct _m_self_or
 {
   template <class Uy = Ty>
-  using _f = Uy;
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Uy;
 };
-} // namespace USTDEX_NAMESPACE
+
+template <class Ret>
+struct _m_quote_function
+{
+  template <class... Args>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = Ret(Args...);
+};
+
+template <class _Set, class... _Ts>
+inline constexpr bool _m_set_contains_v = (USTDEX_IS_BASE_OF(_m_type<_Ts>, _Set) && ...);
+
+template <class _Set, class... _Ts>
+struct _m_set_contains : std::bool_constant<_m_set_contains_v<_Set, _Ts...>>
+{};
+
+namespace _set
+{
+template <class... _Ts>
+struct _tupl;
+
+template <>
+struct _tupl<>
+{
+  template <class _Ty>
+  using _maybe_insert USTDEX_ATTR_NODEBUG_ALIAS = _tupl<_Ty>;
+
+  USTDEX_API static constexpr std::size_t _size() noexcept
+  {
+    return 0;
+  }
+};
+
+template <class _Ty, class... _Ts>
+struct _tupl<_Ty, _Ts...>
+    : _m_type<_Ty>
+    , _tupl<_Ts...>
+{
+  template <class _Uy>
+  using _maybe_insert USTDEX_ATTR_NODEBUG_ALIAS = _m_if<_m_set_contains_v<_tupl, _Uy>, _tupl, _tupl<_Uy, _Ty, _Ts...>>;
+
+  USTDEX_API static constexpr std::size_t _size() noexcept
+  {
+    return sizeof...(_Ts) + 1;
+  }
+};
+
+template <bool _Empty>
+struct _bulk_insert
+{
+  template <class _Set, class...>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = _Set;
+};
+
+template <>
+struct _bulk_insert<false>
+{
+#if USTDEX_MSVC() && _MSC_VER < 1920
+  template <class _Set, class _Ty, class... _Us>
+  USTDEX_API static auto _insert_fn(_m_list<_Ty, _Us...>*) ->
+    typename _bulk_insert<sizeof...(_Us) == 0>::template call<typename _Set::template _maybe_insert<_Ty>, _Us...>;
+
+  template <class _Set, class... _Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = decltype(_insert_fn<_Set>(static_cast<_m_list<_Us...>*>(nullptr)));
+#else
+  template <class _Set, class _Ty, class... _Us>
+  using call USTDEX_ATTR_NODEBUG_ALIAS =
+    typename _bulk_insert<sizeof...(_Us) == 0>::template call<typename _Set::template _maybe_insert<_Ty>, _Us...>;
+#endif
+};
+} // namespace _set
+
+// When comparing sets for equality, use conjunction<> to short-circuit the set
+// comparison if the sizes are different.
+template <class _ExpectedSet, class... _Ts>
+using _m_set_eq =
+  std::conjunction<std::bool_constant<sizeof...(_Ts) == _ExpectedSet::_size()>, _m_set_contains<_ExpectedSet, _Ts...>>;
+
+template <class _ExpectedSet, class... _Ts>
+inline constexpr bool _m_set_eq_v = _m_set_eq<_ExpectedSet, _Ts...>::value;
+
+template <class... _Ts>
+using _m_set = _set::_tupl<_Ts...>;
+
+template <class _Set, class... _Ts>
+using _m_set_insert = typename _set::_bulk_insert<sizeof...(_Ts) == 0>::template call<_Set, _Ts...>;
+
+template <class... _Ts>
+using _m_make_set = _m_set_insert<_m_set<>, _Ts...>;
+
+template <class _Ty, class... _Ts>
+inline constexpr bool _m_contains = (USTDEX_IS_SAME(_Ty, _Ts) || ...);
+
+} // namespace ustdex
 
 USTDEX_PRAGMA_POP()
 
 #include "epilogue.hpp"
+
+#endif

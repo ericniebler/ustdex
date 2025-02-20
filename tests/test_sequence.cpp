@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -22,7 +23,7 @@
 #include "common/checked_receiver.hpp"
 #include "common/utility.hpp"
 
-namespace ex = USTDEX_NAMESPACE;
+namespace ex = ustdex;
 
 namespace
 {
@@ -39,7 +40,7 @@ TEST_CASE("simple use of sequence executes both child operations", "[adaptors][s
       flag2 = true;
     }));
 
-  check_value_types<types<>>(sndr1);
+  check_value_types<_m_list<>>(sndr1);
   check_error_types<std::exception_ptr>(sndr1);
   check_sends_stopped<false>(sndr1);
 

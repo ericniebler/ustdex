@@ -1,13 +1,22 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef USTDEX_ASYNC_DETAIL_CONTINUE_ON
+#define USTDEX_ASYNC_DETAIL_CONTINUE_ON
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
@@ -18,255 +27,262 @@
 #include "utility.hpp"
 #include "variant.hpp"
 
-// This must be the last #include
 #include "prologue.hpp"
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
-struct continue_on_t
+struct USTDEX_TYPE_VISIBILITY_DEFAULT continue_on_t
 {
-#ifndef __CUDACC__
-
 private:
-#endif
   template <class... As>
-  using _set_value_tuple_t = _tuple<set_value_t, _decay_t<As>...>;
+  using _set_value_tuple_t = _tuple<set_value_t, USTDEX_DECAY(As)...>;
 
   template <class Error>
-  using _set_error_tuple_t = _tuple<set_error_t, _decay_t<Error>>;
+  using _set_error_tuple_t = _tuple<set_error_t, USTDEX_DECAY(Error)>;
 
   using _set_stopped_tuple_t = _tuple<set_stopped_t>;
 
   using _complete_fn = void (*)(void*) noexcept;
 
-  template <class... Ts>
-  using _set_value_completion =
-    _mif<_nothrow_decay_copyable<Ts...>,
-         completion_signatures<set_value_t(_decay_t<Ts>...)>,
-         completion_signatures<set_value_t(_decay_t<Ts>...), set_error_t(::std::exception_ptr)>>;
-
-  template <class Error>
-  using _set_error_completion =
-    _mif<_nothrow_decay_copyable<Error>,
-         completion_signatures<set_error_t(_decay_t<Error>)>,
-         completion_signatures<set_error_t(_decay_t<Error>), set_error_t(::std::exception_ptr)>>;
-
   template <class Rcvr, class Result>
-  struct _rcvr_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _rcvr_t
   {
     using receiver_concept = receiver_t;
-    Rcvr _rcvr;
-    Result _result;
-    _complete_fn _complete;
+    Rcvr _rcvr_;
+    Result _result_;
+    _complete_fn _complete_;
 
     template <class Tag, class... As>
-    USTDEX_HOST_DEVICE void operator()(Tag, As&... as) noexcept
+    USTDEX_API void operator()(Tag, As&... _as) noexcept
     {
-      Tag()(static_cast<Rcvr&&>(_rcvr), static_cast<As&&>(as)...);
+      Tag()(static_cast<Rcvr&&>(_rcvr_), static_cast<As&&>(_as)...);
     }
 
     template <class Tag, class... As>
-    USTDEX_HOST_DEVICE void _set_result(Tag, As&&... as) noexcept
+    USTDEX_API void _set_result(Tag, As&&... _as) noexcept
     {
-      using _tupl_t = _tuple<Tag, _decay_t<As>...>;
+      using _tupl_t = _tuple<Tag, USTDEX_DECAY(As)...>;
       if constexpr (_nothrow_decay_copyable<As...>)
       {
-        _result.template emplace<_tupl_t>(Tag(), static_cast<As&&>(as)...);
+        _result_.template _emplace<_tupl_t>(Tag(), static_cast<As&&>(_as)...);
       }
       else
       {
         USTDEX_TRY( //
           ({ //
-            _result.template emplace<_tupl_t>(Tag(), static_cast<As&&>(as)...);
+            _result_.template _emplace<_tupl_t>(Tag(), static_cast<As&&>(_as)...);
           }),
-          USTDEX_CATCH(...)( //
-            { //
-              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
-            }))
+          USTDEX_CATCH(...) //
+          ({ //
+            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+          }) //
+        )
       }
-      _complete = +[](void* ptr) noexcept {
-        auto& self = *static_cast<_rcvr_t*>(ptr);
-        auto& tupl = *static_cast<_tupl_t*>(self._result._ptr());
-        tupl.apply(self, tupl);
+      _complete_ = +[](void* _ptr) noexcept {
+        auto& _self = *static_cast<_rcvr_t*>(_ptr);
+        auto& _tupl = *static_cast<_tupl_t*>(_self._result_._ptr());
+        _tupl.apply(_self, _tupl);
       };
     }
 
-    USTDEX_HOST_DEVICE void set_value() noexcept
+    USTDEX_API void set_value() noexcept
     {
-      _complete(this);
+      _complete_(this);
     }
 
     template <class Error>
-    USTDEX_HOST_DEVICE void set_error(Error&& error) noexcept
+    USTDEX_API void set_error(Error&& _error) noexcept
     {
-      ustdex::set_error(static_cast<Rcvr&&>(_rcvr), static_cast<Error&&>(error));
+      ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), static_cast<Error&&>(_error));
     }
 
-    USTDEX_HOST_DEVICE void set_stopped() noexcept
+    USTDEX_API void set_stopped() noexcept
     {
-      ustdex::set_stopped(static_cast<Rcvr&&>(_rcvr));
+      ustdex::set_stopped(static_cast<Rcvr&&>(_rcvr_));
     }
 
-    USTDEX_HOST_DEVICE env_of_t<Rcvr> get_env() const noexcept
+    USTDEX_API env_of_t<Rcvr> get_env() const noexcept
     {
-      return ustdex::get_env(_rcvr);
+      return ustdex::get_env(_rcvr_);
     }
   };
 
   template <class Rcvr, class CvSndr, class Sch>
-  struct _opstate_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
-    USTDEX_HOST_DEVICE friend auto get_env(const _opstate_t* self) noexcept -> env_of_t<Rcvr>
+    using operation_state_concept = operation_state_t;
+    using _env_t                  = FWD_ENV_T<env_of_t<Rcvr>>;
+
+    using _result_t =
+      typename completion_signatures_of_t<CvSndr, _env_t>::template _transform_q<_decayed_tuple, _variant>;
+
+    USTDEX_API friend auto get_env(const _opstate_t* _self) noexcept -> _env_t
     {
-      return ustdex::get_env(self->_rcvr._rcvr);
+      return ustdex::get_env(_self->_rcvr_._rcvr);
     }
 
-    using operation_state_concept = operation_state_t;
-    using _result_t =
-      _transform_completion_signatures<completion_signatures_of_t<CvSndr, _opstate_t*>,
-                                       _set_value_tuple_t,
-                                       _set_error_tuple_t,
-                                       _set_stopped_tuple_t,
-                                       _variant>;
+    _rcvr_t<Rcvr, _result_t> _rcvr_;
+    connect_result_t<CvSndr, _opstate_t*> _opstate1_;
+    connect_result_t<schedule_result_t<Sch>, _rcvr_t<Rcvr, _result_t>*> _opstate2_;
 
-    // The scheduler contributes error and stopped completions.
-    // This causes its set_value_t() completion to be ignored.
-    using _scheduler_completions = //
-      transform_completion_signatures<completion_signatures_of_t<schedule_result_t<Sch>, _rcvr_t<Rcvr, _result_t>*>,
-                                      ustdex::completion_signatures<>,
-                                      _malways<ustdex::completion_signatures<>>::_f>;
-
-    // The continue_on completions are the scheduler's error
-    // and stopped completions, plus the sender's completions
-    // with all the result data types decayed.
-    using completion_signatures = //
-      transform_completion_signatures<completion_signatures_of_t<CvSndr, _opstate_t*>,
-                                      _scheduler_completions,
-                                      _set_value_completion,
-                                      _set_error_completion>;
-
-    _rcvr_t<Rcvr, _result_t> _rcvr;
-    connect_result_t<CvSndr, _opstate_t*> _opstate1;
-    connect_result_t<schedule_result_t<Sch>, _rcvr_t<Rcvr, _result_t>*> _opstate2;
-
-    USTDEX_HOST_DEVICE _opstate_t(CvSndr&& sndr, Sch sch, Rcvr rcvr)
-        : _rcvr{static_cast<Rcvr&&>(rcvr), {}, nullptr}
-        , _opstate1{ustdex::connect(static_cast<CvSndr&&>(sndr), this)}
-        , _opstate2{ustdex::connect(schedule(sch), &_rcvr)}
+    USTDEX_API _opstate_t(CvSndr&& _sndr, Sch _sch, Rcvr _rcvr)
+        : _rcvr_{static_cast<Rcvr&&>(_rcvr), {}, nullptr}
+        , _opstate1_{ustdex::connect(static_cast<CvSndr&&>(_sndr), this)}
+        , _opstate2_{ustdex::connect(schedule(_sch), &_rcvr_)}
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
 
-    USTDEX_HOST_DEVICE void start() noexcept
+    USTDEX_API void start() noexcept
     {
-      ustdex::start(_opstate1);
+      ustdex::start(_opstate1_);
     }
 
     template <class... As>
-    USTDEX_HOST_DEVICE void set_value(As&&... as) noexcept
+    USTDEX_API void set_value(As&&... _as) noexcept
     {
-      _rcvr._set_result(set_value_t(), static_cast<As&&>(as)...);
-      ustdex::start(_opstate2);
+      _rcvr_._set_result(set_value_t(), static_cast<As&&>(_as)...);
+      ustdex::start(_opstate2_);
     }
 
     template <class Error>
-    USTDEX_HOST_DEVICE void set_error(Error&& error) noexcept
+    USTDEX_API void set_error(Error&& _error) noexcept
     {
-      _rcvr._set_result(set_error_t(), static_cast<Error&&>(error));
-      ustdex::start(_opstate2);
+      _rcvr_._set_result(set_error_t(), static_cast<Error&&>(_error));
+      ustdex::start(_opstate2_);
     }
 
-    USTDEX_HOST_DEVICE void set_stopped() noexcept
+    USTDEX_API void set_stopped() noexcept
     {
-      _rcvr._set_result(set_stopped_t());
-      ustdex::start(_opstate2);
+      _rcvr_._set_result(set_stopped_t());
+      ustdex::start(_opstate2_);
     }
   };
 
   template <class Sndr, class Sch>
-  struct _sndr_t;
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
   template <class Sch>
   struct _closure_t;
 
 public:
   template <class Sndr, class Sch>
-  USTDEX_HOST_DEVICE _sndr_t<Sndr, Sch> operator()(Sndr sndr, Sch sch) const noexcept;
+  USTDEX_API _sndr_t<Sndr, Sch> operator()(Sndr _sndr, Sch _sch) const noexcept;
 
   template <class Sch>
-  USTDEX_HOST_DEVICE USTDEX_INLINE _closure_t<Sch> operator()(Sch sch) const noexcept;
+  USTDEX_TRIVIAL_API _closure_t<Sch> operator()(Sch _sch) const noexcept;
 };
 
 template <class Sch>
-struct continue_on_t::_closure_t
+struct USTDEX_TYPE_VISIBILITY_DEFAULT continue_on_t::_closure_t
 {
   Sch _sch;
 
   template <class Sndr>
-  USTDEX_HOST_DEVICE USTDEX_INLINE friend auto operator|(Sndr sndr, _closure_t&& _self)
+  USTDEX_TRIVIAL_API friend auto operator|(Sndr _sndr, _closure_t&& _self)
   {
-    return continue_on_t()(static_cast<Sndr&&>(sndr), static_cast<Sch&&>(_self._sch));
+    return continue_on_t()(static_cast<Sndr&&>(_sndr), static_cast<Sch&&>(_self._sch));
+  }
+};
+
+template <class Tag>
+struct _decay_args
+{
+  template <class... Ts>
+  USTDEX_TRIVIAL_API constexpr auto operator()() const noexcept
+  {
+    if constexpr (!_decay_copyable<Ts...>)
+    {
+      return invalid_completion_signature<WHERE(IN_ALGORITHM, continue_on_t),
+                                          WHAT(ARGUMENTS_ARE_NOT_DECAY_COPYABLE),
+                                          WITH_ARGUMENTS(Ts...)>();
+    }
+    else if constexpr (!_nothrow_decay_copyable<Ts...>)
+    {
+      return completion_signatures<Tag(USTDEX_DECAY(Ts)...), set_error_t(::std::exception_ptr)>{};
+    }
+    else
+    {
+      return completion_signatures<Tag(USTDEX_DECAY(Ts)...)>{};
+    }
   }
 };
 
 template <class Sndr, class Sch>
-struct continue_on_t::_sndr_t
+struct USTDEX_TYPE_VISIBILITY_DEFAULT continue_on_t::_sndr_t
 {
   using sender_concept = sender_t;
   USTDEX_NO_UNIQUE_ADDRESS continue_on_t _tag;
   Sch _sch;
   Sndr _sndr;
 
-  struct _attrs_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _attrs_t
   {
     _sndr_t* _sndr;
 
     template <class SetTag>
-    USTDEX_HOST_DEVICE auto query(get_completion_scheduler_t<SetTag>) const noexcept
+    USTDEX_API auto query(get_completion_scheduler_t<SetTag>) const noexcept
     {
       return _sndr->_sch;
     }
 
     template <class Query>
-    USTDEX_HOST_DEVICE auto query(Query) const //
+    USTDEX_API auto query(Query) const //
       -> _query_result_t<Query, env_of_t<Sndr>>
     {
       return ustdex::get_env(_sndr->_sndr).query(Query{});
     }
   };
 
-  template <class Rcvr>
-  USTDEX_HOST_DEVICE _opstate_t<Rcvr, Sndr, Sch> connect(Rcvr rcvr) &&
+  template <class Self, class... Env>
+  USTDEX_API static constexpr auto get_completion_signatures()
   {
-    return {static_cast<Sndr&&>(_sndr), _sch, static_cast<Rcvr&&>(rcvr)};
+    USTDEX_LET_COMPLETIONS(auto(_child_completions) = get_child_completion_signatures<Self, Sndr, Env...>())
+    {
+      USTDEX_LET_COMPLETIONS(
+        auto(_sch_completions) = ustdex::get_completion_signatures<schedule_result_t<Sch>, Env...>())
+      {
+        // The scheduler contributes error and stopped completions.
+        return concat_completion_signatures(
+          transform_completion_signatures(_sch_completions, _swallow_transform()),
+          transform_completion_signatures(_child_completions, _decay_args<set_value_t>{}, _decay_args<set_error_t>{}));
+      }
+    }
   }
 
   template <class Rcvr>
-  USTDEX_HOST_DEVICE _opstate_t<Rcvr, const Sndr&, Sch> connect(Rcvr rcvr) const&
+  USTDEX_API _opstate_t<Rcvr, Sndr, Sch> connect(Rcvr _rcvr) &&
   {
-    return {_sndr, _sch, static_cast<Rcvr&&>(rcvr)};
+    return {static_cast<Sndr&&>(_sndr), _sch, static_cast<Rcvr&&>(_rcvr)};
   }
 
-  USTDEX_HOST_DEVICE _attrs_t get_env() const noexcept
+  template <class Rcvr>
+  USTDEX_API _opstate_t<Rcvr, const Sndr&, Sch> connect(Rcvr _rcvr) const&
+  {
+    return {_sndr, _sch, static_cast<Rcvr&&>(_rcvr)};
+  }
+
+  USTDEX_API _attrs_t get_env() const noexcept
   {
     return _attrs_t{this};
   }
 };
 
 template <class Sndr, class Sch>
-USTDEX_HOST_DEVICE auto continue_on_t::operator()(Sndr sndr, Sch sch) const noexcept
-  -> continue_on_t::_sndr_t<Sndr, Sch>
+USTDEX_API auto continue_on_t::operator()(Sndr _sndr, Sch _sch) const noexcept -> continue_on_t::_sndr_t<Sndr, Sch>
 {
-  return _sndr_t<Sndr, Sch>{{}, sch, static_cast<Sndr&&>(sndr)};
+  return _sndr_t<Sndr, Sch>{{}, _sch, static_cast<Sndr&&>(_sndr)};
 }
 
 template <class Sch>
-USTDEX_HOST_DEVICE USTDEX_INLINE continue_on_t::_closure_t<Sch> continue_on_t::operator()(Sch sch) const noexcept
+USTDEX_TRIVIAL_API continue_on_t::_closure_t<Sch> continue_on_t::operator()(Sch _sch) const noexcept
 {
-  return _closure_t<Sch>{sch};
+  return _closure_t<Sch>{_sch};
 }
 
-USTDEX_DEVICE_CONSTANT constexpr continue_on_t continue_on{};
-} // namespace USTDEX_NAMESPACE
+inline constexpr continue_on_t continue_on{};
+} // namespace ustdex
 
 #include "epilogue.hpp"
+
+#endif

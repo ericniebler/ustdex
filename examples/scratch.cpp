@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -16,11 +17,10 @@
 
 #include <cstdio>
 #include <iostream>
-#include <string>
 
 #include "ustdex/ustdex.hpp"
 
-using namespace USTDEX_NAMESPACE;
+using namespace ustdex;
 
 struct sink
 {
@@ -48,7 +48,7 @@ template <class>
 [[deprecated]] void print()
 {}
 
-static_assert(!_is_non_dependent_sender<decltype(read_env(_empty()))>);
+static_assert(dependent_sender<decltype(read_env(_empty()))>);
 
 int main()
 {
@@ -61,7 +61,7 @@ int main()
                 return a + b + c;
               });
   auto s = start_on(sch, std::move(work));
-  static_assert(_is_non_dependent_sender<decltype(s)>);
+  static_assert(!dependent_sender<decltype(s)>);
   std::puts("Hello, world!");
   sync_wait(s);
 
@@ -76,10 +76,8 @@ int main()
   auto [i1, i2] = sync_wait(when_all(just(42), just(43))).value();
   std::cout << i1 << ' ' << i2 << '\n';
 
-  auto s4 = just(42) | then([](int) {}) | upon_error([](auto) { /*return 42;*/ });
-  auto s5 = when_all(std::move(s4), just(42, 43), just(+"hello"));
-  // using X = completion_signatures_of_t<decltype(s5)>;
-  // print<X>();
+  auto s4        = just(42) | then([](int) {}) | upon_error([](auto) { /*return 42;*/ });
+  auto s5        = when_all(std::move(s4), just(42, 43), just(+"hello"));
   auto [i, j, k] = sync_wait(std::move(s5)).value();
   std::cout << i << ' ' << j << ' ' << k << '\n';
 

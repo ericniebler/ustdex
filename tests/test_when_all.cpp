@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -19,7 +20,6 @@
 #include "../tests/common/impulse_scheduler.hpp"
 #include "../tests/common/stopped_scheduler.hpp"
 #include "../tests/common/utility.hpp"
-#include "ustdex/detail/config.hpp"
 #include "ustdex/detail/continue_on.hpp"
 #include "ustdex/detail/just.hpp"
 #include "ustdex/detail/let_value.hpp"
@@ -28,7 +28,7 @@
 #include "ustdex/detail/when_all.hpp"
 #include <catch2/catch_all.hpp>
 
-namespace ex = USTDEX_NAMESPACE;
+namespace ex = ustdex;
 
 namespace
 {
@@ -191,8 +191,14 @@ TEST_CASE("when_all cancels remaining children if cancel is detected", "[when_al
 template <class... Ts>
 struct just_ref
 {
-  using sender_concept        = ex::sender_t;
-  using completion_signatures = ex::completion_signatures<ex::set_value_t(Ts&...)>;
+  using sender_concept = ex::sender_t;
+
+  template <class>
+  static constexpr auto get_completion_signatures()
+  {
+    return ex::completion_signatures<ex::set_value_t(Ts & ...)>{};
+  }
+
   just_ref connect(ex::_ignore) const
   {
     return {};
@@ -203,24 +209,24 @@ TEST_CASE("when_all has the values_type based on the children, decayed and as rv
           "references",
           "[when_all]")
 {
-  check_value_types<types<int>>(ex::when_all(ex::just(13)));
-  check_value_types<types<double>>(ex::when_all(ex::just(3.14)));
-  check_value_types<types<int, double>>(ex::when_all(ex::just(3, 0.14)));
+  check_value_types<_m_list<int>>(ex::when_all(ex::just(13)));
+  check_value_types<_m_list<double>>(ex::when_all(ex::just(3.14)));
+  check_value_types<_m_list<int, double>>(ex::when_all(ex::just(3, 0.14)));
 
-  check_value_types<types<>>(ex::when_all(ex::just()));
+  check_value_types<_m_list<>>(ex::when_all(ex::just()));
 
-  check_value_types<types<int, double>>(ex::when_all(ex::just(3), ex::just(0.14)));
-  check_value_types<types<int, double, int, double>>(ex::when_all(ex::just(3), ex::just(0.14), ex::just(1, 0.4142)));
+  check_value_types<_m_list<int, double>>(ex::when_all(ex::just(3), ex::just(0.14)));
+  check_value_types<_m_list<int, double, int, double>>(ex::when_all(ex::just(3), ex::just(0.14), ex::just(1, 0.4142)));
 
   // if one child returns void, then the value is simply missing
-  check_value_types<types<int, double>>(ex::when_all(ex::just(3), ex::just(), ex::just(0.14)));
+  check_value_types<_m_list<int, double>>(ex::when_all(ex::just(3), ex::just(), ex::just(0.14)));
 
   // if one child has no value completion, the when_all has no value
   // completion
   check_value_types<>(ex::when_all(ex::just(3), ex::just_stopped(), ex::just(0.14)));
 
   // if children send references, they get decayed
-  check_value_types<types<int, double>>(ex::when_all(just_ref<int>(), just_ref<double>()));
+  check_value_types<_m_list<int, double>>(ex::when_all(just_ref<int>(), just_ref<double>()));
 }
 
 struct throwing_copy
@@ -248,8 +254,8 @@ TEST_CASE("when_all has the error_types based on the children", "[when_all]")
   check_error_types<std::exception_ptr>(
     ex::when_all(ex::just(13), ex::just_error(std::exception_ptr{}), ex::just_stopped()));
 
-  // if the child sends something with a potentially throwing decay-copy,
-  // the when_all has an exception_ptr error completion.
+  // if the child sends something with a potentially throwing decay-copy, the
+  // when_all has an exception_ptr error completion.
   check_error_types<std::exception_ptr>(ex::when_all(just_ref<throwing_copy>()));
 }
 

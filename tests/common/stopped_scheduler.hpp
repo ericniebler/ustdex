@@ -1,14 +1,23 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
+
+#include "utility.hpp"
 
 #include "ustdex/ustdex.hpp"
 
@@ -20,12 +29,12 @@ struct stopped_scheduler
 private:
   struct env_t
   {
-    USTDEX_HOST_DEVICE auto query(ustdex::get_completion_scheduler_t<ustdex::set_value_t>) const noexcept
+    HOST_DEVICE auto query(ustdex::get_completion_scheduler_t<ustdex::set_value_t>) const noexcept
     {
       return stopped_scheduler{};
     }
 
-    USTDEX_HOST_DEVICE auto query(ustdex::get_completion_scheduler_t<ustdex::set_stopped_t>) const noexcept
+    HOST_DEVICE auto query(ustdex::get_completion_scheduler_t<ustdex::set_stopped_t>) const noexcept
     {
       return stopped_scheduler{};
     }
@@ -40,7 +49,7 @@ private:
 
     Rcvr _rcvr;
 
-    USTDEX_HOST_DEVICE void start() noexcept
+    HOST_DEVICE void start() noexcept
     {
       ustdex::set_stopped(static_cast<Rcvr&&>(_rcvr));
     }
@@ -48,28 +57,32 @@ private:
 
   struct sndr_t
   {
-    using sender_concept        = ustdex::sender_t;
-    using completion_signatures = //
-      ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
+    using sender_concept = ustdex::sender_t;
+
+    template <class>
+    HOST_DEVICE static constexpr auto get_completion_signatures()
+    {
+      return ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>{};
+    }
 
     template <class Rcvr>
-    USTDEX_HOST_DEVICE opstate_t<Rcvr> connect(Rcvr rcvr) const
+    HOST_DEVICE opstate_t<Rcvr> connect(Rcvr rcvr) const
     {
       return {{}, static_cast<Rcvr&&>(rcvr)};
     }
 
-    USTDEX_HOST_DEVICE env_t get_env() const noexcept
+    HOST_DEVICE env_t get_env() const noexcept
     {
       return {};
     }
   };
 
-  USTDEX_HOST_DEVICE friend bool operator==(stopped_scheduler, stopped_scheduler) noexcept
+  HOST_DEVICE friend bool operator==(stopped_scheduler, stopped_scheduler) noexcept
   {
     return true;
   }
 
-  USTDEX_HOST_DEVICE friend bool operator!=(stopped_scheduler, stopped_scheduler) noexcept
+  HOST_DEVICE friend bool operator!=(stopped_scheduler, stopped_scheduler) noexcept
   {
     return false;
   }
@@ -79,7 +92,7 @@ public:
 
   stopped_scheduler() = default;
 
-  USTDEX_HOST_DEVICE sndr_t schedule() const noexcept
+  HOST_DEVICE sndr_t schedule() const noexcept
   {
     return {};
   }

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Lucian Radu Teodorescu
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -27,7 +28,7 @@
 #include <catch2/catch_all.hpp>
 #include <ustdex/ustdex.hpp>
 
-namespace ex = USTDEX_NAMESPACE;
+namespace ex = ustdex;
 
 namespace
 {
@@ -196,9 +197,9 @@ TEST_CASE("continue_on has the values_type corresponding to the given values", "
 {
   inline_scheduler sched{};
 
-  check_value_types<types<int>>(ex::continue_on(ex::just(1), sched));
-  check_value_types<types<int, double>>(ex::continue_on(ex::just(3, 0.14), sched));
-  check_value_types<types<int, double, std::string>>(ex::continue_on(ex::just(3, 0.14, std::string{"pi"}), sched));
+  check_value_types<_m_list<int>>(ex::continue_on(ex::just(1), sched));
+  check_value_types<_m_list<int, double>>(ex::continue_on(ex::just(3, 0.14), sched));
+  check_value_types<_m_list<int, double, std::string>>(ex::continue_on(ex::just(3, 0.14, std::string{"pi"}), sched));
 }
 
 TEST_CASE("continue_on keeps error_types from scheduler's sender", "[adaptors][continue_on]")
