@@ -1,41 +1,44 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include "config.hpp"
-#include "preprocessor.hpp"
+#ifndef USTDEX_ASYNC_DETAIL_EXCEPTION
+#define USTDEX_ASYNC_DETAIL_EXCEPTION
 
-#include <exception>
+#include "config.hpp" // IWYU pragma: export
+#include "preprocessor.hpp" // IWYU pragma: export
 
-#if defined(__CUDACC__)
-#  include <nv/target>
+#include <exception> // IWYU pragma: export
+
+#if USTDEX_CUDA()
 #  define USTDEX_CATCH(...)
-#  define USTDEX_TRY(TRY, CATCH)                                                         \
-    NV_IF_TARGET(                                                                        \
-      NV_IS_HOST,                                                                        \
-      (try { USTDEX_PP_EXPAND TRY } catch (...){USTDEX_PP_EXPAND CATCH}),                \
-      ({USTDEX_PP_EXPAND TRY}))
+#  define USTDEX_TRY(TRY, CATCH) \
+    USTDEX_IF_ELSE_TARGET(       \
+      USTDEX_IS_HOST, (try { USTDEX_PP_EXPAND TRY } catch (...){USTDEX_PP_EXPAND CATCH}), ({USTDEX_PP_EXPAND TRY}))
 #else
 #  define USTDEX_CATCH(...)
-#  define USTDEX_TRY(TRY, CATCH)                                                         \
-    try {                                                                                \
-      USTDEX_PP_EXPAND TRY                                                               \
-    } catch (...) {                                                                      \
-      USTDEX_PP_EXPAND CATCH                                                             \
-    }
+#  define USTDEX_TRY(TRY, CATCH) USTDEX_PP_EXPAND(try { USTDEX_PP_EXPAND TRY } catch (...){USTDEX_PP_EXPAND CATCH})
 #endif
 
-#if defined(__CUDA_ARCH__)
-// Treat everything as no-throw in device code
-#  define USTDEXEC_NOEXCEPT(...) true
-#else
+#if USTDEX_HOST_ONLY()
 // This is the default behavior for host code, and for nvc++
-#  define USTDEXEC_NOEXCEPT(...) noexcept(__VA_ARGS__)
+#  define USTDEX_NOEXCEPT_EXPR(...) noexcept(__VA_ARGS__)
+#else
+// Treat everything as no-throw in device code
+#  define USTDEX_NOEXCEPT_EXPR(...) true
+#endif
+
 #endif

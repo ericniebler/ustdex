@@ -21,7 +21,7 @@
 #  error "This file should only be included in a CUDA compilation unit"
 #endif
 
-#if defined(_CUDA_MEMORY_RESOURCE) && !defined(LIBCUDACXX_ENABLE_EXPERIMENTAL_MEMORY_RESOURCE)
+#if defined(CUDA_MEMORY_RESOURCE) && !defined(LIBCUDACXX_ENABLE_EXPERIMENTAL_MEMORY_RESOURCE)
 #  error "This file requires the experimental memory resource feature to be enabled"
 #endif
 
@@ -30,8 +30,6 @@
 #endif
 
 // from libcu++:
-#include <cuda/memory_resource>
-#include <cuda/stream_ref>
 
 // from the CUDA Toolkit:
 #include <cuda_runtime.h>

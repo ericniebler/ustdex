@@ -1,19 +1,26 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <mutex>
+#include <condition_variable> // IWYU pragma: keep
+#include <functional> // IWYU pragma: keep
+#include <memory> // IWYU pragma: keep
+#include <mutex> // IWYU pragma: keep
 
 #include "ustdex/ustdex.hpp"
 
@@ -100,8 +107,13 @@ private:
 
   struct sndr_t
   {
-    using sender_concept        = ustdex::sender_t;
-    using completion_signatures = ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>;
+    using sender_concept = ustdex::sender_t;
+
+    template <class>
+    static constexpr auto get_completion_signatures()
+    {
+      return ustdex::completion_signatures<ustdex::set_value_t(), ustdex::set_stopped_t()>{};
+    }
 
     data_t* data_;
 

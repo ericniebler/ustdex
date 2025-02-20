@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -15,7 +16,6 @@
  */
 #pragma once
 
-#include "detail/basic_sender.hpp"
 #include "detail/conditional.hpp"
 #include "detail/config.hpp"
 #include "detail/continue_on.hpp"

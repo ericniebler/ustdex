@@ -1,30 +1,32 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include <cstdint>
-#include <thread>
-#include <type_traits>
-#include <utility>
-#include <version>
+#ifndef USTDEX_ASYNC_DETAIL_STOP_TOKEN
+#define USTDEX_ASYNC_DETAIL_STOP_TOKEN
 
-#include "atomic.hpp"
 #include "config.hpp"
 #include "thread.hpp"
 #include "utility.hpp"
 
+#include <atomic>
 #if __has_include(<stop_token>) && __cpp_lib_jthread >= 201911
 #  include <stop_token>
 #endif
 
-// This must be the last #include
 #include "prologue.hpp"
 
 // warning #20012-D: __device__ annotation is ignored on a
@@ -33,7 +35,20 @@
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_EDG(20012)
 
-namespace USTDEX_NAMESPACE
+#if USTDEX_ARCH(ARM64) && defined(_linux__)
+#  define USTDEX_ASM_THREAD_YIELD (asm volatile("yield" :: :);)
+#elif USTDEX_ARCH(X86_64) && defined(_linux__)
+#  define USTDEX_ASM_THREAD_YIELD (asm volatile("pause" :: :);)
+#else // ^^^  USTDEX_ARCH(X86_64) ^^^ / vvv ! USTDEX_ARCH(X86_64) vvv
+#  define USTDEX_ASM_THREAD_YIELD (;)
+#endif // ! USTDEX_ARCH(X86_64)
+
+USTDEX_API void _ustdex_thread_yield_processor()
+{
+  USTDEX_IF_TARGET(USTDEX_IS_HOST, USTDEX_ASM_THREAD_YIELD)
+}
+
+namespace ustdex
 {
 // [stoptoken.inplace], class inplace_stop_token
 class inplace_stop_token;
@@ -42,60 +57,60 @@ class inplace_stop_token;
 class inplace_stop_source;
 
 // [stopcallback.inplace], class template inplace_stop_callback
-template <class _Callback>
+template <class Callback>
 class inplace_stop_callback;
 
 namespace _stok
 {
 struct _inplace_stop_callback_base
 {
-  USTDEX_HOST_DEVICE void _execute() noexcept
+  USTDEX_API void _execute() noexcept
   {
-    this->_execute_fn(this);
+    this->_execute_fn_(this);
   }
 
 protected:
   using _execute_fn_t = void(_inplace_stop_callback_base*) noexcept;
 
-  USTDEX_HOST_DEVICE explicit _inplace_stop_callback_base( //
+  USTDEX_API explicit _inplace_stop_callback_base( //
     const inplace_stop_source* _source, //
     _execute_fn_t* _execute) noexcept
-      : _source(_source)
-      , _execute_fn(_execute)
+      : _source_(_source)
+      , _execute_fn_(_execute)
   {}
 
-  USTDEX_HOST_DEVICE void _register_callback() noexcept;
+  USTDEX_API void _register_callback() noexcept;
 
   friend inplace_stop_source;
 
-  const inplace_stop_source* _source;
-  _execute_fn_t* _execute_fn;
-  _inplace_stop_callback_base* _next      = nullptr;
-  _inplace_stop_callback_base** _prev_ptr = nullptr;
-  bool* _removed_during_callback          = nullptr;
-  ustd::atomic<bool> _callback_completed{false};
+  const inplace_stop_source* _source_;
+  _execute_fn_t* _execute_fn_;
+  _inplace_stop_callback_base* _next_      = nullptr;
+  _inplace_stop_callback_base** _prev_ptr_ = nullptr;
+  bool* _removed_during_callback_          = nullptr;
+  std::atomic<bool> _callback_completed_{false};
 };
 
 struct _spin_wait
 {
   _spin_wait() noexcept = default;
 
-  USTDEX_HOST_DEVICE void _wait() noexcept
+  USTDEX_API void _wait() noexcept
   {
-    if (_count == 0)
+    if (_count_ == 0)
     {
       ustdex::_this_thread_yield();
     }
     else
     {
-      --_count;
-      USTDEX_PAUSE();
+      --_count_;
+      _ustdex_thread_yield_processor();
     }
   }
 
 private:
   static constexpr uint32_t _yield_threshold = 20;
-  uint32_t _count                            = _yield_threshold;
+  uint32_t _count_                           = _yield_threshold;
 };
 
 template <template <class> class>
@@ -108,52 +123,52 @@ struct never_stop_token
 private:
   struct _callback_type
   {
-    USTDEX_HOST_DEVICE explicit _callback_type(never_stop_token, _ignore) noexcept {}
+    USTDEX_API explicit _callback_type(never_stop_token, _ignore) noexcept {}
   };
 
 public:
   template <class>
   using callback_type = _callback_type;
 
-  USTDEX_HOST_DEVICE static constexpr auto stop_requested() noexcept -> bool
+  USTDEX_API static constexpr auto stop_requested() noexcept -> bool
   {
     return false;
   }
 
-  USTDEX_HOST_DEVICE static constexpr auto stop_possible() noexcept -> bool
+  USTDEX_API static constexpr auto stop_possible() noexcept -> bool
   {
     return false;
   }
 
-  USTDEX_HOST_DEVICE friend constexpr bool operator==(const never_stop_token&, const never_stop_token&) noexcept
+  USTDEX_API friend constexpr bool operator==(const never_stop_token&, const never_stop_token&) noexcept
   {
     return true;
   }
 
-  USTDEX_HOST_DEVICE friend constexpr bool operator!=(const never_stop_token&, const never_stop_token&) noexcept
+  USTDEX_API friend constexpr bool operator!=(const never_stop_token&, const never_stop_token&) noexcept
   {
     return false;
   }
 };
 
-template <class _Callback>
+template <class Callback>
 class inplace_stop_callback;
 
 // [stopsource.inplace], class inplace_stop_source
 class inplace_stop_source
 {
 public:
-  USTDEX_HOST_DEVICE inplace_stop_source() noexcept = default;
-  USTDEX_HOST_DEVICE ~inplace_stop_source();
+  USTDEX_API inplace_stop_source() noexcept = default;
+  USTDEX_API ~inplace_stop_source();
   USTDEX_IMMOVABLE(inplace_stop_source);
 
-  USTDEX_HOST_DEVICE auto get_token() const noexcept -> inplace_stop_token;
+  USTDEX_API auto get_token() const noexcept -> inplace_stop_token;
 
-  USTDEX_HOST_DEVICE auto request_stop() noexcept -> bool;
+  USTDEX_API auto request_stop() noexcept -> bool;
 
-  USTDEX_HOST_DEVICE auto stop_requested() const noexcept -> bool
+  USTDEX_API auto stop_requested() const noexcept -> bool
   {
-    return (_state.load(ustd::memory_order_acquire) & _stop_requested_flag) != 0;
+    return (_state_.load(std::memory_order_acquire) & _stop_requested_flag) != 0;
   }
 
 private:
@@ -162,71 +177,71 @@ private:
   template <class>
   friend class inplace_stop_callback;
 
-  USTDEX_HOST_DEVICE auto _lock() const noexcept -> uint8_t;
-  USTDEX_HOST_DEVICE void _unlock(uint8_t) const noexcept;
+  USTDEX_API auto _lock() const noexcept -> uint8_t;
+  USTDEX_API void _unlock(uint8_t) const noexcept;
 
-  USTDEX_HOST_DEVICE auto _try_lock_unless_stop_requested(bool) const noexcept -> bool;
+  USTDEX_API auto _try_lock_unless_stop_requested(bool) const noexcept -> bool;
 
-  USTDEX_HOST_DEVICE auto _try_add_callback(_stok::_inplace_stop_callback_base*) const noexcept -> bool;
+  USTDEX_API auto _try_add_callback(_stok::_inplace_stop_callback_base*) const noexcept -> bool;
 
-  USTDEX_HOST_DEVICE void _remove_callback(_stok::_inplace_stop_callback_base*) const noexcept;
+  USTDEX_API void _remove_callback(_stok::_inplace_stop_callback_base*) const noexcept;
 
   static constexpr uint8_t _stop_requested_flag = 1;
   static constexpr uint8_t _locked_flag         = 2;
 
-  mutable ustd::atomic<uint8_t> _state{0};
-  mutable _stok::_inplace_stop_callback_base* _callbacks = nullptr;
-  ustdex::_thread_id _notifying_thread;
+  mutable std::atomic<uint8_t> _state_{0};
+  mutable _stok::_inplace_stop_callback_base* _callbacks_ = nullptr;
+  ustdex::_thread_id _notifying_thread_;
 };
 
 // [stoptoken.inplace], class inplace_stop_token
 class inplace_stop_token
 {
 public:
-  template <class _Fun>
-  using callback_type = inplace_stop_callback<_Fun>;
+  template <class Fun>
+  using callback_type = inplace_stop_callback<Fun>;
 
-  USTDEX_HOST_DEVICE inplace_stop_token() noexcept
-      : _source(nullptr)
+  USTDEX_API inplace_stop_token() noexcept
+      : _source_(nullptr)
   {}
 
   inplace_stop_token(const inplace_stop_token& _other) noexcept = default;
 
-  USTDEX_HOST_DEVICE inplace_stop_token(inplace_stop_token&& _other) noexcept
-      : _source(ustdex::_exchange(_other._source, {}))
+  USTDEX_API inplace_stop_token(inplace_stop_token&& _other) noexcept
+      : _source_(ustdex::_exchange(_other._source_, {}))
   {}
 
   auto operator=(const inplace_stop_token& _other) noexcept -> inplace_stop_token& = default;
 
-  USTDEX_HOST_DEVICE auto operator=(inplace_stop_token&& _other) noexcept -> inplace_stop_token&
+  USTDEX_API auto operator=(inplace_stop_token&& _other) noexcept -> inplace_stop_token&
   {
-    _source = ustdex::_exchange(_other._source, nullptr);
+    _source_ = ustdex::_exchange(_other._source_, nullptr);
     return *this;
   }
 
-  [[nodiscard]] USTDEX_HOST_DEVICE auto stop_requested() const noexcept -> bool
+  [[nodiscard]] USTDEX_API auto stop_requested() const noexcept -> bool
   {
-    return _source != nullptr && _source->stop_requested();
+    return _source_ != nullptr && _source_->stop_requested();
   }
 
-  [[nodiscard]] USTDEX_HOST_DEVICE auto stop_possible() const noexcept -> bool
+  [[nodiscard]] USTDEX_API auto stop_possible() const noexcept -> bool
   {
-    return _source != nullptr;
+    return _source_ != nullptr;
   }
 
-  USTDEX_HOST_DEVICE void swap(inplace_stop_token& _other) noexcept
+  USTDEX_API void swap(inplace_stop_token& _other) noexcept
   {
-    ustdex::_swap(_source, _other._source);
+    ustdex::_swap(_source_, _other._source_);
   }
 
-  USTDEX_HOST_DEVICE friend bool operator==(const inplace_stop_token& _a, const inplace_stop_token& _b) noexcept
+  USTDEX_API friend bool operator==(const inplace_stop_token& _a, const inplace_stop_token& _b) noexcept
   {
-    return _a._source == _b._source;
+    return _a._source_ == _b._source_;
   }
 
-  USTDEX_HOST_DEVICE friend bool operator!=(const inplace_stop_token& _a, const inplace_stop_token& _b) noexcept
+  USTDEX_API friend bool operator!=(const inplace_stop_token& _a, const inplace_stop_token& _b) noexcept
   {
-    return _a._source != _b._source;
+    return _a._source_ != _b._source_;
   }
 
 private:
@@ -234,58 +249,58 @@ private:
   template <class>
   friend class inplace_stop_callback;
 
-  USTDEX_HOST_DEVICE explicit inplace_stop_token(const inplace_stop_source* _source) noexcept
-      : _source(_source)
+  USTDEX_API explicit inplace_stop_token(const inplace_stop_source* _source) noexcept
+      : _source_(_source)
   {}
 
-  const inplace_stop_source* _source;
+  const inplace_stop_source* _source_;
 };
 
-USTDEX_HOST_DEVICE inline auto inplace_stop_source::get_token() const noexcept -> inplace_stop_token
+USTDEX_API inline auto inplace_stop_source::get_token() const noexcept -> inplace_stop_token
 {
   return inplace_stop_token{this};
 }
 
 // [stopcallback.inplace], class template inplace_stop_callback
-template <class _Fun>
+template <class Fun>
 class inplace_stop_callback : _stok::_inplace_stop_callback_base
 {
 public:
-  template <class _Fun2>
-  USTDEX_HOST_DEVICE explicit inplace_stop_callback(inplace_stop_token _token, _Fun2&& _fun) noexcept(
-    ::std::is_nothrow_constructible_v<_Fun, _Fun2>)
-      : _stok::_inplace_stop_callback_base(_token._source, &inplace_stop_callback::_execute_impl)
-      , _fun(static_cast<_Fun2&&>(_fun))
+  template <class Fun2>
+  USTDEX_API explicit inplace_stop_callback(inplace_stop_token _token,
+                                            Fun2&& _fun) noexcept(std::is_nothrow_constructible_v<Fun, Fun2>)
+      : _stok::_inplace_stop_callback_base(_token._source_, &inplace_stop_callback::_execute_impl)
+      , _fun(static_cast<Fun2&&>(_fun))
   {
     _register_callback();
   }
 
-  USTDEX_HOST_DEVICE ~inplace_stop_callback()
+  USTDEX_API ~inplace_stop_callback()
   {
-    if (_source != nullptr)
+    if (_source_ != nullptr)
     {
-      _source->_remove_callback(this);
+      _source_->_remove_callback(this);
     }
   }
 
 private:
-  USTDEX_HOST_DEVICE static void _execute_impl(_stok::_inplace_stop_callback_base* cb) noexcept
+  USTDEX_API static void _execute_impl(_stok::_inplace_stop_callback_base* _cb) noexcept
   {
-    std::move(static_cast<inplace_stop_callback*>(cb)->_fun)();
+    static_cast<Fun&&>(static_cast<inplace_stop_callback*>(_cb)->_fun)();
   }
 
-  USTDEX_NO_UNIQUE_ADDRESS _Fun _fun;
+  USTDEX_NO_UNIQUE_ADDRESS Fun _fun;
 };
 
 namespace _stok
 {
-USTDEX_HOST_DEVICE inline void _inplace_stop_callback_base::_register_callback() noexcept
+USTDEX_API inline void _inplace_stop_callback_base::_register_callback() noexcept
 {
-  if (_source != nullptr)
+  if (_source_ != nullptr)
   {
-    if (!_source->_try_add_callback(this))
+    if (!_source_->_try_add_callback(this))
     {
-      _source = nullptr;
+      _source_ = nullptr;
       // Callback not registered because stop_requested() was true.
       // Execute inline here.
       _execute();
@@ -294,79 +309,79 @@ USTDEX_HOST_DEVICE inline void _inplace_stop_callback_base::_register_callback()
 }
 } // namespace _stok
 
-USTDEX_HOST_DEVICE inline inplace_stop_source::~inplace_stop_source()
+USTDEX_API inline inplace_stop_source::~inplace_stop_source()
 {
-  USTDEX_ASSERT((_state.load(ustd::memory_order_relaxed) & _locked_flag) == 0);
-  USTDEX_ASSERT(_callbacks == nullptr);
+  USTDEX_ASSERT((_state_.load(std::memory_order_relaxed) & _locked_flag) == 0, "");
+  USTDEX_ASSERT(_callbacks_ == nullptr, "");
 }
 
-USTDEX_HOST_DEVICE inline auto inplace_stop_source::request_stop() noexcept -> bool
+USTDEX_API inline auto inplace_stop_source::request_stop() noexcept -> bool
 {
   if (!_try_lock_unless_stop_requested(true))
   {
     return true;
   }
 
-  _notifying_thread = ustdex::_this_thread_id();
+  _notifying_thread_ = ustdex::_this_thread_id();
 
   // We are responsible for executing callbacks.
-  while (_callbacks != nullptr)
+  while (_callbacks_ != nullptr)
   {
-    auto* _callbk      = _callbacks;
-    _callbk->_prev_ptr = nullptr;
-    _callbacks         = _callbk->_next;
-    if (_callbacks != nullptr)
+    auto* _callbk       = _callbacks_;
+    _callbk->_prev_ptr_ = nullptr;
+    _callbacks_         = _callbk->_next_;
+    if (_callbacks_ != nullptr)
     {
-      _callbacks->_prev_ptr = &_callbacks;
+      _callbacks_->_prev_ptr_ = &_callbacks_;
     }
 
-    _state.store(_stop_requested_flag, ustd::memory_order_release);
+    _state_.store(_stop_requested_flag, std::memory_order_release);
 
-    bool _removed_during_callback     = false;
-    _callbk->_removed_during_callback = &_removed_during_callback;
+    bool _removed_during_callback_     = false;
+    _callbk->_removed_during_callback_ = &_removed_during_callback_;
 
     _callbk->_execute();
 
-    if (!_removed_during_callback)
+    if (!_removed_during_callback_)
     {
-      _callbk->_removed_during_callback = nullptr;
-      _callbk->_callback_completed.store(true, ustd::memory_order_release);
+      _callbk->_removed_during_callback_ = nullptr;
+      _callbk->_callback_completed_.store(true, std::memory_order_release);
     }
 
     _lock();
   }
 
-  _state.store(_stop_requested_flag, ustd::memory_order_release);
+  _state_.store(_stop_requested_flag, std::memory_order_release);
   return false;
 }
 
-USTDEX_HOST_DEVICE inline auto inplace_stop_source::_lock() const noexcept -> uint8_t
+USTDEX_API inline auto inplace_stop_source::_lock() const noexcept -> uint8_t
 {
   _stok::_spin_wait _spin;
-  auto _old_state = _state.load(ustd::memory_order_relaxed);
+  auto _old_state = _state_.load(std::memory_order_relaxed);
   do
   {
     while ((_old_state & _locked_flag) != 0)
     {
       _spin._wait();
-      _old_state = _state.load(ustd::memory_order_relaxed);
+      _old_state = _state_.load(std::memory_order_relaxed);
     }
-  } while (!_state.compare_exchange_weak(
-    _old_state, _old_state | _locked_flag, ustd::memory_order_acquire, ustd::memory_order_relaxed));
+  } while (!_state_.compare_exchange_weak(
+    _old_state, _old_state | _locked_flag, std::memory_order_acquire, std::memory_order_relaxed));
 
   return _old_state;
 }
 
-USTDEX_HOST_DEVICE inline void inplace_stop_source::_unlock(uint8_t _old_state) const noexcept
+USTDEX_API inline void inplace_stop_source::_unlock(uint8_t _old_state) const noexcept
 {
-  (void) _state.store(_old_state, ustd::memory_order_release);
+  (void) _state_.store(_old_state, std::memory_order_release);
 }
 
-USTDEX_HOST_DEVICE inline auto
-inplace_stop_source::_try_lock_unless_stop_requested(bool _set_stop_requested) const noexcept -> bool
+USTDEX_API inline auto inplace_stop_source::_try_lock_unless_stop_requested(bool _set_stop_requested) const noexcept
+  -> bool
 {
   _stok::_spin_wait _spin;
-  auto _old_state = _state.load(ustd::memory_order_relaxed);
+  auto _old_state = _state_.load(std::memory_order_relaxed);
   do
   {
     while (true)
@@ -383,20 +398,20 @@ inplace_stop_source::_try_lock_unless_stop_requested(bool _set_stop_requested) c
       else
       {
         _spin._wait();
-        _old_state = _state.load(ustd::memory_order_relaxed);
+        _old_state = _state_.load(std::memory_order_relaxed);
       }
     }
-  } while (!_state.compare_exchange_weak(
+  } while (!_state_.compare_exchange_weak(
     _old_state,
     _set_stop_requested ? (_locked_flag | _stop_requested_flag) : _locked_flag,
-    ustd::memory_order_acq_rel,
-    ustd::memory_order_relaxed));
+    std::memory_order_acq_rel,
+    std::memory_order_relaxed));
 
   // Lock acquired successfully
   return true;
 }
 
-USTDEX_HOST_DEVICE inline auto
+USTDEX_API inline auto
 inplace_stop_source::_try_add_callback(_stok::_inplace_stop_callback_base* _callbk) const noexcept -> bool
 {
   if (!_try_lock_unless_stop_requested(false))
@@ -404,47 +419,46 @@ inplace_stop_source::_try_add_callback(_stok::_inplace_stop_callback_base* _call
     return false;
   }
 
-  _callbk->_next     = _callbacks;
-  _callbk->_prev_ptr = &_callbacks;
-  if (_callbacks != nullptr)
+  _callbk->_next_     = _callbacks_;
+  _callbk->_prev_ptr_ = &_callbacks_;
+  if (_callbacks_ != nullptr)
   {
-    _callbacks->_prev_ptr = &_callbk->_next;
+    _callbacks_->_prev_ptr_ = &_callbk->_next_;
   }
-  _callbacks = _callbk;
+  _callbacks_ = _callbk;
 
   _unlock(0);
 
   return true;
 }
 
-USTDEX_HOST_DEVICE inline void
-inplace_stop_source::_remove_callback(_stok::_inplace_stop_callback_base* _callbk) const noexcept
+USTDEX_API inline void inplace_stop_source::_remove_callback(_stok::_inplace_stop_callback_base* _callbk) const noexcept
 {
   auto _old_state = _lock();
 
-  if (_callbk->_prev_ptr != nullptr)
+  if (_callbk->_prev_ptr_ != nullptr)
   {
     // Callback has not been executed yet.
     // Remove from the list.
-    *_callbk->_prev_ptr = _callbk->_next;
-    if (_callbk->_next != nullptr)
+    *_callbk->_prev_ptr_ = _callbk->_next_;
+    if (_callbk->_next_ != nullptr)
     {
-      _callbk->_next->_prev_ptr = _callbk->_prev_ptr;
+      _callbk->_next_->_prev_ptr_ = _callbk->_prev_ptr_;
     }
     _unlock(_old_state);
   }
   else
   {
-    auto _notifying_thread = this->_notifying_thread;
+    auto _notifying_thread_ = this->_notifying_thread_;
     _unlock(_old_state);
 
     // Callback has either already been executed or is
     // currently executing on another thread.
-    if (ustdex::_this_thread_id() == _notifying_thread)
+    if (ustdex::_this_thread_id() == _notifying_thread_)
     {
-      if (_callbk->_removed_during_callback != nullptr)
+      if (_callbk->_removed_during_callback_ != nullptr)
       {
-        *_callbk->_removed_during_callback = true;
+        *_callbk->_removed_during_callback_ = true;
       }
     }
     else
@@ -452,7 +466,7 @@ inplace_stop_source::_remove_callback(_stok::_inplace_stop_callback_base* _callb
       // Concurrently executing on another thread.
       // Wait until the other thread finishes executing the callback.
       _stok::_spin_wait _spin;
-      while (!_callbk->_callback_completed.load(ustd::memory_order_acquire))
+      while (!_callbk->_callback_completed_.load(std::memory_order_acquire))
       {
         _spin._wait();
       }
@@ -462,18 +476,18 @@ inplace_stop_source::_remove_callback(_stok::_inplace_stop_callback_base* _callb
 
 struct _on_stop_request
 {
-  inplace_stop_source& _source;
+  inplace_stop_source& _source_;
 
-  USTDEX_HOST_DEVICE void operator()() const noexcept
+  USTDEX_API void operator()() const noexcept
   {
-    _source.request_stop();
+    _source_.request_stop();
   }
 };
 
 template <class Token, class Callback>
 using stop_callback_for_t = typename Token::template callback_type<Callback>;
-} // namespace USTDEX_NAMESPACE
-
-USTDEX_PRAGMA_POP()
+} // namespace ustdex
 
 #include "epilogue.hpp"
+
+#endif

@@ -18,6 +18,9 @@ project(ustdex VERSION 0.0.1 LANGUAGES CXX)
 # Integrate with LLVM/clang tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Integrate with LLVM/clang tooling
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clangd_compile_info.cmake)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 # Ensure that we link with the threading library
@@ -67,7 +70,7 @@ target_compile_features(ustdex INTERFACE cxx_std_17)
 target_include_directories(ustdex INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_options(ustdex INTERFACE
-                       $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:__cplusplus /Zc:hiddenFriend>)
+                       $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:__cplusplus /Zc:hiddenFriend /Zc:preprocessor /Zc:externConstexpr>)
 
 # download CPM.cmake
 file(

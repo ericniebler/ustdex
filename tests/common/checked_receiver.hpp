@@ -1,19 +1,28 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
+
+#include "utility.hpp"
 
 #include "ustdex/ustdex.hpp"
 
 // Catch header in its own header block
-#include "catch2.hpp"
+#include "catch2.hpp" // IWYU pragma: keep
 
 namespace
 {
@@ -23,9 +32,9 @@ struct checked_value_receiver
   using receiver_concept = ustdex::receiver_t;
 
   template <class... As>
-  USTDEX_HOST_DEVICE void set_value(As... as) && noexcept
+  HOST_DEVICE void set_value(As... as) && noexcept
   {
-    if constexpr (USTDEX_IS_SAME(ustdex::_mlist<Values...>, ustdex::_mlist<As...>))
+    if constexpr (USTDEX_IS_SAME(ustdex::_m_list<Values...>, ustdex::_m_list<As...>))
     {
       _values.apply(
         [&](auto const&... vs) {
@@ -40,12 +49,12 @@ struct checked_value_receiver
   }
 
   template <class Error>
-  USTDEX_HOST_DEVICE void set_error(Error) && noexcept
+  HOST_DEVICE void set_error(Error) && noexcept
   {
     FAIL("expected a value completion; got an error");
   }
 
-  USTDEX_HOST_DEVICE void set_stopped() && noexcept
+  HOST_DEVICE void set_stopped() && noexcept
   {
     FAIL("expected a value completion; got stopped");
   }
@@ -62,13 +71,13 @@ struct checked_error_receiver
   using receiver_concept = ustdex::receiver_t;
 
   template <class... As>
-  USTDEX_HOST_DEVICE void set_value(As...) && noexcept
+  HOST_DEVICE void set_value(As...) && noexcept
   {
     FAIL("expected an error completion; got a value");
   }
 
   template <class Ty>
-  USTDEX_HOST_DEVICE void set_error(Ty ty) && noexcept
+  HOST_DEVICE void set_error(Ty ty) && noexcept
   {
     if constexpr (USTDEX_IS_SAME(Error, Ty))
     {
@@ -80,7 +89,7 @@ struct checked_error_receiver
     }
   }
 
-  USTDEX_HOST_DEVICE void set_stopped() && noexcept
+  HOST_DEVICE void set_stopped() && noexcept
   {
     FAIL("expected a value completion; got stopped");
   }
@@ -96,18 +105,18 @@ struct checked_stopped_receiver
   using receiver_concept = ustdex::receiver_t;
 
   template <class... As>
-  USTDEX_HOST_DEVICE void set_value(As...) && noexcept
+  HOST_DEVICE void set_value(As...) && noexcept
   {
     FAIL("expected a stopped completion; got a value");
   }
 
   template <class Ty>
-  USTDEX_HOST_DEVICE void set_error(Ty) && noexcept
+  HOST_DEVICE void set_error(Ty) && noexcept
   {
     FAIL("expected an stopped completion; got an error");
   }
 
-  USTDEX_HOST_DEVICE void set_stopped() && noexcept {}
+  HOST_DEVICE void set_stopped() && noexcept {}
 };
 
 } // namespace

@@ -23,55 +23,16 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros: [
-                  '_CCCL_ALIGNAS_TYPE',
-                  '_CCCL_ALIGNAS',
-                  '_CCCL_CONSTEXPR_CXX14',
-                  '_CCCL_CONSTEXPR_CXX17',
-                  '_CCCL_CONSTEXPR_CXX20',
-                  '_CCCL_CONSTEXPR_CXX23',
-                  '_CCCL_DEVICE',
-                  '_CCCL_FALLTHROUGH',
-                  '_CCCL_FORCEINLINE',
-                  '_CCCL_HOST_DEVICE',
-                  '_CCCL_HOST',
-                  '_CCCL_NO_UNIQUE_ADDRESS',
-                  '_CCCL_NODISCARD_FRIEND',
-                  '_CCCL_NODISCARD',
-                  '_CCCL_NORETURN',
-                  '_CCCL_VISIBILITY_HIDDEN',
-                  'CUB_RUNTIME_FUNCTION',
-                  'CUB_DETAIL_KERNEL_ATTRIBUTES',
-                  'THRUST_RUNTIME_FUNCTION',
-                  'THRUST_DETAIL_KERNEL_ATTRIBUTES',
-                  '_LIBCUDACXX_ALIGNOF',
-                  '_LIBCUDACXX_ALWAYS_INLINE',
-                  '_LIBCUDACXX_AVAILABILITY_THROW_BAD_VARIANT_ACCESS',
-                  '_LIBCUDACXX_CONSTINIT',
-                  '_LIBCUDACXX_DEPRECATED_IN_CXX11',
-                  '_LIBCUDACXX_DEPRECATED_IN_CXX14',
-                  '_LIBCUDACXX_DEPRECATED_IN_CXX17',
-                  '_LIBCUDACXX_DEPRECATED_IN_CXX20',
-                  '_LIBCUDACXX_DEPRECATED',
-                  '_LIBCUDACXX_DISABLE_EXTENTSION_WARNING',
-                  '_LIBCUDACXX_EXCLUDE_FROM_EXPLICIT_INSTANTIATION',
-                  '_LIBCUDACXX_EXPORTED_FROM_ABI',
-                  '_LIBCUDACXX_EXTERN_TEMPLATE_TYPE_VIS',
-                  '_LIBCUDACXX_HIDDEN',
-                  '_LIBCUDACXX_HIDE_FROM_ABI_AFTER_V1',
-                  '_LIBCUDACXX_HIDE_FROM_ABI',
-                  '_LIBCUDACXX_INLINE_VISIBILITY',
-                  '_LIBCUDACXX_INTERNAL_LINKAGE',
-                  '_LIBCUDACXX_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS',
-                  '_LIBCUDACXX_NO_DESTROY',
-                  '_LIBCUDACXX_NO_SANITIZE',
-                  '_LIBCUDACXX_NOALIAS',
-                  '_LIBCUDACXX_OVERRIDABLE_FUNC_VIS',
-                  '_LIBCUDACXX_STANDALONE_DEBUG',
-                  '_LIBCUDACXX_TEMPLATE_DATA_VIS',
-                  '_LIBCUDACXX_TEMPLATE_VIS',
-                  '_LIBCUDACXX_THREAD_SAFETY_ANNOTATION',
-                  '_LIBCUDACXX_USING_IF_EXISTS',
-                  '_LIBCUDACXX_WEAK',
+                  'USTDEX_API',
+                  'USTDEX_HOST_API',
+                  'USTDEX_DEVICE_API',
+                  'USTDEX_TRIVIAL_API',
+                  'USTDEX_TRIVIAL_HOST_API',
+                  'USTDEX_TRIVIAL_DEVICE_API',
+                  'USTDEX_NO_UNIQUE_ADDRESS',
+                  'USTDEX_TYPE_VISIBILITY_DEFAULT',
+                  'USTDEX_ATTR_NODEBUG_ALIAS',
+                  'USTDEX_HOST_DEVICE',
                  ]
 BinPackArguments: false
 BinPackParameters: false
@@ -101,14 +62,13 @@ ContinuationIndentWidth: 2
 EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: Always
 FixNamespaceComments: true
-IfMacros: [
-  '_CCCL_IF_CONSTEXPR',
-  '_CCCL_ELSE_IF_CONSTEXPR',
-]
 IndentWrappedFunctionNames: false
 IncludeBlocks:   Regroup
 IncludeCategories:
-  - Regex:           '^<(cuda/std/detail/__config|cub/config.cuh|thrust/detail/config.h|thrust/system/cuda/config.h)'
+  - Regex:           '^"prologue[.]hpp"$'
+    Priority:            0x7FFFFFFF
+    SortPriority:        0x7FFFFFFF
+  - Regex:           '^"config[.]hpp"$'
     Priority:            0
     SortPriority:        0
   - Regex:           '^<cub/'
@@ -123,7 +83,7 @@ IncludeCategories:
   - Regex:           '^<[a-z_]*>$'
     Priority:            5
     SortPriority:        4
-  - Regex:           '^<cuda'
+  - Regex:           '^"[a-z_]*[.]hpp"$'
     Priority:            0
     SortPriority:        0
 InsertBraces: true
@@ -136,11 +96,9 @@ IndentWidth: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 Macros:
-- _LIBCUDACXX_TEMPLATE(...)=template<...>
-- _LIBCUDACXX_REQUIRES(...)=requires (...)
-- USTDEX_INLINE=inline inline
-- USTDEX_NO_UNIQUE_ADDRESS=[[no_unique_address]]
-- USTDEX_HOST_DEVICE=__attribute__((inline))
+- USTDEX_TEMPLATE(...)=template<...>
+- USTDEX_REQUIRES(...)=requires (...)
+- USTDEX_CONCEPT=concept
 NamespaceIndentation: None
 PackConstructorInitializers: Never
 PenaltyBreakAssignment: 30
@@ -173,23 +131,23 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++20
 StatementMacros: [
-  '_CCCL_EXEC_CHECK_DISABLE',
+  'USTDEX_EXEC_CHECK_DISABLE',
   'CUB_NAMESPACE_BEGIN',
   'CUB_NAMESPACE_END',
   'THRUST_NAMESPACE_BEGIN',
   'THRUST_NAMESPACE_END',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_STD',
-  '_LIBCUDACXX_END_NAMESPACE_STD',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_STD_NOVERSION',
-  '_LIBCUDACXX_END_NAMESPACE_STD_NOVERSION',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_RANGES',
-  '_LIBCUDACXX_END_NAMESPACE_RANGES',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_RANGES_ABI',
-  '_LIBCUDACXX_END_NAMESPACE_RANGES_ABI',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_CPO',
-  '_LIBCUDACXX_END_NAMESPACE_CPO',
-  '_LIBCUDACXX_BEGIN_NAMESPACE_VIEWS',
-  '_LIBCUDACXX_END_NAMESPACE_VIEWS',
+  'LIBCUDACXX_BEGIN_NAMESPACE_STD',
+  'LIBCUDACXX_END_NAMESPACE_STD',
+  'LIBCUDACXX_BEGIN_NAMESPACE_STD_NOVERSION',
+  'LIBCUDACXX_END_NAMESPACE_STD_NOVERSION',
+  'LIBCUDACXX_BEGIN_NAMESPACE_RANGES',
+  'LIBCUDACXX_END_NAMESPACE_RANGES',
+  'LIBCUDACXX_BEGIN_NAMESPACE_RANGES_ABI',
+  'LIBCUDACXX_END_NAMESPACE_RANGES_ABI',
+  'LIBCUDACXX_BEGIN_NAMESPACE_CPO',
+  'LIBCUDACXX_END_NAMESPACE_CPO',
+  'LIBCUDACXX_BEGIN_NAMESPACE_VIEWS',
+  'LIBCUDACXX_END_NAMESPACE_VIEWS',
 ]
 TabWidth: 2
 UseTab: Never

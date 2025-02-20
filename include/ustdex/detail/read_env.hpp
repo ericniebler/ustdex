@@ -1,13 +1,22 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef USTDEX_ASYNC_DETAIL_READ_ENV
+#define USTDEX_ASYNC_DETAIL_READ_ENV
 
 #include "completion_signatures.hpp"
 #include "config.hpp"
@@ -17,52 +26,30 @@
 #include "queries.hpp"
 #include "utility.hpp"
 
-// This must be the last #include
 #include "prologue.hpp"
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
 struct THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY;
+struct THE_CURRENT_ENVIRONMENT_RETURNED_VOID_FOR_THIS_QUERY;
 
 struct read_env_t
 {
-#ifndef __CUDACC__
-
 private:
-#endif
-  template <class Query, class Env>
-  using _error_env_lacks_query = //
-    ERROR<WHERE(IN_ALGORITHM, read_env_t),
-          WHAT(THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY),
-          WITH_QUERY(Query),
-          WITH_ENVIRONMENT(Env)>;
-
-  struct _completions_fn
-  {
-    template <class Query, class Env>
-    using _f = _mif<_nothrow_callable<Query, Env>,
-                    completion_signatures<set_value_t(_call_result_t<Query, Env>)>,
-                    completion_signatures<set_value_t(_call_result_t<Query, Env>), set_error_t(::std::exception_ptr)>>;
-  };
-
   template <class Rcvr, class Query>
-  struct opstate_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
     using operation_state_concept = operation_state_t;
-    using completion_signatures   = //
-      _minvoke<_mif<_callable<Query, env_of_t<Rcvr>>, _completions_fn, _error_env_lacks_query<Query, env_of_t<Rcvr>>>,
-               Query,
-               env_of_t<Rcvr>>;
 
-    Rcvr _rcvr;
+    Rcvr _rcvr_;
 
-    USTDEX_HOST_DEVICE explicit opstate_t(Rcvr rcvr)
-        : _rcvr(static_cast<Rcvr&&>(rcvr))
+    USTDEX_API explicit _opstate_t(Rcvr _rcvr)
+        : _rcvr_(static_cast<Rcvr&&>(_rcvr))
     {}
 
-    USTDEX_IMMOVABLE(opstate_t);
+    USTDEX_IMMOVABLE(_opstate_t);
 
-    USTDEX_HOST_DEVICE void start() noexcept
+    USTDEX_API void start() noexcept
     {
       // If the query invocation is noexcept, call it directly. Otherwise,
       // wrap it in a try-catch block and forward the exception to the
@@ -71,66 +58,85 @@ private:
       {
         // This looks like a use after move, but `set_value` takes its
         // arguments by forwarding reference, so it's safe.
-        ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
+        ustdex::set_value(static_cast<Rcvr&&>(_rcvr_), Query()(ustdex::get_env(_rcvr_)));
       }
       else
       {
         USTDEX_TRY( //
-          ( //
-            { //
-              ustdex::set_value(static_cast<Rcvr&&>(_rcvr), Query()(ustdex::get_env(_rcvr)));
-            }),
-          USTDEX_CATCH(...)( //
-            { //
-              ustdex::set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
-            }))
+          ({ //
+            ustdex::set_value(static_cast<Rcvr&&>(_rcvr_), Query()(ustdex::get_env(_rcvr_)));
+          }),
+          USTDEX_CATCH(...) //
+          ({ //
+            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+          }) //
+        )
       }
     }
   };
 
-  // This makes read_env a dependent sender:
   template <class Query>
-  struct opstate_t<receiver_archetype, Query>
-  {
-    using operation_state_concept = operation_state_t;
-    using completion_signatures = dependent_completions;
-    USTDEX_HOST_DEVICE explicit opstate_t(receiver_archetype);
-    USTDEX_HOST_DEVICE void start() noexcept;
-  };
-
-  template <class Query>
-  struct _sndr_t;
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
 public:
   /// @brief Returns a sender that, when connected to a receiver and started,
   /// invokes the query with the receiver's environment and forwards the result
   /// to the receiver's `set_value` member.
   template <class Query>
-  USTDEX_HOST_DEVICE USTDEX_INLINE constexpr _sndr_t<Query> operator()(Query) const noexcept;
+  USTDEX_TRIVIAL_API constexpr _sndr_t<Query> operator()(Query) const noexcept;
 };
 
 template <class Query>
-struct read_env_t::_sndr_t
+struct USTDEX_TYPE_VISIBILITY_DEFAULT read_env_t::_sndr_t
 {
   using sender_concept = sender_t;
   USTDEX_NO_UNIQUE_ADDRESS read_env_t _tag;
   USTDEX_NO_UNIQUE_ADDRESS Query _query;
 
-  template <class Rcvr>
-  USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const noexcept(_nothrow_movable<Rcvr>) -> opstate_t<Rcvr, Query>
+  template <class Self, class Env>
+  USTDEX_API static constexpr auto get_completion_signatures()
   {
-    return opstate_t<Rcvr, Query>{static_cast<Rcvr&&>(rcvr)};
+    if constexpr (!_callable<Query, Env>)
+    {
+      return invalid_completion_signature<WHERE(IN_ALGORITHM, read_env_t),
+                                          WHAT(THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY),
+                                          WITH_QUERY(Query),
+                                          WITH_ENVIRONMENT(Env)>();
+    }
+    else if constexpr (std::is_void_v<_call_result_t<Query, Env>>)
+    {
+      return invalid_completion_signature<WHERE(IN_ALGORITHM, read_env_t),
+                                          WHAT(THE_CURRENT_ENVIRONMENT_RETURNED_VOID_FOR_THIS_QUERY),
+                                          WITH_QUERY(Query),
+                                          WITH_ENVIRONMENT(Env)>();
+    }
+    else if constexpr (_nothrow_callable<Query, Env>)
+    {
+      return completion_signatures<set_value_t(_call_result_t<Query, Env>)>{};
+    }
+    else
+    {
+      return completion_signatures<set_value_t(_call_result_t<Query, Env>), set_error_t(::std::exception_ptr)>{};
+    }
+  }
+
+  template <class Rcvr>
+  USTDEX_API auto connect(Rcvr _rcvr) const noexcept(_nothrow_movable<Rcvr>) -> _opstate_t<Rcvr, Query>
+  {
+    return _opstate_t<Rcvr, Query>{static_cast<Rcvr&&>(_rcvr)};
   }
 };
 
 template <class Query>
-USTDEX_HOST_DEVICE USTDEX_INLINE constexpr read_env_t::_sndr_t<Query> read_env_t::operator()(Query query) const noexcept
+USTDEX_TRIVIAL_API constexpr read_env_t::_sndr_t<Query> read_env_t::operator()(Query _query) const noexcept
 {
-  return _sndr_t<Query>{{}, query};
+  return _sndr_t<Query>{{}, _query};
 }
 
-USTDEX_DEVICE_CONSTANT constexpr read_env_t read_env{};
+inline constexpr read_env_t read_env{};
 
-} // namespace USTDEX_NAMESPACE
+} // namespace ustdex
 
 #include "epilogue.hpp"
+
+#endif

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NVIDIA Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
  * (the "License"); you may not use this file except in compliance with
@@ -18,11 +19,11 @@
 #include <ustdex/ustdex.hpp>
 
 // Then include the test helpers
-#include "common/catch2.hpp"
+#include "common/catch2.hpp" // IWYU pragma: keep
 #include "common/checked_receiver.hpp"
 #include "common/utility.hpp"
 
-namespace ex = USTDEX_NAMESPACE;
+namespace ex = ustdex;
 
 namespace
 {
@@ -46,7 +47,7 @@ TEST_CASE("simple use of conditional runs exactly one of the two closures", "[ad
           odd = true;
         }));
 
-    check_value_types<types<>>(sndr1);
+    check_value_types<_m_list<>>(sndr1);
     check_error_types<std::exception_ptr>(sndr1);
     check_sends_stopped<false>(sndr1);
 

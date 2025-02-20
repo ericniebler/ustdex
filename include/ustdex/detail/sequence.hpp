@@ -1,13 +1,22 @@
-//===----------------------------------------------------------------------===//
-//
-// Part of CUDA Experimental in CUDA C++ Core Libraries,
-// under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
-//
-//===----------------------------------------------------------------------===//
-#pragma once
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License Version 2.0 with LLVM Exceptions
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *   https://llvm.org/LICENSE.txt
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef USTDEX_ASYNC_DETAIL_SEQUENCE
+#define USTDEX_ASYNC_DETAIL_SEQUENCE
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
@@ -16,10 +25,9 @@
 #include "rcvr_ref.hpp"
 #include "variant.hpp"
 
-// This must be the last #include
 #include "prologue.hpp"
 
-namespace USTDEX_NAMESPACE
+namespace ustdex
 {
 struct _seq
 {
@@ -32,7 +40,7 @@ struct _seq
   };
 
   template <class Zip>
-  struct _opstate
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate
   {
     using operation_state_concept = operation_state_t;
 
@@ -41,98 +49,106 @@ struct _seq
     using _sndr1_t = typename _args_t::_sndr1_t;
     using _sndr2_t = typename _args_t::_sndr2_t;
 
-    using completion_signatures = //
-      transform_completion_signatures_of< //
-        _sndr1_t,
-        _opstate*,
-        completion_signatures_of_t<_sndr2_t, _rcvr_ref_t<_rcvr_t&>>,
-        _malways<ustdex::completion_signatures<>>::_f>; // swallow the first sender's value completions
-
-    USTDEX_HOST_DEVICE friend env_of_t<_rcvr_t> get_env(const _opstate* self) noexcept
+    USTDEX_API friend env_of_t<_rcvr_t> get_env(const _opstate* _self) noexcept
     {
-      return ustdex::get_env(self->_rcvr);
+      return ustdex::get_env(_self->_rcvr_);
     }
 
-    _rcvr_t _rcvr;
-    connect_result_t<_sndr1_t, _opstate*> _op1;
-    connect_result_t<_sndr2_t, _rcvr_ref_t<_rcvr_t&>> _op2;
+    _rcvr_t _rcvr_;
+    connect_result_t<_sndr1_t, _opstate*> _opstate1_;
+    connect_result_t<_sndr2_t, _rcvr_ref_t<_rcvr_t&>> _opstate2_;
 
-    USTDEX_HOST_DEVICE _opstate(_sndr1_t&& sndr1, _sndr2_t&& sndr2, _rcvr_t&& rcvr)
-        : _rcvr(static_cast<_rcvr_t&&>(rcvr))
-        , _op1(ustdex::connect(static_cast<_sndr1_t&&>(sndr1), this))
-        , _op2(ustdex::connect(static_cast<_sndr2_t&&>(sndr2), _rcvr_ref(_rcvr)))
+    USTDEX_API _opstate(_sndr1_t&& _sndr1, _sndr2_t&& _sndr2, _rcvr_t&& _rcvr)
+        : _rcvr_(static_cast<_rcvr_t&&>(_rcvr))
+        , _opstate1_(ustdex::connect(static_cast<_sndr1_t&&>(_sndr1), this))
+        , _opstate2_(ustdex::connect(static_cast<_sndr2_t&&>(_sndr2), _rcvr_ref(_rcvr_)))
     {}
 
-    USTDEX_HOST_DEVICE void start() noexcept
+    USTDEX_API void start() noexcept
     {
-      ustdex::start(_op1);
+      ustdex::start(_opstate1_);
     }
 
     template <class... Values>
-    USTDEX_HOST_DEVICE void set_value(Values&&...) && noexcept
+    USTDEX_API void set_value(Values&&...) && noexcept
     {
-      ustdex::start(_op2);
+      ustdex::start(_opstate2_);
     }
 
     template <class Error>
-    USTDEX_HOST_DEVICE void set_error(Error&& err) && noexcept
+    USTDEX_API void set_error(Error&& _error) && noexcept
     {
-      ustdex::set_error(static_cast<_rcvr_t&&>(_rcvr), static_cast<Error&&>(err));
+      ustdex::set_error(static_cast<_rcvr_t&&>(_rcvr_), static_cast<Error&&>(_error));
     }
 
-    USTDEX_HOST_DEVICE void set_stopped() && noexcept
+    USTDEX_API void set_stopped() && noexcept
     {
-      ustdex::set_stopped(static_cast<_rcvr_t&&>(_rcvr));
+      ustdex::set_stopped(static_cast<_rcvr_t&&>(_rcvr_));
     }
   };
 
   template <class Sndr1, class Sndr2>
-  struct _sndr;
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
   template <class Sndr1, class Sndr2>
-  USTDEX_HOST_DEVICE auto operator()(Sndr1 sndr1, Sndr2 sndr2) const -> _sndr<Sndr1, Sndr2>;
+  USTDEX_API auto operator()(Sndr1 _sndr1, Sndr2 _sndr2) const -> _sndr_t<Sndr1, Sndr2>;
 };
 
 template <class Sndr1, class Sndr2>
-struct _seq::_sndr
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _seq::_sndr_t
 {
   using sender_concept = sender_t;
   using _sndr1_t       = Sndr1;
   using _sndr2_t       = Sndr2;
 
+  template <class Self, class... Env>
+  USTDEX_API static constexpr auto get_completion_signatures()
+  {
+    USTDEX_LET_COMPLETIONS(auto(_completions1) = get_child_completion_signatures<Self, Sndr1, Env...>())
+    {
+      USTDEX_LET_COMPLETIONS(auto(_completions2) = get_child_completion_signatures<Self, Sndr2, Env...>())
+      {
+        // ignore the first sender's value completions
+        return _completions2 + transform_completion_signatures(_completions1, _swallow_transform());
+      }
+    }
+  }
+
   template <class Rcvr>
-  USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) &&
+  USTDEX_API auto connect(Rcvr _rcvr) &&
   {
     using _opstate_t = _opstate<_zip<_args<Rcvr, Sndr1, Sndr2>>>;
-    return _opstate_t{static_cast<Sndr1&&>(_sndr1), static_cast<Sndr2>(_sndr2), static_cast<Rcvr&&>(rcvr)};
+    return _opstate_t{static_cast<Sndr1&&>(_sndr1_), static_cast<Sndr2>(_sndr2_), static_cast<Rcvr&&>(_rcvr)};
   }
 
   template <class Rcvr>
-  USTDEX_HOST_DEVICE auto connect(Rcvr rcvr) const&
+  USTDEX_API auto connect(Rcvr _rcvr) const&
   {
     using _opstate_t = _opstate<_zip<_args<Rcvr, const Sndr1&, const Sndr2&>>>;
-    return _opstate_t{_sndr1, _sndr2, static_cast<Rcvr&&>(rcvr)};
+    return _opstate_t{_sndr1_, _sndr2_, static_cast<Rcvr&&>(_rcvr)};
   }
 
-  USTDEX_HOST_DEVICE env_of_t<Sndr2> get_env() const noexcept
+  USTDEX_API env_of_t<Sndr2> get_env() const noexcept
   {
-    return ustdex::get_env(_sndr2);
+    return ustdex::get_env(_sndr2_);
   }
 
-  USTDEX_NO_UNIQUE_ADDRESS _seq _tag;
-  USTDEX_NO_UNIQUE_ADDRESS _ignore _ign;
-  _sndr1_t _sndr1;
-  _sndr2_t _sndr2;
+  USTDEX_NO_UNIQUE_ADDRESS _seq _tag_;
+  USTDEX_NO_UNIQUE_ADDRESS _ignore _ign_;
+  _sndr1_t _sndr1_;
+  _sndr2_t _sndr2_;
 };
 
 template <class Sndr1, class Sndr2>
-USTDEX_HOST_DEVICE auto _seq::operator()(Sndr1 sndr1, Sndr2 sndr2) const -> _sndr<Sndr1, Sndr2>
+USTDEX_API auto _seq::operator()(Sndr1 _sndr1, Sndr2 _sndr2) const -> _sndr_t<Sndr1, Sndr2>
 {
-  return _sndr<Sndr1, Sndr2>{{}, {}, static_cast<Sndr1&&>(sndr1), static_cast<Sndr2&&>(sndr2)};
+  return _sndr_t<Sndr1, Sndr2>{{}, {}, static_cast<Sndr1&&>(_sndr1), static_cast<Sndr2&&>(_sndr2)};
 }
 
 using sequence_t = _seq;
-USTDEX_DEVICE_CONSTANT constexpr sequence_t sequence{};
-} // namespace USTDEX_NAMESPACE
+inline constexpr sequence_t sequence{};
+} // namespace ustdex
 
 #include "epilogue.hpp"
+
+#endif
