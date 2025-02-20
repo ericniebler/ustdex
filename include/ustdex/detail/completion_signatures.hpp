@@ -276,12 +276,10 @@ template <class... Sndr>
 }
 #else
 
-#  define USTDEX_PP_EAT_AUTO_auto
+#  define USTDEX_PP_EAT_AUTO_auto(ID) ID USTDEX_PP_EAT USTDEX_PP_LPAREN
 
-#  define USTDEX_LET_COMPLETIONS_ID_HELPER(ID) ID USTDEX_PP_EAT USTDEX_PP_LPAREN
 #  define USTDEX_LET_COMPLETIONS_ID(...) \
-    USTDEX_PP_EXPAND(USTDEX_PP_EXPAND(   \
-      USTDEX_LET_COMPLETIONS_ID_HELPER USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__) USTDEX_PP_RPAREN))
+    USTDEX_PP_EXPAND(USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__) USTDEX_PP_RPAREN)
 
 #  define USTDEX_LET_COMPLETIONS(...)                                                                        \
     if constexpr ([[maybe_unused]] __VA_ARGS__;                                                              \
