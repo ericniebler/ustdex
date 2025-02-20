@@ -91,10 +91,10 @@ using _completion_if = _m_if<_callable<Fn, Sig*>, completion_signatures<Sig>, co
 template <class... Sigs>
 struct USTDEX_TYPE_VISIBILITY_DEFAULT completion_signatures
 {
-  template <class Fn, class Continuation = _m_quote<completion_signatures>>
+  template <class Fn, class Continuation = _m_quote<ustdex::completion_signatures>>
   using _transform USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Continuation, _m_apply<Fn, Sigs>...>;
 
-  template <template <class...> class Fn, template <class...> class Continuation = completion_signatures>
+  template <template <class...> class Fn, template <class...> class Continuation = ustdex::completion_signatures>
   using _transform_q USTDEX_ATTR_NODEBUG_ALIAS = Continuation<_m_apply_q<Fn, Sigs>...>;
 
   using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = _partition_completion_signatures_t<Sigs...>;
