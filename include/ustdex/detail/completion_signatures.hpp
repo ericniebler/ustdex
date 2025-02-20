@@ -282,7 +282,7 @@ template <class... Sndr>
     USTDEX_PP_EXPAND(USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__) USTDEX_PP_RPAREN)
 
 #  define USTDEX_LET_COMPLETIONS(...)                                                                        \
-    if constexpr ([[maybe_unused]] __VA_ARGS__;                                                              \
+    if constexpr (__VA_ARGS__;                                                                               \
                   !::ustdex::_valid_completion_signatures<decltype(USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__))>) \
     {                                                                                                        \
       return USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__);                                                         \
@@ -316,7 +316,7 @@ USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto _checked_complsigs()
   {
     if constexpr (_valid_completion_signatures<Completions>)
     {
-      return Completions();
+      return _cs;
     }
     else
     {
