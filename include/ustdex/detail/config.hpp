@@ -19,9 +19,7 @@
 #include <cassert>
 #include <type_traits> // IWYU pragma: keep
 
-namespace ustdex
-{
-}
+#define USTDEX_PP_STRINGIZE(...) #__VA_ARGS__
 
 // Arch detections:
 // Arm 64-bit
@@ -116,7 +114,7 @@ namespace ustdex
 #if USTDEX_MSVC()
 #  define USTDEX_PRAGMA_PUSH_MSVC()      __pragma(warning(push))
 #  define USTDEX_PRAGMA_POP_MSVC()       __pragma(warning(pop))
-#  define USTDEX_PRAGMA_IGNORE_MSVC(...) USTDEX_PRAGMA(warning(disable : __VA_ARGS__))
+#  define USTDEX_PRAGMA_IGNORE_MSVC(...) __pragma(warning(disable : __VA_ARGS__))
 #endif
 
 #ifndef USTDEX_PRAGMA_PUSH_EDG
@@ -362,3 +360,7 @@ using _remove_reference_t = __remove_reference_t(Ty);
 #endif
 
 #define USTDEX_TYPEID typeid
+
+namespace ustdex
+{
+}

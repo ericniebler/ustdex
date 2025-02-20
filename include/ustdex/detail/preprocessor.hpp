@@ -21,7 +21,6 @@
 // clang-format off
 #define USTDEX_PP_EAT(...)
 #define USTDEX_PP_EMPTY()
-#define USTDEX_PP_STRINGIZE(...)       #__VA_ARGS__
 #define USTDEX_PP_EVAL(MACRO, ...)     MACRO(__VA_ARGS__)
 #define USTDEX_PP_EXPAND(...)          __VA_ARGS__
 #define USTDEX_PP_DEFER(MACRO)         MACRO USTDEX_PP_EMPTY()
