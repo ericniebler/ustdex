@@ -33,7 +33,7 @@
 #include "utility.hpp"
 #include "variant.hpp"
 
-#include <numeric>
+#include <array>
 
 #include "prologue.hpp"
 
