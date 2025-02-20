@@ -76,17 +76,20 @@ USTDEX_CONCEPT _is_awaitable = false; // TODO: Implement this concept.
 
 // Sender traits:
 template <class Sndr>
-inline constexpr bool enable_sender = //
-  [] {
-    if constexpr (_is_sender<Sndr>)
-    {
-      return true;
-    }
-    else
-    {
-      return _is_awaitable<Sndr>;
-    }
-  }();
+USTDEX_API constexpr bool __enable_sender()
+{
+  if constexpr (_is_sender<Sndr>)
+  {
+    return true;
+  }
+  else
+  {
+    return _is_awaitable<Sndr>;
+  }
+}
+
+template <class Sndr>
+inline constexpr bool enable_sender = __enable_sender<Sndr>();
 
 // Sender concepts:
 template <class Sndr>
