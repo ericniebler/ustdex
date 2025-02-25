@@ -94,7 +94,7 @@ public:
   template <class Sch, class Sndr>
   USTDEX_API auto operator()(Sch _sch, Sndr _sndr) const noexcept //
     -> _sndr_t<Sch, Sndr>;
-} start_on{};
+} starts_on{};
 
 template <class Sch, class Sndr>
 struct USTDEX_TYPE_VISIBILITY_DEFAULT start_on_t::_sndr_t

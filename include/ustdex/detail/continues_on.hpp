@@ -280,7 +280,7 @@ USTDEX_TRIVIAL_API continue_on_t::_closure_t<Sch> continue_on_t::operator()(Sch 
   return _closure_t<Sch>{_sch};
 }
 
-inline constexpr continue_on_t continue_on{};
+inline constexpr continue_on_t continues_on{};
 } // namespace ustdex
 
 #include "epilogue.hpp"
