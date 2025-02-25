@@ -168,7 +168,7 @@ void check_values(Sndr&& sndr, const Values&... values) noexcept
   }
 }
 
-#else // USTDEX_HOST_ONLY()
+#else  // USTDEX_HOST_ONLY()
 
 template <class Sndr, class... Values>
 void check_values(Sndr&& sndr, const Values&... values) noexcept

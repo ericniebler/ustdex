@@ -34,6 +34,7 @@ namespace ustdex
 {
 // Declare types to use for diagnostics:
 struct FUNCTION_MUST_RETURN_A_SENDER;
+struct FUNCTION_RETURN_TYPE_IS_NOT_A_SENDER_IN_THE_CURRENT_ENVIRONMENT;
 
 // Forward-declate the let_* algorithm tag types:
 struct let_value_t;
@@ -73,7 +74,7 @@ private:
   struct _opstate_fn
   {
     template <class... As>
-    using call = connect_result_t<_call_result_t<Fn, USTDEX_DECAY(As) & ...>, _rcvr_ref_t<Rcvr&>>;
+    using call = connect_result_t<_call_result_t<Fn, USTDEX_DECAY(As) & ...>, _rcvr_ref<Rcvr>>;
   };
 
   /// @brief Computes the type of a variant of operation states to hold
@@ -94,29 +95,17 @@ private:
   template <class Rcvr, class CvSndr, class Fn>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
-    using _env_t = FWD_ENV_T<env_of_t<Rcvr>>;
-
-    USTDEX_API friend auto get_env(const _opstate_t* _self) noexcept -> _env_t
-    {
-      return ustdex::get_env(_self->_rcvr_);
-    }
-
     using operation_state_concept = operation_state_t;
+    using _env_t                  = FWD_ENV_T<env_of_t<Rcvr>>;
 
     // Compute the type of the variant of operation states
     using _opstate_variant_t = _opstate2_t<CvSndr, Fn, Rcvr>;
-
-    Rcvr _rcvr_;
-    Fn _fn_;
-    _results<CvSndr, _env_t> _result_;
-    connect_result_t<CvSndr, _opstate_t*> _opstate1_;
-    _opstate_variant_t _opstate2_;
 
     USTDEX_API _opstate_t(CvSndr&& _sndr, Fn _fn, Rcvr _rcvr) noexcept(
       _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _opstate_t*>)
         : _rcvr_(static_cast<Rcvr&&>(_rcvr))
         , _fn_(static_cast<Fn&&>(_fn))
-        , _opstate1_(ustdex::connect(static_cast<CvSndr&&>(_sndr), this))
+        , _opstate1_(ustdex::connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref{*this}))
     {}
 
     USTDEX_API void start() noexcept
@@ -130,20 +119,20 @@ private:
       if constexpr (Tag() == SetTag())
       {
         USTDEX_TRY( //
-          ({ //
+          ({        //
             // Store the results so the lvalue refs we pass to the function
             // will be valid for the duration of the async op.
             auto& _tupl = _result_.template _emplace<_decayed_tuple<As...>>(static_cast<As&&>(_as)...);
             // Call the function with the results and connect the resulting
             // sender, storing the operation state in _opstate2_.
             auto& _next_op = _opstate2_._emplace_from(
-              ustdex::connect, _tupl.apply(static_cast<Fn&&>(_fn_), _tupl), ustdex::_rcvr_ref(_rcvr_));
+              ustdex::connect, _tupl.apply(static_cast<Fn&&>(_fn_), _tupl), ustdex::_rcvr_ref{_rcvr_});
             ustdex::start(_next_op);
           }),
           USTDEX_CATCH(...) //
-          ({ //
+          ({                //
             ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          }) //
+          })                //
         )
       }
       else
@@ -169,6 +158,17 @@ private:
     {
       _complete(set_stopped_t());
     }
+
+    USTDEX_API auto get_env() const noexcept -> _env_t
+    {
+      return ustdex::get_env(_rcvr_);
+    }
+
+    Rcvr _rcvr_;
+    Fn _fn_;
+    _results<CvSndr, _env_t> _result_;
+    connect_result_t<CvSndr, _rcvr_ref<_opstate_t, _env_t>> _opstate1_;
+    _opstate_variant_t _opstate2_;
   };
 
   template <class Fn, class... Env>
@@ -190,16 +190,23 @@ private:
                                             WITH_FUNCTION(Fn),
                                             WITH_ARGUMENTS(std::decay_t<Ts> & ...)>();
       }
-      else if constexpr (!_is_sender<_call_result_t<Fn, std::decay_t<Ts>&...>>)
+      else if constexpr (!sender<_call_result_t<Fn, std::decay_t<Ts>&...>>)
       {
         return invalid_completion_signature<WHERE(IN_ALGORITHM, LetTag),
                                             WHAT(FUNCTION_MUST_RETURN_A_SENDER),
                                             WITH_FUNCTION(Fn),
                                             WITH_ARGUMENTS(std::decay_t<Ts> & ...)>();
       }
+      else if constexpr (!sender_in<_call_result_t<Fn, std::decay_t<Ts>&...>, Env...>)
+      {
+        return invalid_completion_signature<WHERE(IN_ALGORITHM, LetTag),
+                                            WHAT(FUNCTION_RETURN_TYPE_IS_NOT_A_SENDER_IN_THE_CURRENT_ENVIRONMENT),
+                                            WITH_FUNCTION(Fn),
+                                            WITH_ARGUMENTS(std::decay_t<Ts> & ...),
+                                            WITH_ENVIRONMENT(Env...)>();
+      }
       else
       {
-        // TODO: test that Sndr satisfies sender_in<Sndr, Env...>
         using Sndr = _call_result_t<Fn, std::decay_t<Ts>&...>;
         // The function is callable with the arguments and returns a sender, but we
         // do not know whether connect will throw.

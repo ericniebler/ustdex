@@ -42,7 +42,7 @@ struct _task : _immovable
 {
   using _execute_fn_t = void(_task*) noexcept;
 
-  _task() = default;
+  _task()             = default;
 
   USTDEX_API explicit _task(_task* _next, _task* _tail) noexcept
       : _next_{_next}
@@ -78,7 +78,7 @@ struct _operation : _task
   {
     auto& _rcvr = static_cast<_operation*>(_p)->_rcvr_;
     USTDEX_TRY( //
-      ({ //
+      ({        //
         if (get_stop_token(get_env(_rcvr)).stop_requested())
         {
           set_stopped(static_cast<Rcvr&&>(_rcvr));
@@ -89,9 +89,9 @@ struct _operation : _task
         }
       }),
       USTDEX_CATCH(...) //
-      ({ //
+      ({                //
         set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
-      }) //
+      })                //
     )
   }
 
@@ -221,15 +221,15 @@ private:
 
 template <class Rcvr>
 USTDEX_API inline void _operation<Rcvr>::start() & noexcept {
-  USTDEX_TRY( //
-    ({ //
-      _loop_->_push_back(this); //
-    }), //
-    USTDEX_CATCH(...) //
-    ({ //
+  USTDEX_TRY(                                                             //
+    ({                                                                    //
+      _loop_->_push_back(this);                                           //
+    }),                                                                   //
+    USTDEX_CATCH(...)                                                     //
+    ({                                                                    //
       set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception()); //
-    }) //
-    ) //
+    })                                                                    //
+    )                                                                     //
 }
 
 USTDEX_API inline void run_loop::run()

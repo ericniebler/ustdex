@@ -21,9 +21,7 @@
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
 #include "exception.hpp"
-#include "lazy.hpp"
 #include "rcvr_ref.hpp"
-#include "variant.hpp"
 
 #include "prologue.hpp"
 
@@ -44,24 +42,16 @@ struct _seq
   {
     using operation_state_concept = operation_state_t;
 
-    using _args_t  = _unzip<Zip>; // _unzip<Zip> is _args<Rcvr, Sndr1, Sndr2>
-    using _rcvr_t  = typename _args_t::_rcvr_t;
-    using _sndr1_t = typename _args_t::_sndr1_t;
-    using _sndr2_t = typename _args_t::_sndr2_t;
-
-    USTDEX_API friend env_of_t<_rcvr_t> get_env(const _opstate* _self) noexcept
-    {
-      return ustdex::get_env(_self->_rcvr_);
-    }
-
-    _rcvr_t _rcvr_;
-    connect_result_t<_sndr1_t, _opstate*> _opstate1_;
-    connect_result_t<_sndr2_t, _rcvr_ref_t<_rcvr_t&>> _opstate2_;
+    using _args_t                 = _unzip<Zip>; // _unzip<Zip> is _args<Rcvr, Sndr1, Sndr2>
+    using _rcvr_t                 = typename _args_t::_rcvr_t;
+    using _sndr1_t                = typename _args_t::_sndr1_t;
+    using _sndr2_t                = typename _args_t::_sndr2_t;
+    using _env_t                  = env_of_t<_rcvr_t>;
 
     USTDEX_API _opstate(_sndr1_t&& _sndr1, _sndr2_t&& _sndr2, _rcvr_t&& _rcvr)
         : _rcvr_(static_cast<_rcvr_t&&>(_rcvr))
-        , _opstate1_(ustdex::connect(static_cast<_sndr1_t&&>(_sndr1), this))
-        , _opstate2_(ustdex::connect(static_cast<_sndr2_t&&>(_sndr2), _rcvr_ref(_rcvr_)))
+        , _opstate1_(ustdex::connect(static_cast<_sndr1_t&&>(_sndr1), _rcvr_ref{*this}))
+        , _opstate2_(ustdex::connect(static_cast<_sndr2_t&&>(_sndr2), _rcvr_ref{_rcvr_}))
     {}
 
     USTDEX_API void start() noexcept
@@ -85,6 +75,15 @@ struct _seq
     {
       ustdex::set_stopped(static_cast<_rcvr_t&&>(_rcvr_));
     }
+
+    USTDEX_API auto get_env() const noexcept -> _env_t
+    {
+      return ustdex::get_env(_rcvr_);
+    }
+
+    _rcvr_t _rcvr_;
+    connect_result_t<_sndr1_t, _rcvr_ref<_opstate, _env_t>> _opstate1_;
+    connect_result_t<_sndr2_t, _rcvr_ref<_rcvr_t>> _opstate2_;
   };
 
   template <class Sndr1, class Sndr2>

@@ -58,7 +58,7 @@ TEST_CASE("continue_on can be piped", "[adaptors][continue_on]")
   // Just continue_on a value to the impulse scheduler
   bool called{false};
   auto sched = impulse_scheduler{};
-  auto snd   = ex::just(13) //
+  auto snd   = ex::just(13)         //
            | ex::continue_on(sched) //
            | ex::then([&](int val) {
                called = true;

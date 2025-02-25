@@ -23,9 +23,8 @@
 #include "cpos.hpp"
 #include "env.hpp"
 #include "exception.hpp"
-#include "queries.hpp"
+#include "rcvr_ref.hpp"
 #include "rcvr_with_env.hpp"
-#include "utility.hpp"
 
 #include "prologue.hpp"
 
@@ -39,12 +38,9 @@ private:
   {
     using operation_state_concept = operation_state_t;
 
-    _rcvr_with_env_t<Rcvr, Env> _env_rcvr_;
-    connect_result_t<Sndr, _rcvr_with_env_t<Rcvr, Env>*> _opstate_;
-
     USTDEX_API explicit _opstate_t(Sndr&& _sndr, Env _env, Rcvr _rcvr)
         : _env_rcvr_{static_cast<Rcvr&&>(_rcvr), static_cast<Env&&>(_env)}
-        , _opstate_(ustdex::connect(static_cast<Sndr&&>(_sndr), &_env_rcvr_))
+        , _opstate_(ustdex::connect(static_cast<Sndr&&>(_sndr), _rcvr_ref{_env_rcvr_}))
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
@@ -53,6 +49,9 @@ private:
     {
       ustdex::start(_opstate_);
     }
+
+    _rcvr_with_env_t<Rcvr, Env> _env_rcvr_;
+    connect_result_t<Sndr, _rcvr_ref<_rcvr_with_env_t<Rcvr, Env>>> _opstate_;
   };
 
   template <class Sndr, class Env>
