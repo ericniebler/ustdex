@@ -19,28 +19,43 @@
 #define USTDEX_ASYNC_DETAIL_RCVR_REF
 
 #include "cpos.hpp"
-#include "meta.hpp"
 
 //
 #include "prologue.hpp"
 
 namespace ustdex
 {
-template <class Rcvr>
-constexpr Rcvr* _rcvr_ref(Rcvr& _rcvr) noexcept
+template <class _Rcvr, class _Env = env_of_t<_Rcvr>>
+struct _rcvr_ref
 {
-  return &_rcvr;
-}
+  using receiver_concept = receiver_t;
+  _Rcvr& _rcvr_;
 
-template <class Rcvr>
-constexpr Rcvr* _rcvr_ref(Rcvr* _rcvr) noexcept
-{
-  return _rcvr;
-}
+  template <class... _As>
+  USTDEX_TRIVIAL_API void set_value(_As&&... _as) noexcept
+  {
+    static_cast<_Rcvr&&>(_rcvr_).set_value(static_cast<_As&&>(_as)...);
+  }
 
-template <class Rcvr>
-using _rcvr_ref_t = decltype(ustdex::_rcvr_ref(declval<Rcvr>()));
+  template <class _Error>
+  USTDEX_TRIVIAL_API void set_error(_Error&& _err) noexcept
+  {
+    static_cast<_Rcvr&&>(_rcvr_).set_error(static_cast<_Error&&>(_err));
+  }
 
+  USTDEX_TRIVIAL_API void set_stopped() noexcept
+  {
+    static_cast<_Rcvr&&>(_rcvr_).set_stopped();
+  }
+
+  USTDEX_API auto get_env() const noexcept -> _Env
+  {
+    return ustdex::get_env(_rcvr_);
+  }
+};
+
+template <class _Rcvr>
+_rcvr_ref(_Rcvr&) -> _rcvr_ref<_Rcvr>;
 } // namespace ustdex
 
 #include "epilogue.hpp"

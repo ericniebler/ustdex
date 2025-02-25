@@ -66,12 +66,6 @@ struct _concat_completion_signatures_fn
     -> _concat_completion_signatures_t<Sigs...>;
 };
 
-#if defined(__CUDA_ARCH__)
-extern USTDEX_DEVICE const _concat_completion_signatures_fn concat_completion_signatures;
-#else
-extern const _concat_completion_signatures_fn concat_completion_signatures;
-#endif
-
 #if defined(__cpp_constexpr_exceptions) // C++26, https://wg21.link/p3068
 template <class... What, class... Values>
 [[noreturn, nodiscard]] constexpr completion_signatures<> invalid_completion_signature(Values... values);
@@ -105,28 +99,30 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT completion_signatures
   constexpr completion_signatures() = default;
 
   template <class Tag>
-  USTDEX_API static constexpr auto count(Tag) noexcept -> std::size_t;
+  USTDEX_API constexpr auto count(Tag) const noexcept -> std::size_t;
 
   template <class Fn>
-  USTDEX_API static constexpr auto apply(Fn) -> _call_result_t<Fn, Sigs*...>;
+  USTDEX_API constexpr auto apply(Fn) const -> _call_result_t<Fn, Sigs*...>;
 
   template <class Fn>
-  USTDEX_API static constexpr auto filter(Fn) -> _concat_completion_signatures_t<_completion_if<Fn, Sigs>...>;
+  USTDEX_API constexpr auto filter(Fn) const -> _concat_completion_signatures_t<_completion_if<Fn, Sigs>...>;
 
   template <class Tag>
-  USTDEX_API static constexpr auto select(Tag) noexcept;
+  USTDEX_API constexpr auto select(Tag) const noexcept;
 
   template <class Transform, class Reduce>
-  USTDEX_API static constexpr auto transform_reduce(Transform, Reduce)
+  USTDEX_API constexpr auto transform_reduce(Transform, Reduce) const
     -> _call_result_t<Reduce, _call_result_t<Transform, Sigs*>...>;
 
   template <class... OtherSigs>
   USTDEX_API constexpr auto operator+(const completion_signatures<OtherSigs...>&) const noexcept;
 };
 
+completion_signatures() -> completion_signatures<>;
+
 template <class... Sigs>
 template <class Tag>
-USTDEX_API constexpr std::size_t completion_signatures<Sigs...>::count(Tag) noexcept
+USTDEX_API constexpr std::size_t completion_signatures<Sigs...>::count(Tag) const noexcept
 {
   if constexpr (Tag() == set_value)
   {
@@ -142,11 +138,9 @@ USTDEX_API constexpr std::size_t completion_signatures<Sigs...>::count(Tag) noex
   }
 }
 
-completion_signatures() -> completion_signatures<>;
-
 template <class... Sigs>
 template <class Fn>
-USTDEX_API constexpr auto completion_signatures<Sigs...>::apply(Fn _fn) -> _call_result_t<Fn, Sigs*...>
+USTDEX_API constexpr auto completion_signatures<Sigs...>::apply(Fn _fn) const -> _call_result_t<Fn, Sigs*...>
 {
   return _fn(static_cast<Sigs*>(nullptr)...);
 }
@@ -163,7 +157,7 @@ USTDEX_API constexpr auto _filer_one(Fn _fn, Sig* _sig) -> _completion_if<Fn, Si
 
 template <class... Sigs>
 template <class Fn>
-USTDEX_API constexpr auto completion_signatures<Sigs...>::filter(Fn _fn)
+USTDEX_API constexpr auto completion_signatures<Sigs...>::filter(Fn _fn) const
   -> _concat_completion_signatures_t<_completion_if<Fn, Sigs>...>
 {
   return concat_completion_signatures(ustdex::_filer_one(_fn, static_cast<Sigs*>(nullptr))...);
@@ -171,7 +165,7 @@ USTDEX_API constexpr auto completion_signatures<Sigs...>::filter(Fn _fn)
 
 template <class... Sigs>
 template <class Tag>
-USTDEX_API constexpr auto completion_signatures<Sigs...>::select(Tag) noexcept
+USTDEX_API constexpr auto completion_signatures<Sigs...>::select(Tag) const noexcept
 {
   if constexpr (Tag() == set_value)
   {
@@ -189,7 +183,7 @@ USTDEX_API constexpr auto completion_signatures<Sigs...>::select(Tag) noexcept
 
 template <class... Sigs>
 template <class Transform, class Reduce>
-USTDEX_API constexpr auto completion_signatures<Sigs...>::transform_reduce(Transform _transform, Reduce _reduce)
+USTDEX_API constexpr auto completion_signatures<Sigs...>::transform_reduce(Transform _transform, Reduce _reduce) const
   -> _call_result_t<Reduce, _call_result_t<Transform, Sigs*>...>
 {
   return _reduce(_transform(static_cast<Sigs*>(nullptr))...);
@@ -210,8 +204,8 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _compile_time_error // : ::std::exception
 };
 
 template <class Data, class... What>
-struct USTDEX_TYPE_VISIBILITY_DEFAULT _sender_type_check_failure
-    : _compile_time_error<_sender_type_check_failure<Data, What...>>
+struct USTDEX_TYPE_VISIBILITY_DEFAULT
+_sender_type_check_failure : _compile_time_error<_sender_type_check_failure<Data, What...>>
 {
   _sender_type_check_failure() = default;
 
@@ -276,13 +270,14 @@ template <class... Sndr>
 }
 #else
 
-#  define USTDEX_PP_EAT_AUTO_auto(ID) ID USTDEX_PP_EAT USTDEX_PP_LPAREN
+#  define USTDEX_PP_EAT_AUTO_auto(ID)     ID USTDEX_PP_EAT USTDEX_PP_LPAREN
+#  define USTDEX_PP_EXPAND_AUTO_auto(_ID) auto _ID
 
 #  define USTDEX_LET_COMPLETIONS_ID(...) \
     USTDEX_PP_EXPAND(USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__) USTDEX_PP_RPAREN)
 
 #  define USTDEX_LET_COMPLETIONS(...)                                                                        \
-    if constexpr (__VA_ARGS__;                                                                               \
+    if constexpr (USTDEX_PP_CAT(USTDEX_PP_EXPAND_AUTO_, __VA_ARGS__);                                        \
                   !::ustdex::_valid_completion_signatures<decltype(USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__))>) \
     {                                                                                                        \
       return USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__);                                                         \
@@ -302,11 +297,16 @@ template <class... Sndr>
 }
 #endif
 
+USTDEX_PRAGMA_PUSH()
+// warning C4913: user defined binary operator ',' exists but no overload could convert all operands, default built-in
+// binary operator ',' used
+USTDEX_PRAGMA_IGNORE_MSVC(4913)
+
 #define USTDEX_GET_COMPLSIGS(...) std::remove_reference_t<Sndr>::template get_completion_signatures<__VA_ARGS__>()
 
-#define USTDEX_CHECKED_COMPLSIGS(...) (__VA_ARGS__, ustdex::_checked_complsigs<decltype(__VA_ARGS__)>())
+#define USTDEX_CHECKED_COMPLSIGS(...) (__VA_ARGS__, void(), ustdex::_checked_complsigs<decltype(__VA_ARGS__)>())
 
-struct CHECKED
+struct A_GET_COMPLETION_SIGNATURES_CUSTOMIZATION_RETURNED_A_TYPE_THAT_IS_NOT_A_COMPLETION_SIGNATURES_SPECIALIZATION
 {};
 
 template <class Completions>
@@ -320,7 +320,9 @@ USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto _checked_complsigs()
     }
     else
     {
-      return invalid_completion_signature<CHECKED(Completions)>();
+      return invalid_completion_signature<
+        A_GET_COMPLETION_SIGNATURES_CUSTOMIZATION_RETURNED_A_TYPE_THAT_IS_NOT_A_COMPLETION_SIGNATURES_SPECIALIZATION,
+        WITH_SIGNATURES(Completions)>();
     }
   }
 }
@@ -344,7 +346,7 @@ inline constexpr bool _has_get_completion_signatures<Sndr, Env> =
   );
 // clang-format on
 
-struct NO_COMPLETIONS
+struct COULD_NOT_DETERMINE_COMPLETION_SIGNATURES_FOR_THIS_SENDER
 {};
 
 template <class Sndr, class... Env>
@@ -369,24 +371,28 @@ USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto _get_completion_signatures_helper()
   }
   else
   {
-    return invalid_completion_signature<NO_COMPLETIONS(Sndr, Env...)>();
+    return invalid_completion_signature<COULD_NOT_DETERMINE_COMPLETION_SIGNATURES_FOR_THIS_SENDER,
+                                        WITH_SENDER(Sndr),
+                                        WITH_ENVIRONMENT(Env...)>();
   }
 }
 
-template <class Sndr>
+template <class Sndr, class... Env>
 USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto get_completion_signatures()
 {
-  return ustdex::_get_completion_signatures_helper<Sndr>();
-}
-
-template <class Sndr, class Env>
-USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto get_completion_signatures()
-{
-  // BUGBUG TODO:
-  // Apply a lazy sender transform if one exists before computing the completion signatures:
-  // using NewSndr = _transform_sender_result_t<_late_domain_of_t<Sndr, Env>, Sndr, Env>;
-  using NewSndr = Sndr;
-  return ustdex::_get_completion_signatures_helper<NewSndr, Env>();
+  static_assert(sizeof...(Env) <= 1, "At most one environment is allowed.");
+  if constexpr (sizeof...(Env) == 0)
+  {
+    return ustdex::_get_completion_signatures_helper<Sndr>();
+  }
+  else
+  {
+    // BUGBUG TODO:
+    // Apply a lazy sender transform if one exists before computing the completion signatures:
+    // using NewSndr = _transform_sender_result_t<_late_domain_of_t<Sndr, Env>, Sndr, Env>;
+    using NewSndr = Sndr;
+    return ustdex::_get_completion_signatures_helper<NewSndr, Env...>();
+  }
 }
 
 // BUGBUG TODO
@@ -399,8 +405,10 @@ constexpr auto get_child_completion_signatures()
   return ustdex::get_completion_signatures<_copy_cvref_t<Parent, Child>, FWD_ENV_T<Env>...>();
 }
 
-// #undef USTDEX_GET_COMPLSIGS
-// #undef USTDEX_CHECKED_COMPLSIGS
+#undef USTDEX_GET_COMPLSIGS
+#undef USTDEX_CHECKED_COMPLSIGS
+
+USTDEX_PRAGMA_POP()
 
 template <class Completions>
 using _partitioned_completions_of = typename Completions::_partitioned;

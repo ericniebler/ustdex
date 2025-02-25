@@ -23,8 +23,7 @@
 #include "cpos.hpp"
 #include "exception.hpp"
 #include "meta.hpp"
-#include "tuple.hpp"
-#include "utility.hpp"
+#include "rcvr_ref.hpp"
 
 #include "prologue.hpp"
 
@@ -95,21 +94,13 @@ private:
   template <class Rcvr, class CvSndr, class Fn>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
-    USTDEX_API friend env_of_t<Rcvr> get_env(const _opstate_t* _self) noexcept
-    {
-      return ustdex::get_env(_self->_rcvr_);
-    }
-
     using operation_state_concept = operation_state_t;
-
-    Rcvr _rcvr_;
-    Fn _fn_;
-    connect_result_t<CvSndr, _opstate_t*> _opstate_;
+    using _env_t                  = env_of_t<Rcvr>;
 
     USTDEX_API _opstate_t(CvSndr&& _sndr, Rcvr _rcvr, Fn _fn)
         : _rcvr_{static_cast<Rcvr&&>(_rcvr)}
         , _fn_{static_cast<Fn&&>(_fn)}
-        , _opstate_{ustdex::connect(static_cast<CvSndr&&>(_sndr), this)}
+        , _opstate_{ustdex::connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref{*this})}
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
@@ -177,6 +168,15 @@ private:
     {
       _complete(set_stopped_t());
     }
+
+    USTDEX_API auto get_env() const noexcept -> _env_t
+    {
+      return ustdex::get_env(_rcvr_);
+    }
+
+    Rcvr _rcvr_;
+    Fn _fn_;
+    connect_result_t<CvSndr, _rcvr_ref<_opstate_t, _env_t>> _opstate_;
   };
 
   template <class Fn>

@@ -23,8 +23,8 @@
 #include "exception.hpp"
 #include "meta.hpp"
 #include "queries.hpp"
+#include "rcvr_ref.hpp"
 #include "tuple.hpp"
-#include "utility.hpp"
 #include "variant.hpp"
 
 #include "prologue.hpp"
@@ -116,19 +116,10 @@ private:
     using _result_t =
       typename completion_signatures_of_t<CvSndr, _env_t>::template _transform_q<_decayed_tuple, _variant>;
 
-    USTDEX_API friend auto get_env(const _opstate_t* _self) noexcept -> _env_t
-    {
-      return ustdex::get_env(_self->_rcvr_._rcvr);
-    }
-
-    _rcvr_t<Rcvr, _result_t> _rcvr_;
-    connect_result_t<CvSndr, _opstate_t*> _opstate1_;
-    connect_result_t<schedule_result_t<Sch>, _rcvr_t<Rcvr, _result_t>*> _opstate2_;
-
     USTDEX_API _opstate_t(CvSndr&& _sndr, Sch _sch, Rcvr _rcvr)
         : _rcvr_{static_cast<Rcvr&&>(_rcvr), {}, nullptr}
-        , _opstate1_{ustdex::connect(static_cast<CvSndr&&>(_sndr), this)}
-        , _opstate2_{ustdex::connect(schedule(_sch), &_rcvr_)}
+        , _opstate1_{ustdex::connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref{*this})}
+        , _opstate2_{ustdex::connect(schedule(_sch), _rcvr_ref{_rcvr_})}
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
@@ -157,6 +148,15 @@ private:
       _rcvr_._set_result(set_stopped_t());
       ustdex::start(_opstate2_);
     }
+
+    USTDEX_API auto get_env() const noexcept -> _env_t
+    {
+      return ustdex::get_env(_rcvr_._rcvr);
+    }
+
+    _rcvr_t<Rcvr, _result_t> _rcvr_;
+    connect_result_t<CvSndr, _rcvr_ref<_opstate_t, _env_t>> _opstate1_;
+    connect_result_t<schedule_result_t<Sch>, _rcvr_ref<_rcvr_t<Rcvr, _result_t>>> _opstate2_;
   };
 
   template <class Sndr, class Sch>
