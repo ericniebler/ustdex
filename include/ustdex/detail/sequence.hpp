@@ -42,11 +42,11 @@ struct _seq
   {
     using operation_state_concept = operation_state_t;
 
-    using _args_t  = _unzip<Zip>; // _unzip<Zip> is _args<Rcvr, Sndr1, Sndr2>
-    using _rcvr_t  = typename _args_t::_rcvr_t;
-    using _sndr1_t = typename _args_t::_sndr1_t;
-    using _sndr2_t = typename _args_t::_sndr2_t;
-    using _env_t   = env_of_t<_rcvr_t>;
+    using _args_t                 = _unzip<Zip>; // _unzip<Zip> is _args<Rcvr, Sndr1, Sndr2>
+    using _rcvr_t                 = typename _args_t::_rcvr_t;
+    using _sndr1_t                = typename _args_t::_sndr1_t;
+    using _sndr2_t                = typename _args_t::_sndr2_t;
+    using _env_t                  = env_of_t<_rcvr_t>;
 
     USTDEX_API _opstate(_sndr1_t&& _sndr1, _sndr2_t&& _sndr2, _rcvr_t&& _rcvr)
         : _rcvr_(static_cast<_rcvr_t&&>(_rcvr))

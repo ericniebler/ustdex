@@ -18,10 +18,10 @@
 #ifndef USTDEX_ASYNC_DETAIL_EXCEPTION
 #define USTDEX_ASYNC_DETAIL_EXCEPTION
 
-#include "config.hpp" // IWYU pragma: export
+#include "config.hpp"       // IWYU pragma: export
 #include "preprocessor.hpp" // IWYU pragma: export
 
-#include <exception> // IWYU pragma: export
+#include <exception>        // IWYU pragma: export
 
 #if USTDEX_CUDA()
 #  define USTDEX_CATCH(...)

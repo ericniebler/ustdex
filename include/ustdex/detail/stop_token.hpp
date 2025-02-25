@@ -39,7 +39,7 @@ USTDEX_PRAGMA_IGNORE_EDG(20012)
 #  define USTDEX_ASM_THREAD_YIELD (asm volatile("yield" :: :);)
 #elif USTDEX_ARCH(X86_64) && defined(_linux__)
 #  define USTDEX_ASM_THREAD_YIELD (asm volatile("pause" :: :);)
-#else // ^^^  USTDEX_ARCH(X86_64) ^^^ / vvv ! USTDEX_ARCH(X86_64) vvv
+#else  // ^^^  USTDEX_ARCH(X86_64) ^^^ / vvv ! USTDEX_ARCH(X86_64) vvv
 #  define USTDEX_ASM_THREAD_YIELD (;)
 #endif // ! USTDEX_ARCH(X86_64)
 
@@ -73,7 +73,7 @@ protected:
   using _execute_fn_t = void(_inplace_stop_callback_base*) noexcept;
 
   USTDEX_API explicit _inplace_stop_callback_base( //
-    const inplace_stop_source* _source, //
+    const inplace_stop_source* _source,            //
     _execute_fn_t* _execute) noexcept
       : _source_(_source)
       , _execute_fn_(_execute)

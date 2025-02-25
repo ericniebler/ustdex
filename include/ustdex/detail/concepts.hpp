@@ -25,16 +25,22 @@
 
 #include "prologue.hpp"
 
+#if USTDEX_MSVC()
+#  define USTDEX_BINARY_FOLD_EXPR(INIT, OP, ...) ustdex::_fold_expr_##OP<INIT, __VA_ARGS__...>
+#else
+#  define USTDEX_BINARY_FOLD_EXPR(INIT, OP, ...) (INIT OP... OP __VA_ARGS__)
+#endif
+
 namespace ustdex
 {
 // Receiver concepts:
 template <class Rcvr>
-USTDEX_CONCEPT receiver = //
-  USTDEX_REQUIRES_EXPR((Rcvr)) //
-  ( //
-    requires(_is_receiver<std::decay_t<Rcvr>>), //
-    requires(std::is_move_constructible_v<std::decay_t<Rcvr>>), //
-    requires(std::is_constructible_v<std::decay_t<Rcvr>, Rcvr>), //
+USTDEX_CONCEPT receiver =                                              //
+  USTDEX_REQUIRES_EXPR((Rcvr))                                         //
+  (                                                                    //
+    requires(_is_receiver<std::decay_t<Rcvr>>),                        //
+    requires(std::is_move_constructible_v<std::decay_t<Rcvr>>),        //
+    requires(std::is_constructible_v<std::decay_t<Rcvr>, Rcvr>),       //
     requires(std::is_nothrow_move_constructible_v<std::decay_t<Rcvr>>) //
   );
 
@@ -52,10 +58,10 @@ inline constexpr bool _has_completions<Rcvr, completion_signatures<Sigs...>> =
   (_valid_completion_for<Rcvr, Sigs> && ...);
 
 template <class Rcvr, class Completions>
-USTDEX_CONCEPT receiver_of = //
-  USTDEX_REQUIRES_EXPR((Rcvr, Completions)) //
-  ( //
-    requires(receiver<Rcvr>), //
+USTDEX_CONCEPT receiver_of =                                    //
+  USTDEX_REQUIRES_EXPR((Rcvr, Completions))                     //
+  (                                                             //
+    requires(receiver<Rcvr>),                                   //
     requires(_has_completions<std::decay_t<Rcvr>, Completions>) //
   );
 
@@ -102,29 +108,29 @@ struct _completions_tester
 };
 
 template <class Sndr>
-USTDEX_CONCEPT sender = //
-  USTDEX_REQUIRES_EXPR((Sndr)) //
-  ( //
-    requires(enable_sender<std::decay_t<Sndr>>), //
+USTDEX_CONCEPT sender =                                         //
+  USTDEX_REQUIRES_EXPR((Sndr))                                  //
+  (                                                             //
+    requires(enable_sender<std::decay_t<Sndr>>),                //
     requires(std::is_move_constructible_v<std::decay_t<Sndr>>), //
     requires(std::is_constructible_v<std::decay_t<Sndr>, Sndr>) //
   );
 
 template <class Sndr, class... Env>
-USTDEX_CONCEPT sender_in = //
-  USTDEX_REQUIRES_EXPR((Sndr, variadic Env)) //
-  ( //
-    requires(sender<Sndr>), //
-    requires(sizeof...(Env) <= 1), //
-    requires((_queryable<Env> && ...)), //
+USTDEX_CONCEPT sender_in =                                             //
+  USTDEX_REQUIRES_EXPR((Sndr, variadic Env))                           //
+  (                                                                    //
+    requires(sender<Sndr>),                                            //
+    requires(sizeof...(Env) <= 1),                                     //
+    requires(USTDEX_BINARY_FOLD_EXPR(true, and, _queryable<Env>)),     //
     requires(_completions_tester<Env...>::template _is_valid<Sndr>(0)) //
   );
 
 template <class Sndr>
-USTDEX_CONCEPT dependent_sender = //
-  USTDEX_REQUIRES_EXPR((Sndr)) //
-  ( //
-    requires(sender<Sndr>), //
+USTDEX_CONCEPT dependent_sender =          //
+  USTDEX_REQUIRES_EXPR((Sndr))             //
+  (                                        //
+    requires(sender<Sndr>),                //
     requires(_is_dependent_sender<Sndr>()) //
   );
 

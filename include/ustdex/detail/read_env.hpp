@@ -63,13 +63,13 @@ private:
       else
       {
         USTDEX_TRY( //
-          ({ //
+          ({        //
             ustdex::set_value(static_cast<Rcvr&&>(_rcvr_), Query()(ustdex::get_env(_rcvr_)));
           }),
           USTDEX_CATCH(...) //
-          ({ //
+          ({                //
             ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          }) //
+          })                //
         )
       }
     }

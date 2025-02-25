@@ -18,9 +18,9 @@
 #pragma once
 
 #include <condition_variable> // IWYU pragma: keep
-#include <functional> // IWYU pragma: keep
-#include <memory> // IWYU pragma: keep
-#include <mutex> // IWYU pragma: keep
+#include <functional>         // IWYU pragma: keep
+#include <memory>             // IWYU pragma: keep
+#include <mutex>              // IWYU pragma: keep
 
 #include "ustdex/ustdex.hpp"
 

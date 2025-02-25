@@ -96,7 +96,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT completion_signatures
   template <class Fn, class... More>
   using call USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Fn, Sigs..., More...>;
 
-  constexpr completion_signatures() = default;
+  constexpr completion_signatures()    = default;
 
   template <class Tag>
   USTDEX_API constexpr auto count(Tag) const noexcept -> std::size_t;
@@ -218,7 +218,7 @@ _sender_type_check_failure : _compile_time_error<_sender_type_check_failure<Data
 
 struct USTDEX_TYPE_VISIBILITY_DEFAULT dependent_sender_error // : ::std::exception
 {
-  USTDEX_TRIVIAL_API char const* what() const noexcept // override
+  USTDEX_TRIVIAL_API char const* what() const noexcept       // override
   {
     return what_;
   }
@@ -302,7 +302,7 @@ USTDEX_PRAGMA_PUSH()
 // binary operator ',' used
 USTDEX_PRAGMA_IGNORE_MSVC(4913)
 
-#define USTDEX_GET_COMPLSIGS(...) std::remove_reference_t<Sndr>::template get_completion_signatures<__VA_ARGS__>()
+#define USTDEX_GET_COMPLSIGS(...)     std::remove_reference_t<Sndr>::template get_completion_signatures<__VA_ARGS__>()
 
 #define USTDEX_CHECKED_COMPLSIGS(...) (__VA_ARGS__, void(), ustdex::_checked_complsigs<decltype(__VA_ARGS__)>())
 
@@ -411,7 +411,7 @@ constexpr auto get_child_completion_signatures()
 USTDEX_PRAGMA_POP()
 
 template <class Completions>
-using _partitioned_completions_of = typename Completions::_partitioned;
+using _partitioned_completions_of  = typename Completions::_partitioned;
 
 constexpr int _invalid_disposition = -1;
 

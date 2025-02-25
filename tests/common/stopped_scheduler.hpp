@@ -90,7 +90,7 @@ private:
 public:
   using scheduler_concept = ustdex::scheduler_t;
 
-  stopped_scheduler() = default;
+  stopped_scheduler()     = default;
 
   HOST_DEVICE sndr_t schedule() const noexcept
   {

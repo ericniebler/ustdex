@@ -45,9 +45,9 @@ private:
   struct opstate_t : ustdex::_immovable
   {
     using operation_state_concept = ustdex::operation_state_t;
-    using completion_signatures   = //
+    using completion_signatures   =  //
       ustdex::completion_signatures< //
-        ustdex::set_value_t(), //
+        ustdex::set_value_t(),       //
         ustdex::set_error_t(Error),
         ustdex::set_stopped_t()>;
 
@@ -68,7 +68,7 @@ private:
     HOST_DEVICE static constexpr auto get_completion_signatures()
     {
       return ustdex::completion_signatures< //
-        ustdex::set_value_t(), //
+        ustdex::set_value_t(),              //
         ustdex::set_error_t(Error),
         ustdex::set_stopped_t()>{};
     }

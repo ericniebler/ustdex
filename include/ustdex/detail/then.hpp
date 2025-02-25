@@ -127,14 +127,14 @@ private:
       }
       else
       {
-        USTDEX_TRY( //
-          ({ //
+        USTDEX_TRY(                                //
+          ({                                       //
             _set<true>(static_cast<Ts&&>(_ts)...); //
-          }), //
-          USTDEX_CATCH(...) //
-          ({ //
+          }),                                      //
+          USTDEX_CATCH(...)                        //
+          ({                                       //
             ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          }) //
+          })                                       //
         )
       }
     }
@@ -228,7 +228,7 @@ private:
     }
 
     template <class Rcvr>
-    USTDEX_API auto connect(Rcvr _rcvr) && //
+    USTDEX_API auto connect(Rcvr _rcvr) &&                                         //
       noexcept(_nothrow_constructible<_opstate_t<Rcvr, Sndr, Fn>, Sndr, Rcvr, Fn>) //
       -> _opstate_t<Rcvr, Sndr, Fn>
     {

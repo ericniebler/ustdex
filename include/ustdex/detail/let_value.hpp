@@ -119,7 +119,7 @@ private:
       if constexpr (Tag() == SetTag())
       {
         USTDEX_TRY( //
-          ({ //
+          ({        //
             // Store the results so the lvalue refs we pass to the function
             // will be valid for the duration of the async op.
             auto& _tupl = _result_.template _emplace<_decayed_tuple<As...>>(static_cast<As&&>(_as)...);
@@ -130,9 +130,9 @@ private:
             ustdex::start(_next_op);
           }),
           USTDEX_CATCH(...) //
-          ({ //
+          ({                //
             ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          }) //
+          })                //
         )
       }
       else

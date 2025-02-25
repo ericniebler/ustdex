@@ -90,8 +90,8 @@ USTDEX_API constexpr std::size_t _index_of() noexcept
 template <class Ty, class Uy = Ty>
 USTDEX_API constexpr Ty _exchange(Ty& _obj, Uy&& _new_value) noexcept
 {
-  constexpr bool _is_nothrow = //
-    noexcept(Ty(static_cast<Ty&&>(_obj))) && //
+  constexpr bool _is_nothrow =                      //
+    noexcept(Ty(static_cast<Ty&&>(_obj))) &&        //
     noexcept(_obj = static_cast<Uy&&>(_new_value)); //
   static_assert(_is_nothrow);
 
@@ -103,8 +103,8 @@ USTDEX_API constexpr Ty _exchange(Ty& _obj, Uy&& _new_value) noexcept
 template <class Ty>
 USTDEX_API constexpr void _swap(Ty& _left, Ty& _right) noexcept
 {
-  constexpr bool _is_nothrow = //
-    noexcept(Ty(static_cast<Ty&&>(_left))) && //
+  constexpr bool _is_nothrow =                   //
+    noexcept(Ty(static_cast<Ty&&>(_left))) &&    //
     noexcept(_left = static_cast<Ty&&>(_right)); //
   static_assert(_is_nothrow);
 

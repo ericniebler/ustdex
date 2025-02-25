@@ -53,7 +53,7 @@ static_assert(dependent_sender<decltype(read_env(_empty()))>);
 int main()
 {
   thread_context ctx;
-  auto sch = ctx.get_scheduler();
+  auto sch  = ctx.get_scheduler();
 
   auto work = just(1, 2, 3) //
             | then([](int a, int b, int c) {
@@ -71,7 +71,7 @@ int main()
             });
   sync_wait(s3);
 
-  auto [sch2] = sync_wait(read_env(get_scheduler)).value();
+  auto [sch2]   = sync_wait(read_env(get_scheduler)).value();
 
   auto [i1, i2] = sync_wait(when_all(just(42), just(43))).value();
   std::cout << i1 << ' ' << i2 << '\n';

@@ -67,14 +67,14 @@ private:
       template <class... As>
       USTDEX_API void set_value(As&&... _as) noexcept
       {
-        USTDEX_TRY( //
-          ({ //
+        USTDEX_TRY(         //
+          ({                //
             _state_->_values_->emplace(static_cast<As&&>(_as)...);
-          }), //
+          }),               //
           USTDEX_CATCH(...) //
-          ({ //
+          ({                //
             _state_->_eptr_ = ::std::current_exception();
-          }) //
+          })                //
         )
         _state_->_loop_.finish();
       }

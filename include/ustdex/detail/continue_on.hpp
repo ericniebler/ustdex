@@ -38,11 +38,11 @@ private:
   using _set_value_tuple_t = _tuple<set_value_t, USTDEX_DECAY(As)...>;
 
   template <class Error>
-  using _set_error_tuple_t = _tuple<set_error_t, USTDEX_DECAY(Error)>;
+  using _set_error_tuple_t   = _tuple<set_error_t, USTDEX_DECAY(Error)>;
 
   using _set_stopped_tuple_t = _tuple<set_stopped_t>;
 
-  using _complete_fn = void (*)(void*) noexcept;
+  using _complete_fn         = void (*)(void*) noexcept;
 
   template <class Rcvr, class Result>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _rcvr_t
@@ -69,13 +69,13 @@ private:
       else
       {
         USTDEX_TRY( //
-          ({ //
+          ({        //
             _result_.template _emplace<_tupl_t>(Tag(), static_cast<As&&>(_as)...);
           }),
           USTDEX_CATCH(...) //
-          ({ //
+          ({                //
             ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          }) //
+          })                //
         )
       }
       _complete_ = +[](void* _ptr) noexcept {

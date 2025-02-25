@@ -105,7 +105,7 @@ struct _cond_t
 
     template <class... As>
     using _opstate_t = //
-      _m_list< //
+      _m_list<         //
         connect_result_t<_call_result_t<Then, _just_from_t<As...>>, _rcvr_ref<Rcvr>>,
         connect_result_t<_call_result_t<Else, _just_from_t<As...>>, _rcvr_ref<Rcvr>>>;
 
@@ -128,7 +128,7 @@ struct _cond_t
     {
       auto _just = just_from(_cond_t::_mk_complete_fn(static_cast<As&&>(_as)...));
       USTDEX_TRY( //
-        ({ //
+        ({        //
           if (static_cast<Pred&&>(_data_._pred_)(_as...))
           {
             auto& _op = _ops_._emplace_from(connect, static_cast<Then&&>(_data_._then_)(_just), _rcvr_ref{_rcvr_});
@@ -141,9 +141,9 @@ struct _cond_t
           }
         }),
         USTDEX_CATCH(...) //
-        ({ //
+        ({                //
           ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-        }) //
+        })                //
       )
     }
 

@@ -257,7 +257,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT ERROR : _merror_base
   // The following aliases are to simplify error propagation
   // in the completion signatures meta-programming.
   template <class...>
-  using call USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+  using call USTDEX_ATTR_NODEBUG_ALIAS         = ERROR;
 
   using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
 
@@ -265,7 +265,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT ERROR : _merror_base
   using _value_types USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
 
   template <template <class...> class>
-  using _error_types USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+  using _error_types USTDEX_ATTR_NODEBUG_ALIAS   = ERROR;
 
   using _sends_stopped USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
 
@@ -483,7 +483,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_maybe_concat_fn
             class... Hs,
             class... Tail>
   USTDEX_API static auto call(
-    _m_list_ptr<Ts...>, // state
+    _m_list_ptr<Ts...>,         // state
     _m_undefined_ptr<A<As...>>, // 1
     _m_undefined_ptr<B<Bs...>>, // 2
     _m_undefined_ptr<C<Cs...>>, // 3
@@ -492,7 +492,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _m_maybe_concat_fn
     _m_undefined_ptr<F<Fs...>>, // 6
     _m_undefined_ptr<G<Gs...>>, // 7
     _m_undefined_ptr<H<Hs...>>, // 8
-    Tail*... _tail) // rest
+    Tail*... _tail)             // rest
     -> decltype(_next_t::call(
       _m_list_ptr<Ts..., As..., Bs..., Cs..., Ds..., Es..., Fs..., Gs..., Hs...>{nullptr},
       _tail...,

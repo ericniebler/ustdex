@@ -4,14 +4,15 @@
 BasedOnStyle: LLVM
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: Consecutive
-AlignConsecutiveBitFields: Consecutive
-AlignConsecutiveMacros: Consecutive
+AlignConsecutiveAssignments: AcrossEmptyLines
+AlignConsecutiveBitFields: AcrossEmptyLines
+AlignConsecutiveMacros: AcrossEmptyLines
 AlignEscapedNewlines: Left
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
 AlignOperands: AlignAfterOperator
 AllowAllArgumentsOnNextLine: true
-AlignTrailingComments:
-  Kind: Never
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowShortBlocksOnASingleLine: false
@@ -96,9 +97,9 @@ IndentWidth: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 Macros:
-- USTDEX_TEMPLATE(...)=template<...>
-- USTDEX_REQUIRES(...)=requires (...)
-- USTDEX_CONCEPT=concept
+  - USTDEX_TEMPLATE(...)=template<__VA_ARGS__>
+  - USTDEX_REQUIRES(...)=requires (__VA_ARGS__)
+  - USTDEX_CONCEPT=concept /*****/
 NamespaceIndentation: None
 PackConstructorInitializers: Never
 PenaltyBreakAssignment: 30
@@ -130,24 +131,5 @@ SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++20
-StatementMacros: [
-  'USTDEX_EXEC_CHECK_DISABLE',
-  'CUB_NAMESPACE_BEGIN',
-  'CUB_NAMESPACE_END',
-  'THRUST_NAMESPACE_BEGIN',
-  'THRUST_NAMESPACE_END',
-  'LIBCUDACXX_BEGIN_NAMESPACE_STD',
-  'LIBCUDACXX_END_NAMESPACE_STD',
-  'LIBCUDACXX_BEGIN_NAMESPACE_STD_NOVERSION',
-  'LIBCUDACXX_END_NAMESPACE_STD_NOVERSION',
-  'LIBCUDACXX_BEGIN_NAMESPACE_RANGES',
-  'LIBCUDACXX_END_NAMESPACE_RANGES',
-  'LIBCUDACXX_BEGIN_NAMESPACE_RANGES_ABI',
-  'LIBCUDACXX_END_NAMESPACE_RANGES_ABI',
-  'LIBCUDACXX_BEGIN_NAMESPACE_CPO',
-  'LIBCUDACXX_END_NAMESPACE_CPO',
-  'LIBCUDACXX_BEGIN_NAMESPACE_VIEWS',
-  'LIBCUDACXX_END_NAMESPACE_VIEWS',
-]
 TabWidth: 2
 UseTab: Never
