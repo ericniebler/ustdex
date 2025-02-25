@@ -141,48 +141,18 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT env<Env0, Env1>
 template <class... Envs>
 env(Envs...) -> env<_unwrap_reference_t<Envs>...>;
 
-using empty_env = env<>;
-
-namespace _adl
-{
-template <class Ty>
-USTDEX_TRIVIAL_API auto get_env(Ty* _ty) noexcept //
-  -> decltype(_ty->get_env())
-{
-  static_assert(noexcept(_ty->get_env()));
-  return _ty->get_env();
-}
-
-struct _get_env_t
-{
-  template <class Ty>
-  USTDEX_TRIVIAL_API auto operator()(Ty* _ty) const noexcept //
-    -> decltype(get_env(_ty))
-  {
-    static_assert(noexcept(get_env(_ty)));
-    return get_env(_ty);
-  }
-};
-} // namespace _adl
+using empty_env [[deprecated("use ustdex::env<> instead")]] = env<>;
 
 struct get_env_t
 {
   template <class Ty>
-  USTDEX_TRIVIAL_API auto operator()(Ty&& _ty) const noexcept //
-    -> decltype(_ty.get_env())
+  USTDEX_TRIVIAL_API auto operator()(Ty&& _ty) const noexcept -> decltype(_ty.get_env())
   {
     static_assert(noexcept(_ty.get_env()));
     return _ty.get_env();
   }
 
-  template <class Ty>
-  USTDEX_TRIVIAL_API auto operator()(Ty* _ty) const noexcept //
-    -> _call_result_t<_adl::_get_env_t, Ty*>
-  {
-    return _adl::_get_env_t()(_ty);
-  }
-
-  USTDEX_TRIVIAL_API empty_env operator()(_ignore) const noexcept
+  USTDEX_TRIVIAL_API env<> operator()(_ignore) const noexcept
   {
     return {};
   }
@@ -196,7 +166,7 @@ inline constexpr get_env_t get_env{};
 using namespace _region;
 
 template <class Ty>
-using env_of_t = decltype(get_env(declval<Ty>()));
+using env_of_t = decltype(ustdex::get_env(declval<Ty>()));
 } // namespace ustdex
 
 USTDEX_PRAGMA_POP()

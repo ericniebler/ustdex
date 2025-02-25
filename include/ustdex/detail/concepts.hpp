@@ -27,13 +27,6 @@
 
 namespace ustdex
 {
-// Utilities:
-template <class Ty>
-USTDEX_API constexpr bool _is_constexpr_helper(Ty)
-{
-  return true;
-}
-
 // Receiver concepts:
 template <class Rcvr>
 USTDEX_CONCEPT receiver = //
@@ -76,7 +69,7 @@ USTDEX_CONCEPT _is_awaitable = false; // TODO: Implement this concept.
 
 // Sender traits:
 template <class Sndr>
-USTDEX_API constexpr bool __enable_sender()
+USTDEX_API constexpr bool _enable_sender()
 {
   if constexpr (_is_sender<Sndr>)
   {
@@ -89,9 +82,25 @@ USTDEX_API constexpr bool __enable_sender()
 }
 
 template <class Sndr>
-inline constexpr bool enable_sender = __enable_sender<Sndr>();
+inline constexpr bool enable_sender = _enable_sender<Sndr>();
 
 // Sender concepts:
+template <class... Env>
+struct _completions_tester
+{
+  template <class Sndr, bool EnableIfConstexpr = (get_completion_signatures<Sndr, Env...>(), true)>
+  USTDEX_API static constexpr auto _is_valid(int) -> bool
+  {
+    return _valid_completion_signatures<completion_signatures_of_t<Sndr, Env...>>;
+  }
+
+  template <class Sndr>
+  USTDEX_API static constexpr auto _is_valid(long) -> bool
+  {
+    return false;
+  }
+};
+
 template <class Sndr>
 USTDEX_CONCEPT sender = //
   USTDEX_REQUIRES_EXPR((Sndr)) //
@@ -108,9 +117,7 @@ USTDEX_CONCEPT sender_in = //
     requires(sender<Sndr>), //
     requires(sizeof...(Env) <= 1), //
     requires((_queryable<Env> && ...)), //
-    requires( //
-      std::bool_constant<ustdex::_is_constexpr_helper(get_completion_signatures<Sndr, Env...>())>::value), //
-    requires(_valid_completion_signatures<decltype(get_completion_signatures<Sndr, Env...>())>) //
+    requires(_completions_tester<Env...>::template _is_valid<Sndr>(0)) //
   );
 
 template <class Sndr>

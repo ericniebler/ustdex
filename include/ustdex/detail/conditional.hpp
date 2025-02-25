@@ -103,16 +103,11 @@ struct _cond_t
     using _data_t                 = _data<Pred, Then, Else>;
     using _env_t                  = FWD_ENV_T<env_of_t<Rcvr>>;
 
-    USTDEX_API friend _env_t get_env(const _opstate* _self) noexcept
-    {
-      return get_env(_self->_rcvr_);
-    }
-
     template <class... As>
     using _opstate_t = //
       _m_list< //
-        connect_result_t<_call_result_t<Then, _just_from_t<As...>>, _rcvr_ref_t<Rcvr&>>,
-        connect_result_t<_call_result_t<Else, _just_from_t<As...>>, _rcvr_ref_t<Rcvr&>>>;
+        connect_result_t<_call_result_t<Then, _just_from_t<As...>>, _rcvr_ref<Rcvr>>,
+        connect_result_t<_call_result_t<Else, _just_from_t<As...>>, _rcvr_ref<Rcvr>>>;
 
     using _next_ops_variant_t = //
       _value_types<completion_signatures_of_t<Sndr, _env_t>, _opstate_t, _m_concat_into_q<_variant>::call>;
@@ -120,7 +115,7 @@ struct _cond_t
     USTDEX_API _opstate(Sndr&& _sndr, Rcvr&& _rcvr, _data_t&& _data)
         : _rcvr_{static_cast<Rcvr&&>(_rcvr)}
         , _data_{static_cast<_data_t&&>(_data)}
-        , _op_{ustdex::connect(static_cast<Sndr&&>(_sndr), this)}
+        , _op_{ustdex::connect(static_cast<Sndr&&>(_sndr), _rcvr_ref{*this})}
     {}
 
     USTDEX_API void start() noexcept
@@ -136,12 +131,12 @@ struct _cond_t
         ({ //
           if (static_cast<Pred&&>(_data_._pred_)(_as...))
           {
-            auto& _op = _ops_._emplace_from(connect, static_cast<Then&&>(_data_._then_)(_just), _rcvr_ref(_rcvr_));
+            auto& _op = _ops_._emplace_from(connect, static_cast<Then&&>(_data_._then_)(_just), _rcvr_ref{_rcvr_});
             ustdex::start(_op);
           }
           else
           {
-            auto& _op = _ops_._emplace_from(connect, static_cast<Else&&>(_data_._else_)(_just), _rcvr_ref(_rcvr_));
+            auto& _op = _ops_._emplace_from(connect, static_cast<Else&&>(_data_._else_)(_just), _rcvr_ref{_rcvr_});
             ustdex::start(_op);
           }
         }),
@@ -163,9 +158,14 @@ struct _cond_t
       ustdex::set_stopped(static_cast<Rcvr&&>(_rcvr_));
     }
 
+    USTDEX_API auto get_env() const noexcept -> _env_t
+    {
+      return ustdex::get_env(_rcvr_);
+    }
+
     Rcvr _rcvr_;
     _data_t _data_;
-    connect_result_t<Sndr, _opstate*> _op_;
+    connect_result_t<Sndr, _rcvr_ref<_opstate, _env_t>> _op_;
     _next_ops_variant_t _ops_;
   };
 

@@ -34,6 +34,7 @@
 #include "variant.hpp"
 
 #include <array>
+#include <utility>
 
 #include "prologue.hpp"
 
@@ -385,7 +386,7 @@ USTDEX_API constexpr auto when_all_t::_merge_completions(Completions... _cs)
   // Use USTDEX_LET_COMPLETIONS to ensure all completions are valid:
   USTDEX_LET_COMPLETIONS(auto(_tmp) = (completion_signatures{}, ..., _cs)) // NB: uses overloaded comma operator
   {
-    (void) _tmp;
+    std::ignore                 = _tmp; // silence unused variable warning
     auto _non_value_completions = concat_completion_signatures(
       completion_signatures<set_stopped_t()>(),
       transform_completion_signatures(_cs, _swallow_transform(), _decay_transform<set_error_t>())...);

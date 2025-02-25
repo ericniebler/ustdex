@@ -100,15 +100,6 @@ inline constexpr struct set_value_t : _completion_tag<_value>
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...)));
     static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...);
   }
-
-  template <class Rcvr, class... Ts>
-  USTDEX_TRIVIAL_API auto operator()(Rcvr* _rcvr, Ts&&... _ts) const noexcept
-    -> decltype(static_cast<Rcvr&&>(*_rcvr).set_value(static_cast<Ts&&>(_ts)...))
-  {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(*_rcvr).set_value(static_cast<Ts&&>(_ts)...)), void>);
-    static_assert(noexcept(static_cast<Rcvr&&>(*_rcvr).set_value(static_cast<Ts&&>(_ts)...)));
-    static_cast<Rcvr&&>(*_rcvr).set_value(static_cast<Ts&&>(_ts)...);
-  }
 } set_value{};
 
 inline constexpr struct set_error_t : _completion_tag<_error>
@@ -121,15 +112,6 @@ inline constexpr struct set_error_t : _completion_tag<_error>
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e))));
     static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e));
   }
-
-  template <class Rcvr, class Ey>
-  USTDEX_TRIVIAL_API auto operator()(Rcvr* _rcvr, Ey&& _e) const noexcept
-    -> decltype(static_cast<Rcvr&&>(*_rcvr).set_error(static_cast<Ey&&>(_e)))
-  {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(*_rcvr).set_error(static_cast<Ey&&>(_e))), void>);
-    static_assert(noexcept(static_cast<Rcvr&&>(*_rcvr).set_error(static_cast<Ey&&>(_e))));
-    static_cast<Rcvr&&>(*_rcvr).set_error(static_cast<Ey&&>(_e));
-  }
 } set_error{};
 
 inline constexpr struct set_stopped_t : _completion_tag<_stopped>
@@ -140,14 +122,6 @@ inline constexpr struct set_stopped_t : _completion_tag<_stopped>
     static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(_rcvr).set_stopped()), void>);
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_stopped()));
     static_cast<Rcvr&&>(_rcvr).set_stopped();
-  }
-
-  template <class Rcvr>
-  USTDEX_TRIVIAL_API auto operator()(Rcvr* _rcvr) const noexcept -> decltype(static_cast<Rcvr&&>(*_rcvr).set_stopped())
-  {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(*_rcvr).set_stopped()), void>);
-    static_assert(noexcept(static_cast<Rcvr&&>(*_rcvr).set_stopped()));
-    static_cast<Rcvr&&>(*_rcvr).set_stopped();
   }
 } set_stopped{};
 
@@ -164,10 +138,7 @@ inline constexpr struct start_t
 } start{};
 
 // get_completion_signatures
-template <class Sndr>
-USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto get_completion_signatures();
-
-template <class Sndr, class Env>
+template <class Sndr, class... Env>
 USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto get_completion_signatures();
 
 // connect
