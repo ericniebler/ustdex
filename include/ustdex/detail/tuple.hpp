@@ -73,6 +73,8 @@ _tupl(Ts...) //
 template <class Fn, class Tupl, class... Us>
 using _apply_result_t = decltype(declval<Tupl>().apply(declval<Fn>(), declval<Tupl>(), declval<Us>()...));
 
+namespace detail
+{
 #if USTDEX_MSVC()
 template <class... Ts>
 struct _mk_tuple_
@@ -87,6 +89,10 @@ using _tuple = typename _mk_tuple_<Ts...>::type;
 template <class... Ts>
 using _tuple = _tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 #endif
+} // namespace detail
+
+template <class... Ts>
+using _tuple = detail::_tuple<Ts...>;
 
 template <class... Ts>
 using _decayed_tuple = _tuple<USTDEX_DECAY(Ts)...>;

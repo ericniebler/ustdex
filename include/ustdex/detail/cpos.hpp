@@ -19,10 +19,8 @@
 #define USTDEX_ASYNC_DETAIL_CPOS
 
 #include "config.hpp"
-#include "env.hpp"
+#include "env.hpp" // IWYU pragma: export
 #include "meta.hpp"
-#include "type_traits.hpp"
-#include "utility.hpp"
 
 #include "prologue.hpp"
 

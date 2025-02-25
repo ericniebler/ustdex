@@ -24,6 +24,7 @@
 #  define CATCH_CONFIG_DISABLE_EXCEPTIONS
 #endif
 
+// IWYU pragma: always_keep
 #include <catch2/catch_all.hpp> // IWYU pragma: export
 
 // In device code, a few of the Catch2 macros are not supported.

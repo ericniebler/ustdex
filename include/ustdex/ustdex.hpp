@@ -16,22 +16,22 @@
  */
 #pragma once
 
-#include "detail/conditional.hpp"
-#include "detail/config.hpp"
-#include "detail/continues_on.hpp"
-#include "detail/cpos.hpp"
-#include "detail/just.hpp"
-#include "detail/just_from.hpp"
-#include "detail/let_value.hpp"
-#include "detail/queries.hpp"
-#include "detail/read_env.hpp"
-#include "detail/run_loop.hpp"
-#include "detail/sequence.hpp"
-#include "detail/start_detached.hpp"
-#include "detail/starts_on.hpp"
-#include "detail/stop_token.hpp"
-#include "detail/sync_wait.hpp"
-#include "detail/then.hpp"
-#include "detail/thread_context.hpp"
-#include "detail/when_all.hpp"
-#include "detail/write_env.hpp"
+#include "detail/conditional.hpp"    // IWYU pragma: export
+#include "detail/config.hpp"         // IWYU pragma: export
+#include "detail/continues_on.hpp"   // IWYU pragma: export
+#include "detail/cpos.hpp"           // IWYU pragma: export
+#include "detail/just.hpp"           // IWYU pragma: export
+#include "detail/just_from.hpp"      // IWYU pragma: export
+#include "detail/let_value.hpp"      // IWYU pragma: export
+#include "detail/queries.hpp"        // IWYU pragma: export
+#include "detail/read_env.hpp"       // IWYU pragma: export
+#include "detail/run_loop.hpp"       // IWYU pragma: export
+#include "detail/sequence.hpp"       // IWYU pragma: export
+#include "detail/start_detached.hpp" // IWYU pragma: export
+#include "detail/starts_on.hpp"      // IWYU pragma: export
+#include "detail/stop_token.hpp"     // IWYU pragma: export
+#include "detail/sync_wait.hpp"      // IWYU pragma: export
+#include "detail/then.hpp"           // IWYU pragma: export
+#include "detail/thread_context.hpp" // IWYU pragma: export
+#include "detail/when_all.hpp"       // IWYU pragma: export
+#include "detail/write_env.hpp"      // IWYU pragma: export

@@ -21,7 +21,6 @@
 #include "meta.hpp"
 #include "queries.hpp"
 #include "tuple.hpp"
-#include "type_traits.hpp"
 #include "utility.hpp"
 
 #include <functional>

@@ -24,7 +24,7 @@
 #include "just_from.hpp"
 #include "meta.hpp"
 #include "type_traits.hpp"
-#include "variant.hpp"
+#include "variant.hpp" // IWYU pragma: keep
 
 #include <exception>
 
