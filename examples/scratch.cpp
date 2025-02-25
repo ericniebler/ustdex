@@ -60,7 +60,7 @@ int main()
                 std::printf("%d %d %d\n", a, b, c);
                 return a + b + c;
               });
-  auto s = start_on(sch, std::move(work));
+  auto s = starts_on(sch, std::move(work));
   static_assert(!dependent_sender<decltype(s)>);
   std::puts("Hello, world!");
   sync_wait(s);

@@ -17,14 +17,14 @@
 
 #pragma once
 
-#include "ustdex/ustdex.hpp"
+#include "ustdex/ustdex.hpp" // IWYU pragma: export
 
 #if !USTDEX_HOST_ONLY()
 // disable exceptions in Catch2 when compiling for device:
 #  define CATCH_CONFIG_DISABLE_EXCEPTIONS
 #endif
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_all.hpp> // IWYU pragma: export
 
 // In device code, a few of the Catch2 macros are not supported.
 #if !USTDEX_HOST_ONLY()

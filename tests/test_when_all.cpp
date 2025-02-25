@@ -20,10 +20,10 @@
 #include "../tests/common/impulse_scheduler.hpp"
 #include "../tests/common/stopped_scheduler.hpp"
 #include "../tests/common/utility.hpp"
-#include "ustdex/detail/continue_on.hpp"
+#include "ustdex/detail/continues_on.hpp"
 #include "ustdex/detail/just.hpp"
 #include "ustdex/detail/let_value.hpp"
-#include "ustdex/detail/start_on.hpp"
+#include "ustdex/detail/starts_on.hpp"
 #include "ustdex/detail/then.hpp"
 #include "ustdex/detail/when_all.hpp"
 #include <catch2/catch_all.hpp>
@@ -82,9 +82,9 @@ TEST_CASE("when_all completes when children complete", "[when_all]")
 {
   impulse_scheduler sched;
   bool called{false};
-  auto snd = ex::when_all(ex::just(11) | ex::continue_on(sched),
-                          ex::just(13) | ex::continue_on(sched),
-                          ex::just(17) | ex::continue_on(sched))
+  auto snd = ex::when_all(ex::just(11) | ex::continues_on(sched),
+                          ex::just(13) | ex::continues_on(sched),
+                          ex::just(17) | ex::continues_on(sched))
            | ex::then([&](int a, int b, int c) {
                called = true;
                return a + b + c;
@@ -111,7 +111,7 @@ TEST_CASE("when_all can be used with just_*", "[when_all]")
 TEST_CASE("when_all terminates with error if one child terminates with error", "[when_all]")
 {
   error_scheduler sched{42};
-  auto snd = ex::when_all(ex::just(2), ex::just(5) | ex::continue_on(sched), ex::just(7));
+  auto snd = ex::when_all(ex::just(2), ex::just(5) | ex::continues_on(sched), ex::just(7));
   auto op  = ex::connect(std::move(snd), checked_error_receiver{42});
   ex::start(op);
 }
@@ -119,7 +119,7 @@ TEST_CASE("when_all terminates with error if one child terminates with error", "
 TEST_CASE("when_all terminates with stopped if one child is cancelled", "[when_all]")
 {
   stopped_scheduler sched;
-  auto snd = ex::when_all(ex::just(2), ex::just(5) | ex::continue_on(sched), ex::just(7));
+  auto snd = ex::when_all(ex::just(2), ex::just(5) | ex::continues_on(sched), ex::just(7));
   auto op  = ex::connect(std::move(snd), checked_stopped_receiver{});
   ex::start(op);
 }
@@ -132,11 +132,11 @@ TEST_CASE("when_all cancels remaining children if error is detected", "[when_all
   bool called3{false};
   bool cancelled{false};
   auto snd = ex::when_all(
-    ex::start_on(sched, ex::just()) | ex::then([&] {
+    ex::starts_on(sched, ex::just()) | ex::then([&] {
       called1 = true;
     }),
-    ex::start_on(sched, ex::just(5) | ex::continue_on(err_sched)),
-    ex::start_on(sched, ex::just()) | ex::then([&] {
+    ex::starts_on(sched, ex::just(5) | ex::continues_on(err_sched)),
+    ex::starts_on(sched, ex::just()) | ex::then([&] {
       called3 = true;
     }) | ex::let_stopped([&] {
       cancelled = true;
@@ -164,11 +164,11 @@ TEST_CASE("when_all cancels remaining children if cancel is detected", "[when_al
   bool called3{false};
   bool cancelled{false};
   auto snd = ex::when_all(
-    ex::start_on(sched, ex::just()) | ex::then([&] {
+    ex::starts_on(sched, ex::just()) | ex::then([&] {
       called1 = true;
     }),
-    ex::start_on(sched, ex::just(5) | ex::continue_on(stopped_sched)),
-    ex::start_on(sched, ex::just()) | ex::then([&] {
+    ex::starts_on(sched, ex::just(5) | ex::continues_on(stopped_sched)),
+    ex::starts_on(sched, ex::just()) | ex::then([&] {
       called3 = true;
     }) | ex::let_stopped([&] {
       cancelled = true;

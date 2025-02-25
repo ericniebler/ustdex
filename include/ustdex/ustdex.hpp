@@ -18,7 +18,7 @@
 
 #include "detail/conditional.hpp"
 #include "detail/config.hpp"
-#include "detail/continue_on.hpp"
+#include "detail/continues_on.hpp"
 #include "detail/cpos.hpp"
 #include "detail/just.hpp"
 #include "detail/just_from.hpp"
@@ -28,7 +28,7 @@
 #include "detail/run_loop.hpp"
 #include "detail/sequence.hpp"
 #include "detail/start_detached.hpp"
-#include "detail/start_on.hpp"
+#include "detail/starts_on.hpp"
 #include "detail/stop_token.hpp"
 #include "detail/sync_wait.hpp"
 #include "detail/then.hpp"
