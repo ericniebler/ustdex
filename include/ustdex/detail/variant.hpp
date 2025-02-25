@@ -162,6 +162,8 @@ public:
   }
 };
 
+namespace detail
+{
 #if USTDEX_MSVC()
 template <class... Ts>
 struct _mk_variant_
@@ -176,6 +178,10 @@ using _variant = typename _mk_variant_<Ts...>::type;
 template <class... Ts>
 using _variant = _variant_impl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 #endif
+} // namespace detail
+
+template <class... Ts>
+using _variant = detail::_variant<Ts...>;
 
 template <class... Ts>
 using _decayed_variant = _variant<USTDEX_DECAY(Ts)...>;
