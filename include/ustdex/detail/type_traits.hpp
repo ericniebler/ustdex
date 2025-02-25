@@ -105,7 +105,7 @@ template <template <class...> class Fn, class... Ts>
 inline constexpr bool _is_specialization_of<Fn<Ts...>, Fn> = true;
 
 template <bool Init, bool... Bs>
-inline constexpr bool _fold_expr_and = (Init and ... and Bs);
+inline constexpr bool _fold_expr_and = (Init && ... && Bs);
 
 #if defined(__CUDA_ARCH__)
 template <class Fn, class... As>
