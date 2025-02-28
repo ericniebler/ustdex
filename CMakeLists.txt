@@ -26,8 +26,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 # Ensure that we link with the threading library
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED
-  BUILD_EXPORT_SET stdexec-exports
-  INSTALL_EXPORT_SET stdexec-exports
+  BUILD_EXPORT_SET ustdex-exports
+  INSTALL_EXPORT_SET ustdex-exports
 )
 
 option(USTDEX_ENABLE_CUDA "Enable ustdex CUDA support" OFF)
