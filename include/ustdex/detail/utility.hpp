@@ -185,7 +185,7 @@ constexpr std::size_t _next(long)
 
 // Prior to Clang 12, we can't use the _slot trick to erase long type names
 // because of a compiler bug. We'll just use the original type name in that case.
-#if USTDEX_CLANG() && (_clang__ < 12)
+#if USTDEX_CLANG() && (__clang__ < 12)
 
 template <class Type>
 using _zip = Type;
