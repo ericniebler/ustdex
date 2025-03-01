@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 #if !defined(USTDEX_ASYNC_PROLOGUE_INCLUDED)
-#  _error epilogue.cuh included without a prior inclusion of prologue.cuh
+#  error epilogue.cuh included without a prior inclusion of prologue.cuh
 #endif
 
 #undef USTDEX_ASYNC_PROLOGUE_INCLUDED
