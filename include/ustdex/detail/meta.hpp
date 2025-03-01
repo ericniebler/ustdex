@@ -164,9 +164,9 @@ using _m_if USTDEX_ATTR_NODEBUG_ALIAS = _m_call<_m_if_<Cond>, Then, Else...>;
 #if defined(__cpp_pack_indexing)
 
 USTDEX_PRAGMA_PUSH()
-USTDEX_PRAGMA_IGNORE_CLANG("-Wc++26-extensions")
+USTDEX_PRAGMA_IGNORE_GNU("-Wc++26-extensions")
 
-template <size_t _Ip, class... _Ts>
+template <std::size_t _Ip, class... _Ts>
 using _m_index = _Ts...[_Ip];
 
 USTDEX_PRAGMA_POP()

@@ -16,7 +16,7 @@
  */
 
 #if defined(USTDEX_ASYNC_PROLOGUE_INCLUDED)
-#  _error multiple inclusion of prologue.cuh
+#  error multiple inclusion of prologue.cuh
 #endif
 
 #define USTDEX_ASYNC_PROLOGUE_INCLUDED

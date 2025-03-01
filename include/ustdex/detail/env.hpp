@@ -111,27 +111,27 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT env<Env0, Env1>
   USTDEX_NO_UNIQUE_ADDRESS Env1 _env1_;
 
   template <class Query>
-  USTDEX_TRIVIAL_API constexpr decltype(auto) _get_1st(Query) const noexcept
+  USTDEX_TRIVIAL_API static constexpr decltype(auto) _get_1st(const env& _self) noexcept
   {
     if constexpr (_queryable_with<Env0, Query>)
     {
-      return (_env0_);
+      return (_self._env0_);
     }
     else
     {
-      return (_env1_);
+      return (_self._env1_);
     }
   }
 
-  template <class Query, class Env = env>
-  using _1st_env_t = decltype(declval<const Env&>()._get_1st(Query{}));
+  template <class Query>
+  using _1st_env_t = decltype(env::_get_1st<Query>(declval<const env&>()));
 
   template <class Query>
   USTDEX_TRIVIAL_API constexpr auto query(Query _query) const
     noexcept(_nothrow_queryable_with<_1st_env_t<Query>, Query>) //
     -> _query_result_t<_1st_env_t<Query>, Query>
   {
-    return _get_1st(_query).query(_query);
+    return env::_get_1st<Query>(*this).query(_query);
   }
 
   env& operator=(const env&) = delete;

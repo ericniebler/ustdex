@@ -1,0 +1,16 @@
+---
+If:
+  PathMatch: ".*/ustdex/detail/epilogue[.]hpp"
+
+CompileFlags:
+  Add:
+  - -include ustdex/detail/config.hpp
+  - -include ustdex/detail/prologue.hpp
+
+---
+If:
+  PathMatch: ".*/ustdex/detail/prologue[.]hpp"
+
+CompileFlags:
+  Add:
+  - -include ustdex/detail/config.hpp
