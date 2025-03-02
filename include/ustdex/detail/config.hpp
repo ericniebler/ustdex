@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License Version 2.0 with LLVM Exceptions
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 #pragma once
+
+// IWYU pragma: always_keep
 
 #include <cassert>
 #include <type_traits> // IWYU pragma: keep
