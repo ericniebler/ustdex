@@ -16,6 +16,8 @@
  */
 #pragma once
 
+// IWYU pragma: always_keep
+
 #include <cassert>
 #include <type_traits> // IWYU pragma: keep
 
