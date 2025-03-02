@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+add_executable(_clangd_helper_file detail/_clangd_helper_file.cpp)
+target_link_libraries(_clangd_helper_file PUBLIC ustdex)
+
 add_executable(scratch scratch.cpp)
 target_link_libraries(scratch PUBLIC ustdex)
 

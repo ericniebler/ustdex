@@ -49,7 +49,7 @@
 #  define USTDEX_EDG() 1
 #endif
 
-#if defined(_clang__)
+#if defined(__clang__)
 #  define USTDEX_CLANG() 1
 #  if defined(_MSC_VER)
 #    define USTDEX_CLANG_CL() 1
