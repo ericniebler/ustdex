@@ -33,13 +33,15 @@ namespace ex = ustdex;
 namespace
 {
 
-TEST_CASE("continues_on returns a sender", "[adaptors][continues_on]") {
+TEST_CASE("continues_on returns a sender", "[adaptors][continues_on]")
+{
   auto snd = ex::continues_on(ex::just(13), inline_scheduler{});
   static_assert(ex::sender<decltype(snd)>);
   (void) snd;
 }
 
-TEST_CASE("continues_on with environment returns a sender", "[adaptors][continues_on]") {
+TEST_CASE("continues_on with environment returns a sender", "[adaptors][continues_on]")
+{
   auto snd = ex::continues_on(ex::just(13), inline_scheduler{});
   static_assert(ex::sender_in<decltype(snd), ex::env<>>);
   (void) snd;
@@ -58,7 +60,7 @@ TEST_CASE("continues_on can be piped", "[adaptors][continues_on]")
   // Just continues_on a value to the impulse scheduler
   bool called{false};
   auto sched = impulse_scheduler{};
-  auto snd   = ex::just(13)         //
+  auto snd   = ex::just(13)          //
            | ex::continues_on(sched) //
            | ex::then([&](int val) {
                called = true;
