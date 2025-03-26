@@ -43,15 +43,16 @@ inline constexpr struct start_on_t
 {
 private:
   template <class Rcvr, class Sch, class CvSndr>
-  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
+  struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t : _rcvr_with_env_t<Rcvr, _sch_env_t<Sch>>
   {
     using operation_state_concept = operation_state_t;
     using _env_t                  = env_of_t<Rcvr>;
+    using _rcvr_with_sch_t        = _rcvr_with_env_t<Rcvr, _sch_env_t<Sch>>;
 
     USTDEX_API _opstate_t(Sch _sch, Rcvr _rcvr, CvSndr&& _sndr)
-        : _env_rcvr_{static_cast<Rcvr&&>(_rcvr), {_sch}}
-        , _opstate1_{connect(schedule(_env_rcvr_._env_._sch_), _rcvr_ref{*this})}
-        , _opstate2_{connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref{_env_rcvr_})}
+        : _rcvr_with_sch_t{static_cast<Rcvr&&>(_rcvr), {_sch}}
+        , _opstate1_{connect(schedule(this->_env_._sch_), _rcvr_ref<_opstate_t>{*this})}
+        , _opstate2_{connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref<_rcvr_with_sch_t>{*this})}
     {}
 
     USTDEX_IMMOVABLE(_opstate_t);
@@ -66,25 +67,13 @@ private:
       ustdex::start(_opstate2_);
     }
 
-    template <class Error>
-    USTDEX_API void set_error(Error&& _error) noexcept
-    {
-      ustdex::set_error(static_cast<Rcvr&&>(_env_rcvr_._rcvr()), static_cast<Error&&>(_error));
-    }
-
-    USTDEX_API void set_stopped() noexcept
-    {
-      ustdex::set_stopped(static_cast<Rcvr&&>(_env_rcvr_._rcvr()));
-    }
-
     USTDEX_API auto get_env() const noexcept -> _env_t
     {
-      return ustdex::get_env(_env_rcvr_._rcvr());
+      return ustdex::get_env(this->base());
     }
 
-    _rcvr_with_env_t<Rcvr, _sch_env_t<Sch>> _env_rcvr_;
-    connect_result_t<schedule_result_t<Sch>, _rcvr_ref<_opstate_t, _env_t>> _opstate1_;
-    connect_result_t<CvSndr, _rcvr_ref<_rcvr_with_env_t<Rcvr, _sch_env_t<Sch>>>> _opstate2_;
+    connect_result_t<schedule_result_t<Sch&>, _rcvr_ref<_opstate_t, _env_t>> _opstate1_;
+    connect_result_t<CvSndr, _rcvr_ref<_rcvr_with_sch_t>> _opstate2_;
   };
 
   template <class Sch, class Sndr>
