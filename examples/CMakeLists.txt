@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+#find_package(asio CONFIG REQUIRED)
+
 add_executable(_clangd_helper_file detail/_clangd_helper_file.cpp)
 target_link_libraries(_clangd_helper_file PUBLIC ustdex)
 
 add_executable(scratch scratch.cpp)
 target_link_libraries(scratch PUBLIC ustdex)
+#target_link_libraries(scratch PUBLIC ustdex asio::asio)
 
 if (USTDEX_ENABLE_CUDA)
   add_executable(cuscratch scratch.cu)

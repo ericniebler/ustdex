@@ -38,16 +38,16 @@ struct _lazy
   template <class... Ts>
   USTDEX_API Ty& construct(Ts&&... _ts) noexcept(_nothrow_constructible<Ty, Ts...>)
   {
-    Ty* _value_ = ::new (static_cast<void*>(std::addressof(_value_))) Ty{static_cast<Ts&&>(_ts)...};
-    return *std::launder(_value_);
+    Ty* rst = ::new (static_cast<void*>(std::addressof(_value_))) Ty{static_cast<Ts&&>(_ts)...};
+    return *std::launder(rst);
   }
 
   template <class Fn, class... Ts>
   USTDEX_API Ty& construct_from(Fn&& _fn, Ts&&... _ts) noexcept(_nothrow_callable<Fn, Ts...>)
   {
-    Ty* _value_ = ::new (static_cast<void*>(std::addressof(_value_)))
+    Ty* rst = ::new (static_cast<void*>(std::addressof(_value_)))
       Ty{static_cast<Fn&&>(_fn)(static_cast<Ts&&>(_ts)...)};
-    return *std::launder(_value_);
+    return *std::launder(rst);
   }
 
   USTDEX_API void destroy() noexcept

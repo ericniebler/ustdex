@@ -151,7 +151,7 @@ private:
 
     USTDEX_API auto get_env() const noexcept -> _env_t
     {
-      return ustdex::get_env(_rcvr_._rcvr);
+      return ustdex::get_env(_rcvr_._rcvr_);
     }
 
     _rcvr_t<Rcvr, _result_t> _rcvr_;

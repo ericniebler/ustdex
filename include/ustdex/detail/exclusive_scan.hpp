@@ -24,7 +24,7 @@
 
 namespace ustdex
 {
-#if __cplusplus >= 202002L
+#if __cplusplus >= 202302L
 // exclusive_scan is constexpr in C++20
 using std::exclusive_scan;
 #else

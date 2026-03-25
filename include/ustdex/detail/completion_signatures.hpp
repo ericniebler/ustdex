@@ -169,15 +169,15 @@ USTDEX_API constexpr auto completion_signatures<Sigs...>::select(Tag) const noex
 {
   if constexpr (Tag() == set_value)
   {
-    return _partitioned::template _value_types<_m_quote_f<set_value_t>::call, completion_signatures>();
+      return typename _partitioned::template _value_types<_m_quote_f<set_value_t>::call, completion_signatures>();
   }
   else if constexpr (Tag() == set_error)
   {
-    return _partitioned::template _error_types<completion_signatures, _m_quote_f<set_error_t>::call>();
+    return typename _partitioned::template _error_types<completion_signatures, _m_quote_f<set_error_t>::call>();
   }
   else
   {
-    return _partitioned::template _stopped_types<completion_signatures>();
+    return typename _partitioned::template _stopped_types<completion_signatures>();
   }
 }
 

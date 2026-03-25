@@ -130,6 +130,27 @@ public:
       using _id            = _schedule_task;
       using sender_concept = sender_t;
 
+      struct _env
+      {
+        run_loop* _loop_;
+
+        template <class Tag>
+        USTDEX_API auto query(get_completion_scheduler_t<Tag>) const noexcept -> _scheduler
+        {
+          return _loop_->get_scheduler();
+        }
+
+        USTDEX_API auto query(get_scheduler_t) const noexcept -> _scheduler
+        {
+          return _loop_->get_scheduler();
+        }
+      };
+
+      USTDEX_API auto get_env() const noexcept -> _env
+      {
+        return _env{_loop_};
+      }
+
       template <class Rcvr>
       USTDEX_API auto connect(Rcvr _rcvr) const noexcept -> _operation<Rcvr>
       {
@@ -144,22 +165,6 @@ public:
 
     private:
       friend _scheduler;
-
-      struct _env
-      {
-        run_loop* _loop_;
-
-        template <class Tag>
-        USTDEX_API auto query(get_completion_scheduler_t<Tag>) const noexcept -> _scheduler
-        {
-          return _loop_->get_scheduler();
-        }
-      };
-
-      USTDEX_API auto get_env() const noexcept -> _env
-      {
-        return _env{_loop_};
-      }
 
       USTDEX_API explicit _schedule_task(run_loop* _loop) noexcept
           : _loop_(_loop)

@@ -56,6 +56,10 @@ struct _rcvr_ref
 
 template <class _Rcvr>
 _rcvr_ref(_Rcvr&) -> _rcvr_ref<_Rcvr>;
+
+template <class _Rcvr>
+_rcvr_ref(_rcvr_ref<_Rcvr>&) -> _rcvr_ref<_rcvr_ref<_Rcvr>>;
+
 } // namespace ustdex
 
 #include "epilogue.hpp"

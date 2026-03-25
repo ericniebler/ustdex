@@ -47,10 +47,10 @@ struct _rcvr_with_env_t : Rcvr
     using _1st_env_t = decltype(_env_t::_get_1st<Query>(declval<const _env_t&>()));
 
     template <class Query>
-    USTDEX_TRIVIAL_API constexpr auto query(Query) const noexcept(_nothrow_queryable_with<_1st_env_t<Query>, Query>) //
+    USTDEX_TRIVIAL_API constexpr auto query(Query _query) const noexcept(_nothrow_queryable_with<_1st_env_t<Query>, Query>) //
       -> _query_result_t<_1st_env_t<Query>, Query>
     {
-      return _env_t::_get_1st<Query>(*this);
+      return _env_t::_get_1st<Query>(*this).query(_query);
     }
 
     _rcvr_with_env_t const* _rcvr_;

@@ -122,9 +122,9 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT start_on_t::_sndr_t
     return _opstate_t<Rcvr, Sch, const Sndr&>{_sch_, static_cast<Rcvr&&>(_rcvr), _sndr_};
   }
 
-  USTDEX_API env_of_t<Sndr> get_env() const noexcept
+  USTDEX_API env<env_of_t<Sndr>, prop<get_scheduler_t, Sch>> get_env() const noexcept
   {
-    return ustdex::get_env(_sndr_);
+    return env{ ustdex::get_env(_sndr_), prop(get_scheduler, _sch_) };
   }
 };
 

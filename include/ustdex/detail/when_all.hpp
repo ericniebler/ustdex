@@ -362,7 +362,7 @@ template <class Child, class... Env>
 USTDEX_API constexpr auto when_all_t::_child_completions()
 {
   using _env_t = prop<get_stop_token_t, inplace_stop_token>;
-  USTDEX_LET_COMPLETIONS(auto(_completions) = get_completion_signatures<Child, env<_env_t, FWD_ENV_T<Env>>...>())
+  USTDEX_LET_COMPLETIONS(auto(_completions) = get_completion_signatures<Child, env<_env_t, FWD_ENV_T<Env>...>>())
   {
     if constexpr (_completions.count(set_value) > 1)
     {
@@ -384,7 +384,12 @@ template <class... Completions>
 USTDEX_API constexpr auto when_all_t::_merge_completions(Completions... _cs)
 {
   // Use USTDEX_LET_COMPLETIONS to ensure all completions are valid:
-  USTDEX_LET_COMPLETIONS(auto(_tmp) = (completion_signatures{}, ..., _cs)) // NB: uses overloaded comma operator
+  if constexpr (auto _tmp = (completion_signatures{}, ..., _cs);
+                !::ustdex::_valid_completion_signatures<decltype(_tmp)>)
+  {
+    return _pair{_tmp, _nil{}};
+  }
+  else                                                                     // NB: uses overloaded comma operator
   {
     std::ignore                 = _tmp;                                    // silence unused variable warning
     auto _non_value_completions = concat_completion_signatures(
@@ -400,7 +405,7 @@ USTDEX_API constexpr auto when_all_t::_merge_completions(Completions... _cs)
     }
     else
     {
-      using _m_list_size_fn                                    = _m_bind_front<_m_indirect_q<_m_apply>, _m_size>;
+      using _m_list_size_fn                                    = _m_bind_front<_m_quote<_m_apply>, _m_size>;
       std::array<std::size_t, sizeof...(Completions)> _offsets = {
         _value_types<Completions, _m_list, _m_list_size_fn::call>::value...};
       (void) ustdex::exclusive_scan(_offsets.begin(), _offsets.end(), _offsets.begin(), 0ul);

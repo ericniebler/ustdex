@@ -211,6 +211,8 @@ struct _cond_t
 template <class Sndr, class Pred, class Then, class Else>
 struct USTDEX_TYPE_VISIBILITY_DEFAULT _cond_t::_sndr_t
 {
+  using sender_concept = sender_t;
+
   using _data_t = _cond_t::_data<Pred, Then, Else>;
   _cond_t _tag_;
   _data_t _data_;
@@ -236,7 +238,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _cond_t::_sndr_t
   template <class Rcvr>
   USTDEX_API auto connect(Rcvr _rcvr) const& -> _opstate<Sndr const&, Rcvr, Pred, Then, Else>
   {
-    return {_sndr_, static_cast<Rcvr&&>(_rcvr), static_cast<_data_t&&>(_data_)};
+    return {_sndr_, static_cast<Rcvr&&>(_rcvr), _data_};
   }
 
   USTDEX_API env_of_t<Sndr> get_env() const noexcept

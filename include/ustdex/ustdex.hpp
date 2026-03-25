@@ -34,4 +34,9 @@
 #include "detail/then.hpp"           // IWYU pragma: export
 #include "detail/thread_context.hpp" // IWYU pragma: export
 #include "detail/when_all.hpp"       // IWYU pragma: export
+#include "detail/when_any.hpp"      // IWYU pragma: export
 #include "detail/write_env.hpp"      // IWYU pragma: export
+#include "detail/stop_when.hpp"      // IWYU pragma: export
+#include "detail/stop_with.hpp"      // IWYU pragma: export
+#include "detail/static_thread_pool.hpp"
+#include "detail/basic_sender.hpp"

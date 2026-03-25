@@ -73,13 +73,13 @@ target_compile_options(ustdex INTERFACE
                        $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:__cplusplus /Zc:hiddenFriend /Zc:preprocessor /Zc:externConstexpr>)
 
 # download CPM.cmake
-file(
-  DOWNLOAD
-  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.39.0/CPM.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
-  EXPECTED_HASH SHA256=66639bcac9dd2907b2918de466783554c1334446b9874e90d38e3778d404c2ef
-)
-include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+#file(
+#  DOWNLOAD
+#  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.39.0/CPM.cmake
+#  ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+#  EXPECTED_HASH SHA256=66639bcac9dd2907b2918de466783554c1334446b9874e90d38e3778d404c2ef
+#)
+#include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 
 if (USTDEX_ENABLE_CUDA)
   target_compile_features(ustdex INTERFACE cuda_std_17)

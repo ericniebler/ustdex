@@ -1,36 +1,59 @@
 {
-    "version": 3,
-    "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 21,
-      "patch": 3
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 3
+  },
+  "configurePresets": [
+    {
+      "name": "Debug",
+      "binaryDir": "${sourceDir}/build/Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG}/scripts/buildsystems/vcpkg.cmake"
+      }
     },
-    "configurePresets": [
-      {
-        "name": "Debug",
-        "binaryDir": "${sourceDir}/build/Debug",
-        "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Debug",
-          "CMAKE_CXX_STANDARD": "17"
-        }
+    {
+      "name": "Release",
+      "binaryDir": "${sourceDir}/build/Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "clang-x64-debug",
+      "displayName": "Clang x64 Debug",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
       },
-      {
-        "name": "Release",
-        "binaryDir": "${sourceDir}/build/Release",
-        "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Release",
-          "CMAKE_CXX_STANDARD": "17"
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang.exe",
+        "CMAKE_CXX_COMPILER": "clang++.exe",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-clang-x64"
         }
       }
-    ],
-    "buildPresets": [
-        {
-          "name": "Debug",
-          "configurePreset": "Debug"
-        },
-        {
-            "name": "Release",
-            "configurePreset": "Release"
-        }
-    ]
-  }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release"
+    },
+    
+  ]
+}

@@ -366,3 +366,6 @@ using _remove_reference_t = __remove_reference_t(Ty);
 namespace ustdex
 {
 }
+
+template <typename... Args>
+struct _whatis;

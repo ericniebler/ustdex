@@ -98,10 +98,11 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT read_env_t::_sndr_t
   {
     if constexpr (!_callable<Query, Env>)
     {
-      return invalid_completion_signature<WHERE(IN_ALGORITHM, read_env_t),
+      /*return invalid_completion_signature<WHERE(IN_ALGORITHM, read_env_t),
                                           WHAT(THE_CURRENT_ENVIRONMENT_LACKS_THIS_QUERY),
                                           WITH_QUERY(Query),
-                                          WITH_ENVIRONMENT(Env)>();
+                                          WITH_ENVIRONMENT(Env)>();*/
+      return _dependent_sender<Self>();
     }
     else if constexpr (std::is_void_v<_call_result_t<Query, Env>>)
     {

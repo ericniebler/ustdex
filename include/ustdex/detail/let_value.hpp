@@ -102,7 +102,7 @@ private:
     using _opstate_variant_t = _opstate2_t<CvSndr, Fn, Rcvr>;
 
     USTDEX_API _opstate_t(CvSndr&& _sndr, Fn _fn, Rcvr _rcvr) noexcept(
-      _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _opstate_t*>)
+      _nothrow_decay_copyable<Fn, Rcvr> && _nothrow_connectable<CvSndr, _rcvr_ref<_opstate_t>>)
         : _rcvr_(static_cast<Rcvr&&>(_rcvr))
         , _fn_(static_cast<Fn&&>(_fn))
         , _opstate1_(ustdex::connect(static_cast<CvSndr&&>(_sndr), _rcvr_ref{*this}))
@@ -230,19 +230,21 @@ private:
     template <class Self, class... Env>
     USTDEX_API static constexpr auto get_completion_signatures()
     {
+      using SndrEnv = env_of_t<Sndr>;
+      using Env_t = env<SndrEnv, Env...>;
       USTDEX_LET_COMPLETIONS(auto(_child_completions) = get_child_completion_signatures<Self, Sndr, Env...>())
       {
         if constexpr (Disposition == _disposition_t::_value)
         {
-          return transform_completion_signatures(_child_completions, _transform_args_fn<Fn>{});
+          return transform_completion_signatures(_child_completions, _transform_args_fn<Fn, Env_t>{});
         }
         else if constexpr (Disposition == _disposition_t::_error)
         {
-          return transform_completion_signatures(_child_completions, {}, _transform_args_fn<Fn>{});
+          return transform_completion_signatures(_child_completions, {}, _transform_args_fn<Fn, Env_t>{});
         }
         else
         {
-          return transform_completion_signatures(_child_completions, {}, {}, _transform_args_fn<Fn>{});
+          return transform_completion_signatures(_child_completions, {}, {}, _transform_args_fn<Fn, Env_t>{});
         }
       }
     }

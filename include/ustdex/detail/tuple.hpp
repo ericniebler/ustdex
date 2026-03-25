@@ -47,6 +47,9 @@ struct _tupl;
 template <std::size_t... Idx, class... Ts>
 struct _tupl<std::index_sequence<Idx...>, Ts...> : _box<Idx, Ts>...
 {
+  template<std::size_t idx_at>
+  using at = _m_index<idx_at, Ts...>;
+
   template <class Fn, class Self, class... Us>
   USTDEX_TRIVIAL_API static auto apply(Fn&& _fn, Self&& _self, Us&&... _us) //
     noexcept(_nothrow_callable<Fn, Us..., _copy_cvref_t<Self, Ts>...>)
@@ -75,24 +78,21 @@ using _apply_result_t = decltype(declval<Tupl>().apply(declval<Fn>(), declval<Tu
 
 namespace detail
 {
-#if USTDEX_MSVC()
-template <class... Ts>
-struct _mk_tuple_
-{
-  using _indices_t = std::make_index_sequence<sizeof...(Ts)>;
-  using type       = _tupl<_indices_t, Ts...>;
-};
-
-template <class... Ts>
-using _tuple = typename _mk_tuple_<Ts...>::type;
-#else
-template <class... Ts>
-using _tuple = _tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
-#endif
+    template <class... Ts>
+    using _tuple = _tupl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 } // namespace detail
 
 template <class... Ts>
 using _tuple = detail::_tuple<Ts...>;
+
+template <class... _Ts>
+using _tupl_for = _tuple<_Ts...>;
+
+template <typename... Ts>
+_tuple<Ts...> _mk_tuple(Ts... ts)
+{
+    return _tuple<Ts...>{std::move(ts)...};
+}
 
 template <class... Ts>
 using _decayed_tuple = _tuple<USTDEX_DECAY(Ts)...>;
