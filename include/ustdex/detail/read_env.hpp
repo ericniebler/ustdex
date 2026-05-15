@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_READ_ENV
-#define USTDEX_ASYNC_DETAIL_READ_ENV
+#ifndef USTDEX_DETAIL_READ_ENV
+#define USTDEX_DETAIL_READ_ENV
 
 #include "completion_signatures.hpp"
 #include "config.hpp"
 #include "cpos.hpp"
 #include "env.hpp"
 #include "exception.hpp"
-#include "queries.hpp"
-#include "utility.hpp"
 
 #include "prologue.hpp"
 
@@ -62,15 +60,14 @@ private:
       }
       else
       {
-        USTDEX_TRY( //
-          ({        //
-            ustdex::set_value(static_cast<Rcvr&&>(_rcvr_), Query()(ustdex::get_env(_rcvr_)));
-          }),
-          USTDEX_CATCH(...) //
-          ({                //
-            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          })                //
-        )
+        USTDEX_TRY
+        {
+          ustdex::set_value(static_cast<Rcvr&&>(_rcvr_), Query()(ustdex::get_env(_rcvr_)));
+        }
+        USTDEX_CATCH_ALL
+        {
+          ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+        }
       }
     }
   };
@@ -79,9 +76,9 @@ private:
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
 public:
-  /// @brief Returns a sender that, when connected to a receiver and started,
-  /// invokes the query with the receiver's environment and forwards the result
-  /// to the receiver's `set_value` member.
+  //! \brief Returns a sender that, when connected to a receiver and started,
+  //! invokes the query with the receiver's environment and forwards the result
+  //! to the receiver's `set_value` member.
   template <class Query>
   USTDEX_TRIVIAL_API constexpr _sndr_t<Query> operator()(Query) const noexcept;
 };

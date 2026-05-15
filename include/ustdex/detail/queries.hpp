@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_QUERIES
-#define USTDEX_ASYNC_DETAIL_QUERIES
+#ifndef USTDEX_DETAIL_QUERIES
+#define USTDEX_DETAIL_QUERIES
 
 #include "meta.hpp"
 #include "stop_token.hpp"
@@ -30,10 +30,7 @@
 namespace ustdex
 {
 template <class Ty, class Query>
-auto _query_result_() -> decltype(declval<Ty>().query(Query()));
-
-template <class Ty, class Query>
-using _query_result_t = decltype(_query_result_<Ty, Query>());
+using _query_result_t = decltype(declval<const Ty&>().query(declval<Query>()));
 
 template <class Ty, class Query>
 inline constexpr bool _queryable_with = _m_callable_q<_query_result_t, Ty, Query>;
@@ -43,7 +40,7 @@ template <class Ty, class Query>
 inline constexpr bool _nothrow_queryable_with = true;
 #else
 template <class Ty, class Query>
-using _nothrow_queryable_ = std::enable_if_t<noexcept(declval<Ty>().query(Query()))>;
+using _nothrow_queryable_ = std::enable_if_t<noexcept(declval<const Ty&>().query(declval<Query>()))>;
 
 template <class Ty, class Query>
 inline constexpr bool _nothrow_queryable_with = _m_callable_q<_nothrow_queryable_, Ty, Query>;
@@ -52,8 +49,7 @@ inline constexpr bool _nothrow_queryable_with = _m_callable_q<_nothrow_queryable
 inline constexpr struct get_allocator_t
 {
   template <class Env>
-  USTDEX_API auto operator()(const Env& _env) const noexcept //
-    -> decltype(_env.query(*this))
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
   {
     static_assert(noexcept(_env.query(*this)));
     return _env.query(*this);
@@ -68,8 +64,7 @@ inline constexpr struct get_allocator_t
 inline constexpr struct get_stop_token_t
 {
   template <class Env>
-  USTDEX_API auto operator()(const Env& _env) const noexcept //
-    -> decltype(_env.query(*this))
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
   {
     static_assert(noexcept(_env.query(*this)));
     return _env.query(*this);
@@ -88,8 +83,7 @@ template <class Tag>
 struct get_completion_scheduler_t
 {
   template <class Env>
-  USTDEX_API auto operator()(const Env& _env) const noexcept //
-    -> decltype(_env.query(*this))
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
   {
     static_assert(noexcept(_env.query(*this)));
     return _env.query(*this);
@@ -102,19 +96,27 @@ inline constexpr get_completion_scheduler_t<Tag> get_completion_scheduler{};
 inline constexpr struct get_scheduler_t
 {
   template <class Env>
-  USTDEX_API auto operator()(const Env& _env) const noexcept //
-    -> decltype(_env.query(*this))
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
   {
     static_assert(noexcept(_env.query(*this)));
     return _env.query(*this);
   }
 } get_scheduler{};
 
+inline constexpr struct get_start_scheduler_t
+{
+  template <class Env>
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
+  {
+    static_assert(noexcept(_env.query(*this)));
+    return _env.query(*this);
+  }
+} get_start_scheduler{};
+
 inline constexpr struct get_delegation_scheduler_t
 {
   template <class Env>
-  USTDEX_API auto operator()(const Env& _env) const noexcept //
-    -> decltype(_env.query(*this))
+  USTDEX_API auto operator()(const Env& _env) const noexcept -> decltype(_env.query(*this))
   {
     static_assert(noexcept(_env.query(*this)));
     return _env.query(*this);
@@ -131,8 +133,7 @@ enum class forward_progress_guarantee
 inline constexpr struct get_forward_progress_guarantee_t
 {
   template <class Sch>
-  USTDEX_API auto operator()(const Sch& _sch) const noexcept //
-    -> decltype(ustdex::_decay_copy(_sch.query(*this)))
+  USTDEX_API auto operator()(const Sch& _sch) const noexcept -> decltype(ustdex::_decay_copy(_sch.query(*this)))
   {
     static_assert(noexcept(_sch.query(*this)));
     return _sch.query(*this);
@@ -147,7 +148,7 @@ inline constexpr struct get_forward_progress_guarantee_t
 inline constexpr struct get_domain_t
 {
   template <class Sch>
-  USTDEX_API constexpr auto operator()(const Sch& _sch) const noexcept //
+  USTDEX_API constexpr auto operator()(const Sch& _sch) const noexcept
     -> decltype(ustdex::_decay_copy(_sch.query(*this)))
   {
     return {};

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_WHEN_ALL
-#define USTDEX_ASYNC_DETAIL_WHEN_ALL
+#ifndef USTDEX_DETAIL_WHEN_ALL
+#define USTDEX_DETAIL_WHEN_ALL
 
 #include "completion_signatures.hpp"
 #include "concepts.hpp"
@@ -61,10 +61,10 @@ private:
   template <class... Completions>
   USTDEX_API static constexpr auto _merge_completions(Completions...);
 
-  /// The receivers connected to the when_all's sub-operations expose this as
-  /// their environment. Its `get_stop_token` query returns the token from
-  /// when_all's stop source. All other queries are forwarded to the outer
-  /// receiver's environment.
+  //! The receivers connected to the when_all's sub-operations expose this as
+  //! their environment. Its `get_stop_token` query returns the token from
+  //! when_all's stop source. All other queries are forwarded to the outer
+  //! receiver's environment.
   template <class StateZip>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _env_t
   {
@@ -95,7 +95,7 @@ private:
     _state_t& _state_;
 
     template <class... Ts>
-    USTDEX_TRIVIAL_API void set_value(Ts&&... _ts) noexcept
+    USTDEX_API void set_value(Ts&&... _ts) noexcept
     {
       constexpr std::index_sequence_for<Ts...>* idx = nullptr;
       _state_.template _set_value<Index>(idx, static_cast<Ts&&>(_ts)...);
@@ -103,7 +103,7 @@ private:
     }
 
     template <class Error>
-    USTDEX_TRIVIAL_API void set_error(Error&& _error) noexcept
+    USTDEX_API void set_error(Error&& _error) noexcept
     {
       _state_._set_error(static_cast<Error&&>(_error));
       _state_._arrive();
@@ -128,11 +128,11 @@ private:
     _stopped
   };
 
-  /// @brief The data stored in the operation state and referred to
-  /// by the receiver.
-  /// @tparam Rcvr The receiver connected to the when_all sender.
-  /// @tparam CvFn A metafunction to apply cv- and ref-qualifiers to the senders
-  /// @tparam Sndrs A tuple of the when_all sender's child senders.
+  //! \brief The data stored in the operation state and referred to
+  //! by the receiver.
+  //! \tparam Rcvr The receiver connected to the when_all sender.
+  //! \tparam CvFn A metafunction to apply cv- and ref-qualifiers to the senders
+  //! \tparam Sndrs A tuple of the when_all sender's child senders.
   template <class Rcvr, class CvFn, class Sndrs>
   struct _state_t;
 
@@ -166,7 +166,7 @@ private:
     template <std::size_t Index, std::size_t... Jdx, class... Ts>
     USTDEX_API void _set_value(std::index_sequence<Jdx...>*, [[maybe_unused]] Ts&&... _ts) noexcept
     {
-      if constexpr (!std::is_same_v<_values_t, _nil>)
+      if constexpr (!USTDEX_IS_SAME(_values_t, _nil))
       {
         constexpr std::size_t Offset = _completions_and_offsets.second[Index];
         if constexpr (_nothrow_decay_copyable<Ts...>)
@@ -175,15 +175,14 @@ private:
         }
         else
         {
-          USTDEX_TRY( //
-            ({        //
-              (_values_.template _emplace<Jdx + Offset>(static_cast<Ts&&>(_ts)), ...);
-            }),
-            USTDEX_CATCH(...) //
-            ({                //
-              _set_error(::std::current_exception());
-            })                //
-          )
+          USTDEX_TRY
+          {
+            (_values_.template _emplace<Jdx + Offset>(static_cast<Ts&&>(_ts)), ...);
+          }
+          USTDEX_CATCH_ALL
+          {
+            _set_error(::std::current_exception());
+          }
         }
       }
     }
@@ -203,15 +202,14 @@ private:
         }
         else
         {
-          USTDEX_TRY( //
-            ({        //
-              _errors_.template _emplace<USTDEX_DECAY(Error)>(static_cast<Error&&>(_err));
-            }),
-            USTDEX_CATCH(...) //
-            ({                //
-              _errors_.template _emplace<::std::exception_ptr>(::std::current_exception());
-            })                //
-          )
+          USTDEX_TRY
+          {
+            _errors_.template _emplace<USTDEX_DECAY(Error)>(static_cast<Error&&>(_err));
+          }
+          USTDEX_CATCH_ALL
+          {
+            _errors_.template _emplace<::std::exception_ptr>(::std::current_exception());
+          }
         }
       }
     }
@@ -244,7 +242,7 @@ private:
       switch (_state_.load(std::memory_order_relaxed))
       {
         case _started:
-          if constexpr (!std::is_same_v<_values_t, _nil>)
+          if constexpr (!USTDEX_IS_SAME(_values_t, _nil))
           {
             // All child operations completed successfully:
             _values_.apply(ustdex::set_value, static_cast<_values_t&&>(_values_), static_cast<Rcvr&&>(_rcvr_));
@@ -272,7 +270,7 @@ private:
     _lazy<_stop_callback_t> _on_stop_;
   };
 
-  /// The operation state for when_all
+  //! The operation state for when_all
   template <class, class, class>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t;
 
@@ -296,7 +294,7 @@ private:
         // completions. All child senders can be connected to receivers
         // of the same type, saving template instantiations.
         [[maybe_unused]] constexpr bool _no_values =
-          std::is_same_v<decltype(_state_t::_completions_and_offsets.second), _nil>;
+          USTDEX_IS_SAME(decltype(_state_t::_completions_and_offsets.second), _nil);
         // The offsets are used to determine which elements in the values
         // tuple each receiver is responsible for setting.
         return _tupl{
@@ -310,8 +308,8 @@ private:
     _state_t _state_;
     _sub_opstates_t _sub_ops_;
 
-    /// Initialize the data member, connect all the sub-operations and
-    /// save the resulting operation states in _sub_ops_.
+    //! Initialize the data member, connect all the sub-operations and
+    //! save the resulting operation states in _sub_ops_.
     USTDEX_API _opstate_t(_sndrs_t&& _sndrs_, Rcvr _rcvr)
         : _state_{static_cast<Rcvr&&>(_rcvr), sizeof...(Sndrs)}
         , _sub_ops_{_sndrs_.apply(_connect_subs_fn(), static_cast<_sndrs_t&&>(_sndrs_), _state_)}
@@ -319,7 +317,7 @@ private:
 
     USTDEX_IMMOVABLE(_opstate_t);
 
-    /// Start all the sub-operations.
+    //! Start all the sub-operations.
     USTDEX_API void start() & noexcept
     {
       // register stop callback:

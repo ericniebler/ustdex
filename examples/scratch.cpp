@@ -71,7 +71,7 @@ int main()
             });
   sync_wait(s3);
 
-  auto [sch2]   = sync_wait(read_env(get_scheduler)).value();
+  auto [sch2]   = sync_wait(read_env(get_start_scheduler)).value();
 
   auto [i1, i2] = sync_wait(when_all(just(42), just(43))).value();
   std::cout << i1 << ' ' << i2 << '\n';

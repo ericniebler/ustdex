@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_UTILITY
-#define USTDEX_ASYNC_DETAIL_UTILITY
+#ifndef USTDEX_DETAIL_UTILITY
+#define USTDEX_DETAIL_UTILITY
 
 #include "config.hpp"
-#include "meta.hpp"
 #include "type_traits.hpp"
 
 #include "prologue.hpp"
@@ -83,7 +82,7 @@ USTDEX_API constexpr std::size_t _find_pos(bool const* const _begin, bool const*
 template <class Ty, class... Ts>
 USTDEX_API constexpr std::size_t _index_of() noexcept
 {
-  constexpr bool _same[] = {std::is_same_v<Ty, Ts>...};
+  constexpr bool _same[] = {USTDEX_IS_SAME(Ty, Ts)...};
   return ustdex::_find_pos(_same, _same + sizeof...(Ts));
 }
 
@@ -133,6 +132,7 @@ USTDEX_API constexpr std::decay_t<Ty> _decay_copy(Ty&& _ty) noexcept(_nothrow_de
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wnon-template-friend")
+USTDEX_PRAGMA_IGNORE_GNU("-Wsfinae-incomplete")
 USTDEX_PRAGMA_IGNORE_EDG(probable_guiding_friend)
 
 // _zip/_unzip is for keeping type names short. It has the unfortunate side

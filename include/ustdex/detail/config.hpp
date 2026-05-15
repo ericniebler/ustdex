@@ -40,31 +40,40 @@
 #  define USTDEX_ARCH_X86_64_() 0
 #endif
 
-#define USTDEX_ARCH(...) USTDEX_ARCH_##__VA_ARGS__##_()
+#define USTDEX_ARCH_I(...) USTDEX_ARCH_##__VA_ARGS__##_()
+#define USTDEX_ARCH(...)   USTDEX_ARCH_I(__VA_ARGS__)
 
 // Compiler detections:
 #if defined(__NVCC__)
 #  define USTDEX_NVCC() 1
+#  define USTDEX_NVCC_VERSION (__CUDACC_VER_MAJOR__ * 100 + __CUDACC_VER_MINOR__)
 #elif defined(__NVCOMPILER)
 #  define USTDEX_NVHPC() 1
-#elif defined(__EDG__)
+#  define USTDEX_NVHPC_VERSION (__NVCOMPILER_MAJOR__ * 100 + __NVCOMPILER_MINOR__)
+#endif
+
+#if defined(__EDG__)
 #  define USTDEX_EDG() 1
 #endif
 
 #if defined(__clang__)
-#  define USTDEX_CLANG() 1
+#  define USTDEX_CLANG()       1
+#  define USTDEX_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #  if defined(_MSC_VER)
-#    define USTDEX_CLANG_CL() 1
+#    define USTDEX_CLANG_CL()  1
 #  endif
 #  if defined(__apple_build_version__)
-#    define USTDEX_APPLE_CLANG() 1
+#    define USTDEX_APPLE_CLANG()       1
+#    define USTDEX_APPLE_CLANG_VERSION (__apple_build_version__ / 1000)
 #  endif
 #elif defined(__GNUC__)
-#  define USTDEX_GCC() 1
+#  define USTDEX_GCC()       1
+#  define USTDEX_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #endif
 
 #if defined(_MSC_VER)
-#  define USTDEX_MSVC() 1
+#  define USTDEX_MSVC()       1
+#  define USTDEX_MSVC_VERSION _MSC_VER
 #endif
 
 #ifndef USTDEX_NVCC
@@ -98,17 +107,21 @@
 #  define USTDEX_PRAGMA_PUSH_EDG()      _Pragma("nv_diagnostic push")
 #  define USTDEX_PRAGMA_POP_EDG()       _Pragma("nv_diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(nv_diag_suppress __VA_ARGS__))
-#elif USTDEX_NVHPC() || USTDEX_EDG()
-#  define USTDEX_PRAGMA_PUSH_EDG()      _Pragma("diagnostic push") USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
+#elif USTDEX_EDG()
+#  define USTDEX_PRAGMA_PUSH_EDG()      _Pragma("diagnostic push")                     \
+                                        USTDEX_PRAGMA_IGNORE_EDG(invalid_error_number)
 #  define USTDEX_PRAGMA_POP_EDG()       _Pragma("diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_EDG(...) _Pragma(USTDEX_PP_STRINGIZE(diag_suppress __VA_ARGS__))
 #endif
 
 #if USTDEX_CLANG() || USTDEX_GCC()
-#  define USTDEX_PRAGMA_PUSH_GNU()                                                                                     \
-    _Pragma("GCC diagnostic push") USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas") \
-      USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option") USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")            \
-        USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
+#  define USTDEX_PRAGMA_PUSH_GNU()                       \
+    _Pragma("GCC diagnostic push")                       \
+    USTDEX_PRAGMA_IGNORE_GNU("-Wpragmas")                \
+    USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-pragmas")        \
+    USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-warning-option") \
+    USTDEX_PRAGMA_IGNORE_GNU("-Wunknown-attributes")     \
+    USTDEX_PRAGMA_IGNORE_GNU("-Wattributes")
 #  define USTDEX_PRAGMA_POP_GNU()       _Pragma("GCC diagnostic pop")
 #  define USTDEX_PRAGMA_IGNORE_GNU(...) _Pragma(USTDEX_PP_STRINGIZE(GCC diagnostic ignored __VA_ARGS__))
 #endif
@@ -142,9 +155,9 @@
   USTDEX_PRAGMA_PUSH_GNU()   \
   USTDEX_PRAGMA_PUSH_MSVC()
 
-#define USTDEX_PRAGMA_POP() \
-  USTDEX_PRAGMA_POP_MSVC()  \
-  USTDEX_PRAGMA_POP_GNU()   \
+#define USTDEX_PRAGMA_POP()  \
+  USTDEX_PRAGMA_POP_MSVC()   \
+  USTDEX_PRAGMA_POP_GNU()    \
   USTDEX_PRAGMA_POP_EDG()
 
 #ifdef USTDEX_CUDA
@@ -169,6 +182,12 @@
 #  define USTDEX_HOST_ONLY() 1
 #endif
 
+#if defined(__CUDACC__) || defined(_NVHPC_CUDA)
+#  define USTDEX_CUDA_COMPILATION() 1
+#else
+#  define USTDEX_CUDA_COMPILATION() 0
+#endif
+
 #if USTDEX_CUDA()
 #  define USTDEX_HOST            __host__
 #  define USTDEX_DEVICE          __device__
@@ -179,6 +198,14 @@
 #  define USTDEX_DEVICE
 #  define USTDEX_HOST_DEVICE
 #  define USTDEX_DEVICE_CONSTANT inline
+#endif
+
+#if USTDEX_CUDA_COMPILATION() && defined(__CUDA_ARCH__)
+#  define USTDEX_NO_STDCPP_EXCEPTIONS() 1
+#elif USTDEX_MSVC() || USTDEX_CLANG_CL()
+#  define USTDEX_NO_STDCPP_EXCEPTIONS() (_HAS_EXCEPTIONS == 0) || (_CPPUNWIND == 0)
+#else
+#  define USTDEX_NO_STDCPP_EXCEPTIONS() (__EXCEPTIONS == 0)
 #endif
 
 #if defined(__has_attribute)
@@ -217,8 +244,8 @@
 #  define USTDEX_ATTR_ALWAYS_INLINE
 #endif
 
-#if USTDEX_HAS_ATTRIBUTE(_exclude_from_explicit_instantiation__)
-#  define USTDEX_ATTR_EXCLUDE_FROM_EXPLICIT_INSTANTIATION __attribute__((_exclude_from_explicit_instantiation__))
+#if USTDEX_HAS_ATTRIBUTE(__exclude_from_explicit_instantiation__)
+#  define USTDEX_ATTR_EXCLUDE_FROM_EXPLICIT_INSTANTIATION __attribute__((__exclude_from_explicit_instantiation__))
 #else
 #  define USTDEX_ATTR_EXCLUDE_FROM_EXPLICIT_INSTANTIATION
 #endif
@@ -262,21 +289,27 @@
 #elif USTDEX_HAS_BUILTIN(__is_same_as)
 #  define USTDEX_IS_SAME(...) __is_same_as(__VA_ARGS__)
 #else
-#  define USTDEX_IS_SAME(...) ustdex::_is_same<__VA_ARGS__>
-
 namespace ustdex
 {
 template <class T, class U>
-inline constexpr bool _is_same = false;
+inline constexpr bool _is_same_v = false;
 template <class T>
-inline constexpr bool _is_same<T, T> = true;
+inline constexpr bool _is_same_v<T, T> = true;
 } // namespace ustdex
+
+#  define USTDEX_IS_SAME(...) ::ustdex::_is_same_v<__VA_ARGS__>
 #endif
 
-#if USTDEX_HAS_BUILTIN(_decay)
-#  define USTDEX_DECAY(...) _identity_t<_decay(__VA_ARGS__)>
+#if USTDEX_HAS_BUILTIN(__decay)
+namespace ustdex
+{
+template <class Ty>
+using _decay_t = __decay(Ty);
+} // namespace ustdex
+
+#  define USTDEX_DECAY(...) ::ustdex::_decay_t<__VA_ARGS__>
 #else
-#  define USTDEX_DECAY(...) std::decay_t<__VA_ARGS__>
+#  define USTDEX_DECAY(...) ::std::decay_t<__VA_ARGS__>
 #endif
 
 #if USTDEX_HAS_BUILTIN(__remove_reference)
@@ -286,7 +319,7 @@ template <class Ty>
 using _remove_reference_t = __remove_reference(Ty);
 } // namespace ustdex
 
-#  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
+#  define USTDEX_REMOVE_REFERENCE(...) ::ustdex::_remove_reference_t<__VA_ARGS__>
 #elif USTDEX_HAS_BUILTIN(__remove_reference_t)
 namespace ustdex
 {
@@ -294,7 +327,7 @@ template <class Ty>
 using _remove_reference_t = __remove_reference_t(Ty);
 } // namespace ustdex
 
-#  define USTDEX_REMOVE_REFERENCE(...) ustdex::_remove_reference_t<__VA_ARGS__>
+#  define USTDEX_REMOVE_REFERENCE(...) ::ustdex::_remove_reference_t<__VA_ARGS__>
 #else
 #  define USTDEX_REMOVE_REFERENCE(...) ::std::remove_reference_t<__VA_ARGS__>
 #endif
@@ -309,13 +342,18 @@ using _remove_reference_t = __remove_reference_t(Ty);
 #  define USTDEX_ASSERT(X, Y) assert(X)
 #endif
 
-#if USTDEX_HAS_CPP_ATTRIBUTE(no_unique_address)
-#  define USTDEX_NO_UNIQUE_ADDRESS [[no_unique_address]]
-#else
+#if !USTDEX_HAS_CPP_ATTRIBUTE(no_unique_address)     /*                            */ \
+  || (USTDEX_NVHPC() && USTDEX_NVHPC_VERSION < 2305) /*                            */ \
+  || (USTDEX_MSVC() && USTDEX_MSVC_VERSION < 1943)   /*                            */ \
+  || (USTDEX_CLANG_CL() && USTDEX_CLANG_VERSION < 1801)
 #  define USTDEX_NO_UNIQUE_ADDRESS
+#elif USTDEX_CLANG_CL() || USTDEX_MSVC()
+#  define USTDEX_NO_UNIQUE_ADDRESS       [[msvc::no_unique_address]]
+#else
+#  define USTDEX_NO_UNIQUE_ADDRESS       [[no_unique_address]]
 #endif
 
-// GCC struggles with guaranteed copy elision
+// GCC struggles with guaranteed copy elision of immovable types
 #if USTDEX_GCC()
 #  define USTDEX_IMMOVABLE(XP) XP(XP&&)
 #else
@@ -329,7 +367,7 @@ using _remove_reference_t = __remove_reference_t(Ty);
 #endif
 
 #if USTDEX_MSVC()
-#  define USTDEX_VISIBILITY_DEFAULT _declspec(dllimport)
+#  define USTDEX_VISIBILITY_DEFAULT __declspec(dllimport)
 // #elif USTDEX_NVRTC()
 // #  define USTDEX_VISIBILITY_DEFAULT
 #else
@@ -338,7 +376,7 @@ using _remove_reference_t = __remove_reference_t(Ty);
 
 #if USTDEX_MSVC() // || USTDEX_NVRTC()
 #  define USTDEX_TYPE_VISIBILITY_DEFAULT
-#elif USTDEX_HAS_ATTRIBUTE(_m_visibility__)
+#elif USTDEX_HAS_ATTRIBUTE(__visibility__)
 #  define USTDEX_TYPE_VISIBILITY_DEFAULT __attribute__((__visibility__("default")))
 #else
 #  define USTDEX_TYPE_VISIBILITY_DEFAULT USTDEX_VISIBILITY_DEFAULT
@@ -346,10 +384,10 @@ using _remove_reference_t = __remove_reference_t(Ty);
 
 #if __has_include(<nv/target>)
 #  include <nv/target>
-#  define USTDEX_IS_HOST        NV_IS_HOST
-#  define USTDEX_IS_DEVICE      NV_IS_DEVICE
-#  define USTDEX_IF_TARGET      NV_IF_TARGET
-#  define USTDEX_IF_ELSE_TARGET NV_IF_ELSE_TARGET
+#  define USTDEX_IS_HOST                 NV_IS_HOST
+#  define USTDEX_IS_DEVICE               NV_IS_DEVICE
+#  define USTDEX_IF_TARGET(X, Y)         NV_IF_TARGET(X, Y)
+#  define USTDEX_IF_ELSE_TARGET(X, Y, Z) NV_IF_ELSE_TARGET(X, Y, Z)
 #else
 #  define USTDEX_IS_HOST   1
 #  define USTDEX_IS_DEVICE 0

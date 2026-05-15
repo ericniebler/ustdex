@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_WRITE_ENV
-#define USTDEX_ASYNC_DETAIL_WRITE_ENV
+#ifndef USTDEX_DETAIL_WRITE_ENV
+#define USTDEX_DETAIL_WRITE_ENV
 
 #include "completion_signatures.hpp"
 #include "config.hpp"
@@ -58,8 +58,8 @@ private:
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t;
 
 public:
-  /// @brief Wraps one sender in another that modifies the execution
-  /// environment by merging in the environment specified.
+  //! \brief Wraps one sender in another that modifies the execution
+  //! environment by merging in the environment specified.
   template <class Sndr, class Env>
   USTDEX_TRIVIAL_API constexpr auto operator()(Sndr, Env) const //
     -> _sndr_t<Sndr, Env>;

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_THEN
-#define USTDEX_ASYNC_DETAIL_THEN
+#ifndef USTDEX_DETAIL_THEN
+#define USTDEX_DETAIL_THEN
 
 #include "completion_signatures.hpp"
 #include "concepts.hpp"
@@ -115,7 +115,7 @@ private:
     {
       if constexpr (CanThrow || _nothrow_callable<Fn, Ts...>)
       {
-        if constexpr (std::is_same_v<void, _call_result_t<Fn, Ts...>>)
+        if constexpr (USTDEX_IS_SAME(void, _call_result_t<Fn, Ts...>))
         {
           static_cast<Fn&&>(_fn_)(static_cast<Ts&&>(_ts)...);
           ustdex::set_value(static_cast<Rcvr&&>(_rcvr_));
@@ -127,22 +127,21 @@ private:
       }
       else
       {
-        USTDEX_TRY(                                //
-          ({                                       //
-            _set<true>(static_cast<Ts&&>(_ts)...); //
-          }),                                      //
-          USTDEX_CATCH(...)                        //
-          ({                                       //
-            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          })                                       //
-        )
+        USTDEX_TRY
+        {
+          _set<true>(static_cast<Ts&&>(_ts)...);
+        }
+        USTDEX_CATCH(...)
+        {
+          ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+        }
       }
     }
 
     template <class Tag, class... Ts>
     USTDEX_TRIVIAL_API void _complete(Tag, Ts&&... _ts) noexcept
     {
-      if constexpr (std::is_same_v<Tag, SetTag>)
+      if constexpr (USTDEX_IS_SAME(Tag, SetTag))
       {
         _set(static_cast<Ts&&>(_ts)...);
       }

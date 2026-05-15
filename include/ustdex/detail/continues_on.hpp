@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_CONTINUE_ON
-#define USTDEX_ASYNC_DETAIL_CONTINUE_ON
+#ifndef USTDEX_DETAIL_CONTINUE_ON
+#define USTDEX_DETAIL_CONTINUE_ON
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
@@ -68,15 +68,14 @@ private:
       }
       else
       {
-        USTDEX_TRY( //
-          ({        //
-            _result_.template _emplace<_tupl_t>(Tag(), static_cast<As&&>(_as)...);
-          }),
-          USTDEX_CATCH(...) //
-          ({                //
-            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          })                //
-        )
+        USTDEX_TRY
+        {
+          _result_.template _emplace<_tupl_t>(Tag(), static_cast<As&&>(_as)...);
+        }
+        USTDEX_CATCH_ALL
+        {
+          ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+        }
       }
       _complete_ = +[](void* _ptr) noexcept {
         auto& _self = *static_cast<_rcvr_t*>(_ptr);

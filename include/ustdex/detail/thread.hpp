@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_THREAD
-#define USTDEX_ASYNC_DETAIL_THREAD
+#ifndef USTDEX_DETAIL_THREAD
+#define USTDEX_DETAIL_THREAD
 
 #include "config.hpp"
 

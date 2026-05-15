@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_START_DETACHED
-#define USTDEX_ASYNC_DETAIL_START_DETACHED
+#ifndef USTDEX_DETAIL_START_DETACHED
+#define USTDEX_DETAIL_START_DETACHED
 
 #include "config.hpp"
 #include "cpos.hpp"
@@ -78,8 +78,8 @@ private:
   };
 
 public:
-  /// @brief Eagerly connects and starts a sender and lets it
-  /// run detached.
+  //! \brief Eagerly connects and starts a sender and lets it
+  //! run detached.
   template <class Sndr>
   USTDEX_TRIVIAL_API void operator()(Sndr _sndr) const
   {

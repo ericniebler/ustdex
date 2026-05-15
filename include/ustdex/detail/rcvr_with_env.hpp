@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_RCVR_WITH_ENV
-#define USTDEX_ASYNC_DETAIL_RCVR_WITH_ENV
+#ifndef USTDEX_DETAIL_RCVR_WITH_ENV
+#define USTDEX_DETAIL_RCVR_WITH_ENV
 
 #include "cpos.hpp"
 #include "env.hpp"

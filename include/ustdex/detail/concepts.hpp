@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_CONCEPTS
-#define USTDEX_ASYNC_DETAIL_CONCEPTS
+#ifndef USTDEX_DETAIL_CONCEPTS
+#define USTDEX_DETAIL_CONCEPTS
 
 #include "completion_signatures.hpp"
 #include "config.hpp"
@@ -138,4 +138,4 @@ USTDEX_CONCEPT dependent_sender =          //
 
 #include "epilogue.hpp"
 
-#endif // USTDEX_ASYNC_DETAIL_CONCEPTS
+#endif // USTDEX_DETAIL_CONCEPTS

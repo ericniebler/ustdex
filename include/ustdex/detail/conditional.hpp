@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_CONDITIONAL
-#define USTDEX_ASYNC_DETAIL_CONDITIONAL
+#ifndef USTDEX_DETAIL_CONDITIONAL
+#define USTDEX_DETAIL_CONDITIONAL
 
 #include "completion_signatures.hpp"
 #include "concepts.hpp"
@@ -127,24 +127,23 @@ struct _cond_t
     USTDEX_API void set_value(As&&... _as) noexcept
     {
       auto _just = just_from(_cond_t::_mk_complete_fn(static_cast<As&&>(_as)...));
-      USTDEX_TRY( //
-        ({        //
-          if (static_cast<Pred&&>(_data_._pred_)(_as...))
-          {
-            auto& _op = _ops_._emplace_from(connect, static_cast<Then&&>(_data_._then_)(_just), _rcvr_ref{_rcvr_});
-            ustdex::start(_op);
-          }
-          else
-          {
-            auto& _op = _ops_._emplace_from(connect, static_cast<Else&&>(_data_._else_)(_just), _rcvr_ref{_rcvr_});
-            ustdex::start(_op);
-          }
-        }),
-        USTDEX_CATCH(...) //
-        ({                //
-          ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-        })                //
-      )
+      USTDEX_TRY
+      {
+        if (static_cast<Pred&&>(_data_._pred_)(_as...))
+        {
+          auto& _op = _ops_._emplace_from(connect, static_cast<Then&&>(_data_._then_)(_just), _rcvr_ref{_rcvr_});
+          ustdex::start(_op);
+        }
+        else
+        {
+          auto& _op = _ops_._emplace_from(connect, static_cast<Else&&>(_data_._else_)(_just), _rcvr_ref{_rcvr_});
+          ustdex::start(_op);
+        }
+      }
+      USTDEX_CATCH_ALL
+      {
+        ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+      }
     }
 
     template <class Error>
