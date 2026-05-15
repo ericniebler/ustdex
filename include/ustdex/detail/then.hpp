@@ -209,7 +209,7 @@ private:
     template <class Self, class... Env>
     USTDEX_API static constexpr auto get_completion_signatures()
     {
-      USTDEX_LET_COMPLETIONS(auto(_child_completions) = get_child_completion_signatures<Self, Sndr, Env...>())
+      USTDEX_LET(auto _child_completions = get_child_completion_signatures<Self, Sndr, Env...>())
       {
         if constexpr (Disposition == _disposition_t::_value)
         {

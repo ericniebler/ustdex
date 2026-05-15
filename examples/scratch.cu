@@ -79,7 +79,7 @@ void print() {
 }
 
 USTDEX_HOST_DEVICE void _main() {
-  auto s = start_on(
+  auto s = starts_on(
     _inline_scheduler(),
     then(
       just(1, 2, 3),

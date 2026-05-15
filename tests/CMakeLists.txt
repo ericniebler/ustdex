@@ -22,11 +22,18 @@ include(Catch)
 # Find all test files with "test_" prefix
 file(GLOB TEST_FILES test_*.cpp)
 
+set(CMAKE_EXE_LINKER_FLAGS " -static")
+
 # Add each test file as a test
 foreach(TEST_FILE ${TEST_FILES})
   get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
   add_executable(${TEST_NAME} ${TEST_FILE})
-  target_link_libraries(${TEST_NAME} ustdex Catch2::Catch2WithMain)
+  target_link_libraries(${TEST_NAME} ustdex Catch2::Catch2WithMain $<$<CXX_COMPILER_ID:GNU>:-static-libgcc -static-libstdc++>)
+  set_target_properties(${TEST_NAME} PROPERTIES CXX_EXTENSIONS OFF)
+  target_compile_options(${TEST_NAME} PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+  )
   catch_discover_tests(${TEST_NAME})
 endforeach()
 

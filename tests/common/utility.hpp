@@ -180,21 +180,21 @@ template <class... Ts>
 using _m_list = ustdex::_m_list<Ts...>;
 
 template <class... Values, class Sndr>
-HOST_DEVICE void check_value_types(Sndr&& sndr) noexcept
+HOST_DEVICE void check_value_types(Sndr&&) noexcept
 {
   using actual_t = ustdex::value_types_of_t<Sndr, ustdex::env<>, _m_list, ustdex::_m_make_set>;
   static_assert(ustdex::_m_set_eq_v<actual_t, Values...>, "value_types_of_t does not match expected types");
 }
 
 template <class... Errors, class Sndr>
-HOST_DEVICE void check_error_types(Sndr&& sndr) noexcept
+HOST_DEVICE void check_error_types(Sndr&&) noexcept
 {
   using actual_t = ustdex::error_types_of_t<Sndr, ustdex::env<>, ustdex::_m_make_set>;
   static_assert(ustdex::_m_set_eq_v<actual_t, Errors...>, "error_types_of_t does not match expected types");
 }
 
 template <bool SendsStopped, class Sndr>
-HOST_DEVICE void check_sends_stopped(Sndr&& sndr) noexcept
+HOST_DEVICE void check_sends_stopped(Sndr&&) noexcept
 {
   static_assert(ustdex::sends_stopped<Sndr> == SendsStopped, "sends_stopped does not match expected value");
 }

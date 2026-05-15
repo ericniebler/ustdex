@@ -18,7 +18,7 @@
 
 #include "config.hpp"
 
-#include <atomic>
+#include <atomic> // IWYU pragma: keep
 
 #if USTDEX_CUDA()
 #  include <cuda/std/atomic>

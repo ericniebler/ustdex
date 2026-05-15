@@ -103,9 +103,9 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _seq::_sndr_t
   template <class Self, class... Env>
   USTDEX_API static constexpr auto get_completion_signatures()
   {
-    USTDEX_LET_COMPLETIONS(auto(_completions1) = get_child_completion_signatures<Self, Sndr1, Env...>())
+    USTDEX_LET(auto _completions1 = get_child_completion_signatures<Self, Sndr1, Env...>())
     {
-      USTDEX_LET_COMPLETIONS(auto(_completions2) = get_child_completion_signatures<Self, Sndr2, Env...>())
+      USTDEX_LET(auto _completions2 = get_child_completion_signatures<Self, Sndr2, Env...>())
       {
         // ignore the first sender's value completions
         return _completions2 + transform_completion_signatures(_completions1, _swallow_transform());
