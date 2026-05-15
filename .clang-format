@@ -114,6 +114,7 @@ PenaltyIndentedWhitespace: 2
 PointerAlignment: Left
 ReflowComments: true
 RemoveSemicolon: false
+SkipMacroDefinitionBody: true
 SortIncludes: CaseInsensitive
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false

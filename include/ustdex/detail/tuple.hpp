@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_TUPLE
-#define USTDEX_ASYNC_DETAIL_TUPLE
+#ifndef USTDEX_DETAIL_TUPLE
+#define USTDEX_DETAIL_TUPLE
 
 #include "config.hpp"
 #include "meta.hpp"

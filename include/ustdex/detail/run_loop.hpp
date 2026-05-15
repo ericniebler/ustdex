@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_RUN_LOOP
-#define USTDEX_ASYNC_DETAIL_RUN_LOOP
+#ifndef USTDEX_DETAIL_RUN_LOOP
+#define USTDEX_DETAIL_RUN_LOOP
 
 #include "config.hpp"
 
@@ -77,22 +77,21 @@ struct _operation : _task
   USTDEX_API static void _execute_impl(_task* _p) noexcept
   {
     auto& _rcvr = static_cast<_operation*>(_p)->_rcvr_;
-    USTDEX_TRY( //
-      ({        //
-        if (get_stop_token(get_env(_rcvr)).stop_requested())
-        {
-          set_stopped(static_cast<Rcvr&&>(_rcvr));
-        }
-        else
-        {
-          set_value(static_cast<Rcvr&&>(_rcvr));
-        }
-      }),
-      USTDEX_CATCH(...) //
-      ({                //
-        set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
-      })                //
-    )
+    USTDEX_TRY
+    {
+      if (get_stop_token(get_env(_rcvr)).stop_requested())
+      {
+        set_stopped(static_cast<Rcvr&&>(_rcvr));
+      }
+      else
+      {
+        set_value(static_cast<Rcvr&&>(_rcvr));
+      }
+    }
+    USTDEX_CATCH_ALL
+    {
+      set_error(static_cast<Rcvr&&>(_rcvr), ::std::current_exception());
+    }
   }
 
   USTDEX_API explicit _operation(_task* _tail_) noexcept
@@ -220,16 +219,16 @@ private:
 };
 
 template <class Rcvr>
-USTDEX_API inline void _operation<Rcvr>::start() & noexcept {
-  USTDEX_TRY(                                                             //
-    ({                                                                    //
-      _loop_->_push_back(this);                                           //
-    }),                                                                   //
-    USTDEX_CATCH(...)                                                     //
-    ({                                                                    //
-      set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception()); //
-    })                                                                    //
-    )                                                                     //
+USTDEX_API inline void _operation<Rcvr>::start() & noexcept
+{
+  USTDEX_TRY
+  {
+    _loop_->_push_back(this);
+  }
+  USTDEX_CATCH(...)
+  {
+    set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+  }
 }
 
 USTDEX_API inline void run_loop::run()

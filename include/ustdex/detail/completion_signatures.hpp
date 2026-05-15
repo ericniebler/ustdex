@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_COMPLETION_SIGNATURES
-#define USTDEX_ASYNC_DETAIL_COMPLETION_SIGNATURES
+#ifndef USTDEX_DETAIL_COMPLETION_SIGNATURES
+#define USTDEX_DETAIL_COMPLETION_SIGNATURES
 
 #include "config.hpp"
 #include "cpos.hpp"
@@ -85,13 +85,17 @@ using _completion_if = _m_if<_callable<Fn, Sig*>, completion_signatures<Sig>, co
 template <class... Sigs>
 struct USTDEX_TYPE_VISIBILITY_DEFAULT completion_signatures
 {
+  // In a nested struct to delay instantiation until it's needed.
+  struct _deferred
+  {
+    using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = _partition_completion_signatures_t<Sigs...>;
+  };
+
   template <class Fn, class Continuation = _m_quote<ustdex::completion_signatures>>
   using _transform USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Continuation, _m_apply<Fn, Sigs>...>;
 
   template <template <class...> class Fn, template <class...> class Continuation = ustdex::completion_signatures>
   using _transform_q USTDEX_ATTR_NODEBUG_ALIAS = Continuation<_m_apply_q<Fn, Sigs>...>;
-
-  using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = _partition_completion_signatures_t<Sigs...>;
 
   template <class Fn, class... More>
   using call USTDEX_ATTR_NODEBUG_ALIAS = _m_call<Fn, Sigs..., More...>;
@@ -126,15 +130,15 @@ USTDEX_API constexpr std::size_t completion_signatures<Sigs...>::count(Tag) cons
 {
   if constexpr (Tag() == set_value)
   {
-    return _partitioned::_count_values::value;
+    return _deferred::_partitioned::_count_values::value;
   }
   else if constexpr (Tag() == set_error)
   {
-    return _partitioned::_count_errors::value;
+    return _deferred::_partitioned::_count_errors::value;
   }
   else
   {
-    return _partitioned::_count_stopped::value;
+    return _deferred::_partitioned::_count_stopped::value;
   }
 }
 
@@ -169,15 +173,15 @@ USTDEX_API constexpr auto completion_signatures<Sigs...>::select(Tag) const noex
 {
   if constexpr (Tag() == set_value)
   {
-    return _partitioned::template _value_types<_m_quote_f<set_value_t>::call, completion_signatures>();
+    return _deferred::_partitioned::template _value_types<_m_quote_f<set_value_t>::call, completion_signatures>();
   }
   else if constexpr (Tag() == set_error)
   {
-    return _partitioned::template _error_types<completion_signatures, _m_quote_f<set_error_t>::call>();
+    return _deferred::_partitioned::template _error_types<completion_signatures, _m_quote_f<set_error_t>::call>();
   }
   else
   {
-    return _partitioned::template _stopped_types<completion_signatures>();
+    return _deferred::_partitioned::template _stopped_types<completion_signatures>();
   }
 }
 
@@ -411,7 +415,7 @@ constexpr auto get_child_completion_signatures()
 USTDEX_PRAGMA_POP()
 
 template <class Completions>
-using _partitioned_completions_of  = typename Completions::_partitioned;
+using _partitioned_completions_of  = typename Completions::_deferred::_partitioned;
 
 constexpr int _invalid_disposition = -1;
 
@@ -456,10 +460,9 @@ struct _gather_sigs_fn<set_stopped_t>
 template <class Sigs, class WantedTag, template <class...> class TaggedTuple, template <class...> class Variant>
 using _gather_completion_signatures = typename _gather_sigs_fn<WantedTag>::template call<Sigs, TaggedTuple, Variant>;
 
-// _partitioned_completions is a cache of completion signatures for fast
-// access. The completion_signatures<Sigs...>::_partitioned nested struct
-// inherits from _partitioned_completions. If the cache is never accessed,
-// it is never instantiated.
+// _partitioned_completions is a cache of completion signatures for fast access. The
+// completion_signatures<Sigs...>::_deferred::_partitioned nested struct inherits from
+// _partitioned_completions. If the cache is never accessed, it is never instantiated.
 template <class... ValueTuples, class... Errors, bool HasStopped>
 struct _partitioned_completions<_m_list<ValueTuples...>, _m_list<Errors...>, HasStopped>
 {
@@ -626,22 +629,22 @@ completion_signatures<Sigs...>::operator+(const completion_signatures<OtherSigs.
 }
 
 template <class Sigs, template <class...> class Tuple, template <class...> class Variant>
-using _value_types = typename Sigs::_partitioned::template _value_types<Tuple, Variant>;
+using _value_types = typename Sigs::_deferred::_partitioned::template _value_types<Tuple, Variant>;
 
 template <class Sndr, class Env, template <class...> class Tuple, template <class...> class Variant>
 using value_types_of_t = _value_types<completion_signatures_of_t<Sndr, Env>, Tuple, _m_try_q<Variant>::template call>;
 
 template <class Sigs, template <class...> class Variant>
-using _error_types = typename Sigs::_partitioned::template _error_types<Variant, _identity_t>;
+using _error_types = typename Sigs::_deferred::_partitioned::template _error_types<Variant, _identity_t>;
 
 template <class Sndr, class Env, template <class...> class Variant>
 using error_types_of_t = _error_types<completion_signatures_of_t<Sndr, Env>, Variant>;
 
 template <class Sigs, template <class...> class Variant, class Type>
-using _stopped_types = typename Sigs::_partitioned::template _stopped_types<Variant, Type>;
+using _stopped_types = typename Sigs::_deferred::_partitioned::template _stopped_types<Variant, Type>;
 
 template <class Sigs>
-inline constexpr bool _sends_stopped = Sigs::_partitioned::_count_stopped::value != 0;
+inline constexpr bool _sends_stopped = Sigs::_deferred::_partitioned::_count_stopped::value != 0;
 
 template <class Sndr, class... Env>
 inline constexpr bool sends_stopped = _sends_stopped<completion_signatures_of_t<Sndr, Env...>>;

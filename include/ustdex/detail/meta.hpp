@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_META
-#define USTDEX_ASYNC_DETAIL_META
+#ifndef USTDEX_DETAIL_META
+#define USTDEX_DETAIL_META
 
 #include "config.hpp"
 #include "preprocessor.hpp"
@@ -256,10 +256,13 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT ERROR : _merror_base
 {
   // The following aliases are to simplify error propagation
   // in the completion signatures meta-programming.
-  template <class...>
-  using call USTDEX_ATTR_NODEBUG_ALIAS         = ERROR;
+  struct _deferred
+  {
+    using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+  };
 
-  using _partitioned USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
+  template <class...>
+  using call USTDEX_ATTR_NODEBUG_ALIAS = ERROR;
 
   template <template <class...> class, template <class...> class>
   using _value_types USTDEX_ATTR_NODEBUG_ALIAS = ERROR;

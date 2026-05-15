@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_LET_VALUE
-#define USTDEX_ASYNC_DETAIL_LET_VALUE
+#ifndef USTDEX_DETAIL_LET_VALUE
+#define USTDEX_DETAIL_LET_VALUE
 
 #include "completion_signatures.hpp"
 #include "concepts.hpp"
@@ -64,8 +64,8 @@ private:
   template <class...>
   using _empty_tuple = _tuple<>;
 
-  /// @brief Computes the type of a variant of tuples to hold the results of
-  /// the predecessor sender.
+  //! \brief Computes the type of a variant of tuples to hold the results of
+  //! the predecessor sender.
   template <class CvSndr, class Env>
   using _results =
     _gather_completion_signatures<completion_signatures_of_t<CvSndr, Env>, SetTag, _decayed_tuple, _variant>;
@@ -77,8 +77,8 @@ private:
     using call = connect_result_t<_call_result_t<Fn, USTDEX_DECAY(As) & ...>, _rcvr_ref<Rcvr>>;
   };
 
-  /// @brief Computes the type of a variant of operation states to hold
-  /// the second operation state.
+  //! \brief Computes the type of a variant of operation states to hold
+  //! the second operation state.
   template <class CvSndr, class Fn, class Rcvr>
   using _opstate2_t =
     _gather_completion_signatures<completion_signatures_of_t<CvSndr, FWD_ENV_T<env_of_t<Rcvr>>>,
@@ -86,12 +86,12 @@ private:
                                   _opstate_fn<Fn, Rcvr>::template call,
                                   _variant>;
 
-  /// @brief The `let_(value|error|stopped)` operation state.
-  /// @tparam CvSndr The cvref-qualified predecessor sender type.
-  /// @tparam Fn The function to be called when the predecessor sender
-  /// completes.
-  /// @tparam Rcvr The receiver connected to the `let_(value|error|stopped)`
-  /// sender.
+  //! \brief The `let_(value|error|stopped)` operation state.
+  //! \tparam CvSndr The cvref-qualified predecessor sender type.
+  //! \tparam Fn The function to be called when the predecessor sender
+  //! completes.
+  //! \tparam Rcvr The receiver connected to the `let_(value|error|stopped)`
+  //! sender.
   template <class Rcvr, class CvSndr, class Fn>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _opstate_t
   {
@@ -118,22 +118,21 @@ private:
     {
       if constexpr (Tag() == SetTag())
       {
-        USTDEX_TRY( //
-          ({        //
-            // Store the results so the lvalue refs we pass to the function
-            // will be valid for the duration of the async op.
-            auto& _tupl = _result_.template _emplace<_decayed_tuple<As...>>(static_cast<As&&>(_as)...);
-            // Call the function with the results and connect the resulting
-            // sender, storing the operation state in _opstate2_.
-            auto& _next_op = _opstate2_._emplace_from(
-              ustdex::connect, _tupl.apply(static_cast<Fn&&>(_fn_), _tupl), ustdex::_rcvr_ref{_rcvr_});
-            ustdex::start(_next_op);
-          }),
-          USTDEX_CATCH(...) //
-          ({                //
-            ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
-          })                //
-        )
+        USTDEX_TRY
+        {
+          // Store the results so the lvalue refs we pass to the function
+          // will be valid for the duration of the async op.
+          auto& _tupl = _result_.template _emplace<_decayed_tuple<As...>>(static_cast<As&&>(_as)...);
+          // Call the function with the results and connect the resulting
+          // sender, storing the operation state in _opstate2_.
+          auto& _next_op = _opstate2_._emplace_from(
+            ustdex::connect, _tupl.apply(static_cast<Fn&&>(_fn_), _tupl), ustdex::_rcvr_ref{_rcvr_});
+          ustdex::start(_next_op);
+        }
+        USTDEX_CATCH_ALL
+        {
+          ustdex::set_error(static_cast<Rcvr&&>(_rcvr_), ::std::current_exception());
+        }
       }
       else
       {
@@ -183,42 +182,41 @@ private:
                                             WHAT(ARGUMENTS_ARE_NOT_DECAY_COPYABLE),
                                             WITH_ARGUMENTS(Ts...)>();
       }
-      else if constexpr (!_callable<Fn, std::decay_t<Ts>&...>)
+      else if constexpr (!_callable<Fn, USTDEX_DECAY(Ts) & ...>)
       {
         return invalid_completion_signature<WHERE(IN_ALGORITHM, LetTag),
                                             WHAT(FUNCTION_IS_NOT_CALLABLE),
                                             WITH_FUNCTION(Fn),
-                                            WITH_ARGUMENTS(std::decay_t<Ts> & ...)>();
+                                            WITH_ARGUMENTS(USTDEX_DECAY(Ts) & ...)>();
       }
-      else if constexpr (!sender<_call_result_t<Fn, std::decay_t<Ts>&...>>)
+      else if constexpr (!sender<_call_result_t<Fn, USTDEX_DECAY(Ts) & ...>>)
       {
         return invalid_completion_signature<WHERE(IN_ALGORITHM, LetTag),
                                             WHAT(FUNCTION_MUST_RETURN_A_SENDER),
                                             WITH_FUNCTION(Fn),
-                                            WITH_ARGUMENTS(std::decay_t<Ts> & ...)>();
+                                            WITH_ARGUMENTS(USTDEX_DECAY(Ts) & ...)>();
       }
-      else if constexpr (!sender_in<_call_result_t<Fn, std::decay_t<Ts>&...>, Env...>)
+      else if constexpr (!sender_in<_call_result_t<Fn, USTDEX_DECAY(Ts) & ...>, Env...>)
       {
         return invalid_completion_signature<WHERE(IN_ALGORITHM, LetTag),
                                             WHAT(FUNCTION_RETURN_TYPE_IS_NOT_A_SENDER_IN_THE_CURRENT_ENVIRONMENT),
                                             WITH_FUNCTION(Fn),
-                                            WITH_ARGUMENTS(std::decay_t<Ts> & ...),
+                                            WITH_ARGUMENTS(USTDEX_DECAY(Ts) & ...),
                                             WITH_ENVIRONMENT(Env...)>();
       }
       else
       {
-        using Sndr = _call_result_t<Fn, std::decay_t<Ts>&...>;
-        // The function is callable with the arguments and returns a sender, but we
-        // do not know whether connect will throw.
+        using Sndr = _call_result_t<Fn, USTDEX_DECAY(Ts) & ...>;
+        // Fn is callable with the arguments and returns a sender, but we do not know
+        // whether connect will throw.
         return concat_completion_signatures(get_completion_signatures<Sndr, Env...>(), _eptr_completion());
       }
     }
   };
 
-  /// @brief The `let_(value|error|stopped)` sender.
-  /// @tparam Sndr The predecessor sender.
-  /// @tparam Fn The function to be called when the predecessor sender
-  /// completes.
+  //! \brief The `let_(value|error|stopped)` sender.
+  //! \tparam Sndr The predecessor sender.
+  //! \tparam Fn The function to be called when the predecessor sender completes.
   template <class Sndr, class Fn>
   struct USTDEX_TYPE_VISIBILITY_DEFAULT _sndr_t
   {

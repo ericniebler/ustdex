@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_TYPE_TRAITS
-#define USTDEX_ASYNC_DETAIL_TYPE_TRAITS
+#ifndef USTDEX_DETAIL_TYPE_TRAITS
+#define USTDEX_DETAIL_TYPE_TRAITS
 
 #include "config.hpp"
 #include "meta.hpp"

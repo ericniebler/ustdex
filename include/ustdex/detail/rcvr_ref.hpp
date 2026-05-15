@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_RCVR_REF
-#define USTDEX_ASYNC_DETAIL_RCVR_REF
+#ifndef USTDEX_DETAIL_RCVR_REF
+#define USTDEX_DETAIL_RCVR_REF
 
 #include "cpos.hpp"
 

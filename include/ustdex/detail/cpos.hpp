@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_CPOS
-#define USTDEX_ASYNC_DETAIL_CPOS
+#ifndef USTDEX_DETAIL_CPOS
+#define USTDEX_DETAIL_CPOS
 
 #include "config.hpp"
 #include "env.hpp" // IWYU pragma: export
@@ -94,7 +94,7 @@ inline constexpr struct set_value_t : _completion_tag<_value>
   USTDEX_TRIVIAL_API auto operator()(Rcvr&& _rcvr, Ts&&... _ts) const noexcept
     -> decltype(static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...))
   {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...)), void>);
+    static_assert(USTDEX_IS_SAME(decltype(static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...)), void));
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...)));
     static_cast<Rcvr&&>(_rcvr).set_value(static_cast<Ts&&>(_ts)...);
   }
@@ -106,7 +106,7 @@ inline constexpr struct set_error_t : _completion_tag<_error>
   USTDEX_TRIVIAL_API auto operator()(Rcvr&& _rcvr, Ey&& _e) const noexcept
     -> decltype(static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e)))
   {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e))), void>);
+    static_assert(USTDEX_IS_SAME(decltype(static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e))), void));
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e))));
     static_cast<Rcvr&&>(_rcvr).set_error(static_cast<Ey&&>(_e));
   }
@@ -117,7 +117,7 @@ inline constexpr struct set_stopped_t : _completion_tag<_stopped>
   template <class Rcvr>
   USTDEX_TRIVIAL_API auto operator()(Rcvr&& _rcvr) const noexcept -> decltype(static_cast<Rcvr&&>(_rcvr).set_stopped())
   {
-    static_assert(std::is_same_v<decltype(static_cast<Rcvr&&>(_rcvr).set_stopped()), void>);
+    static_assert(USTDEX_IS_SAME(decltype(static_cast<Rcvr&&>(_rcvr).set_stopped()), void));
     static_assert(noexcept(static_cast<Rcvr&&>(_rcvr).set_stopped()));
     static_cast<Rcvr&&>(_rcvr).set_stopped();
   }
@@ -129,7 +129,7 @@ inline constexpr struct start_t
   USTDEX_TRIVIAL_API auto operator()(OpState& _opstate) const noexcept -> decltype(_opstate.start())
   {
     // static_assert(!_m_is_error<typename OpState::completion_signatures>);
-    static_assert(std::is_same_v<decltype(_opstate.start()), void>);
+    static_assert(USTDEX_IS_SAME(decltype(_opstate.start()), void));
     static_assert(noexcept(_opstate.start()));
     _opstate.start();
   }

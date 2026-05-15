@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_SEQUENCE
-#define USTDEX_ASYNC_DETAIL_SEQUENCE
+#ifndef USTDEX_DETAIL_SEQUENCE
+#define USTDEX_DETAIL_SEQUENCE
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"

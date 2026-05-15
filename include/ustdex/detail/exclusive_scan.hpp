@@ -19,8 +19,9 @@
 
 #include "config.hpp"
 
-#include <algorithm> // IWYU pragma: keep
-#include <functional>
+#include <algorithm>  // IWYU pragma: keep
+#include <functional> // IWYU pragma: keep
+#include <numeric>    // IWYU pragma: keep
 
 namespace ustdex
 {

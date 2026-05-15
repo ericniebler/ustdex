@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_SYNC_WAIT
-#define USTDEX_ASYNC_DETAIL_SYNC_WAIT
+#ifndef USTDEX_DETAIL_SYNC_WAIT
+#define USTDEX_DETAIL_SYNC_WAIT
 
 // run_loop isn't supported on-device yet, so neither can sync_wait be.
 #if !defined(__CUDA_ARCH__)
 
 #  include "exception.hpp"
-#  include "meta.hpp"
 #  include "run_loop.hpp"
-#  include "utility.hpp"
 #  include "write_env.hpp"
 
 #  include <optional>
@@ -36,7 +34,7 @@
 
 namespace ustdex
 {
-/// @brief Function object type for synchronously waiting for the result of a
+/// \brief Function object type for synchronously waiting for the result of a
 /// sender.
 struct sync_wait_t
 {
@@ -46,6 +44,11 @@ private:
     run_loop* _loop_;
 
     USTDEX_API auto query(get_scheduler_t) const noexcept
+    {
+      return _loop_->get_scheduler();
+    }
+
+    USTDEX_API auto query(get_start_scheduler_t) const noexcept
     {
       return _loop_->get_scheduler();
     }
@@ -67,26 +70,25 @@ private:
       template <class... As>
       USTDEX_API void set_value(As&&... _as) noexcept
       {
-        USTDEX_TRY(         //
-          ({                //
-            _state_->_values_->emplace(static_cast<As&&>(_as)...);
-          }),               //
-          USTDEX_CATCH(...) //
-          ({                //
-            _state_->_eptr_ = ::std::current_exception();
-          })                //
-        )
+        USTDEX_TRY
+        {
+          _state_->_values_->emplace(static_cast<As&&>(_as)...);
+        }
+        USTDEX_CATCH(...)
+        {
+          _state_->_eptr_ = ::std::current_exception();
+        }
         _state_->_loop_.finish();
       }
 
       template <class Error>
       USTDEX_API void set_error(Error _err) noexcept
       {
-        if constexpr (std::is_same_v<Error, ::std::exception_ptr>)
+        if constexpr (USTDEX_IS_SAME(Error, ::std::exception_ptr))
         {
           _state_->_eptr_ = static_cast<Error&&>(_err);
         }
-        else if constexpr (std::is_same_v<Error, ::std::error_code>)
+        else if constexpr (USTDEX_IS_SAME(Error, ::std::error_code))
         {
           _state_->_eptr_ = ::std::make_exception_ptr(::std::system_error(_err));
         }
@@ -131,29 +133,29 @@ private:
 
 public:
   // clang-format off
-    /// @brief Synchronously wait for the result of a sender, blocking the
-    ///         current thread.
+    //! \brief Synchronously wait for the result of a sender, blocking the
+    //!         current thread.
     ///
-    /// `sync_wait` connects and starts the given sender, and then drives a
-    ///         `run_loop` instance until the sender completes. Additional work
-    ///         can be delegated to the `run_loop` by scheduling work on the
-    ///         scheduler returned by calling `get_delegation_scheduler` on the
-    ///         receiver's environment.
+    //! `sync_wait` connects and starts the given sender, and then drives a
+    //!         `run_loop` instance until the sender completes. Additional work
+    //!         can be delegated to the `run_loop` by scheduling work on the
+    //!         scheduler returned by calling `get_delegation_scheduler` on the
+    //!         receiver's environment.
     ///
-    /// @pre The sender must have a exactly one value completion signature. That
-    ///         is, it can only complete successfully in one way, with a single
-    ///         set of values.
+    //! \pre The sender must have a exactly one value completion signature. That
+    //!         is, it can only complete successfully in one way, with a single
+    //!         set of values.
     ///
-    /// @retval success Returns an engaged `::std::optional` containing the result
-    ///         values in a `::std::tuple`.
-    /// @retval canceled Returns an empty `::std::optional`.
-    /// @retval error Throws the error.
+    //! \retval success Returns an engaged `::std::optional` containing the result
+    //!         values in a `::std::tuple`.
+    //! \retval canceled Returns an empty `::std::optional`.
+    //! \retval error Throws the error.
     ///
-    /// @throws ::std::rethrow_exception(error) if the error has type
-    ///         `::std::exception_ptr`.
-    /// @throws ::std::system_error(error) if the error has type
-    ///         `::std::error_code`.
-    /// @throws error otherwise
+    //! \throws ::std::rethrow_exception(error) if the error has type
+    //!         `::std::exception_ptr`.
+    //! \throws ::std::system_error(error) if the error has type
+    //!         `::std::error_code`.
+    //! \throws error otherwise
   // clang-format on
   template <class Sndr>
   auto operator()(Sndr&& _sndr) const

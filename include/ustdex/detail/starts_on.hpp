@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_START_ON
-#define USTDEX_ASYNC_DETAIL_START_ON
+#ifndef USTDEX_DETAIL_START_ON
+#define USTDEX_DETAIL_START_ON
 
 #include "completion_signatures.hpp"
 #include "cpos.hpp"
@@ -33,7 +33,7 @@ struct _sch_env_t
 {
   Sch _sch_;
 
-  Sch query(get_scheduler_t) const noexcept
+  Sch query(get_start_scheduler_t) const noexcept
   {
     return _sch_;
   }

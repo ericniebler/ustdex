@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_JUST
-#define USTDEX_ASYNC_DETAIL_JUST
+#ifndef USTDEX_DETAIL_JUST
+#define USTDEX_DETAIL_JUST
 
 #include "completion_signatures.hpp"
 #include "config.hpp"

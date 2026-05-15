@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_ENV
-#define USTDEX_ASYNC_DETAIL_ENV
+#ifndef USTDEX_DETAIL_ENV
+#define USTDEX_DETAIL_ENV
 
 #include "meta.hpp"
 #include "queries.hpp"

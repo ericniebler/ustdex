@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_LAZY
-#define USTDEX_ASYNC_DETAIL_LAZY
+#ifndef USTDEX_DETAIL_LAZY
+#define USTDEX_DETAIL_LAZY
 
 #include "config.hpp"
 #include "meta.hpp"
@@ -27,7 +27,7 @@
 
 namespace ustdex
 {
-/// @brief A lazy type that can be used to delay the construction of a type.
+/// \brief A lazy type that can be used to delay the construction of a type.
 template <class Ty>
 struct _lazy
 {

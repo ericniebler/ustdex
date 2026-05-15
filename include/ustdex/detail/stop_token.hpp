@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef USTDEX_ASYNC_DETAIL_STOP_TOKEN
-#define USTDEX_ASYNC_DETAIL_STOP_TOKEN
+#ifndef USTDEX_DETAIL_STOP_TOKEN
+#define USTDEX_DETAIL_STOP_TOKEN
 
 #include "config.hpp"
 #include "thread.hpp"
