@@ -133,6 +133,7 @@ USTDEX_API constexpr std::decay_t<Ty> _decay_copy(Ty&& _ty) noexcept(_nothrow_de
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wnon-template-friend")
 USTDEX_PRAGMA_IGNORE_GNU("-Wsfinae-incomplete")
+USTDEX_PRAGMA_IGNORE_GNU("-Wunused-function")
 USTDEX_PRAGMA_IGNORE_EDG(probable_guiding_friend)
 
 // _zip/_unzip is for keeping type names short. It has the unfortunate side
@@ -185,7 +186,7 @@ constexpr std::size_t _next(long)
 
 // Prior to Clang 12, we can't use the _slot trick to erase long type names
 // because of a compiler bug. We'll just use the original type name in that case.
-#if USTDEX_CLANG() && (__clang__ < 12)
+#if USTDEX_CLANG() && (USTDEX_CLANG_VERSION < 1200)
 
 template <class Type>
 using _zip = Type;

@@ -236,10 +236,9 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT continue_on_t::_sndr_t
   template <class Self, class... Env>
   USTDEX_API static constexpr auto get_completion_signatures()
   {
-    USTDEX_LET_COMPLETIONS(auto(_child_completions) = get_child_completion_signatures<Self, Sndr, Env...>())
+    USTDEX_LET(auto _child_completions = get_child_completion_signatures<Self, Sndr, Env...>())
     {
-      USTDEX_LET_COMPLETIONS(
-        auto(_sch_completions) = ustdex::get_completion_signatures<schedule_result_t<Sch>, Env...>())
+      USTDEX_LET(auto _sch_completions = ustdex::get_completion_signatures<schedule_result_t<Sch>, Env...>())
       {
         // The scheduler contributes error and stopped completions.
         return concat_completion_signatures(

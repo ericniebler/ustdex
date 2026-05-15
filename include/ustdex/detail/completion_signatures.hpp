@@ -30,6 +30,9 @@
 
 namespace ustdex
 {
+template <class Ty>
+USTDEX_CONCEPT _valid_completion_signatures = _is_specialization_of<Ty, completion_signatures>;
+
 template <class ValueTuplesList = _m_list<>, class ErrorsList = _m_list<>, bool HasStopped = false>
 struct _partitioned_completions;
 
@@ -53,22 +56,106 @@ using _partition_completion_signatures_t USTDEX_ATTR_NODEBUG_ALIAS = //
   decltype(ustdex::_unpack_partitioned_completions(
     (declval<_m_undefined<_partitioned_completions<>>&>() * ... * static_cast<Sigs*>(nullptr))));
 
+// make_completion_signatures
+template <class Tag, class... As>
+USTDEX_API auto _normalize_helper(As&&...) -> Tag (*)(As...);
+
+template <class Tag, class... As>
+USTDEX_API auto _normalize(Tag (*)(As...)) -> decltype(ustdex::_normalize_helper<Tag>(declval<As>()...));
+
+template <class... Sigs>
+USTDEX_API auto _make_unique(Sigs*...) -> _m_apply<_m_quote<completion_signatures>, _m_make_set<Sigs...>>;
+
+template <class... Sigs>
+using _make_completion_signatures_t =
+  decltype(ustdex::_make_unique(ustdex::_normalize(static_cast<Sigs*>(nullptr))...));
+
+template <class... ExplicitSigs, class... DeducedSigs>
+USTDEX_TRIVIAL_API constexpr auto make_completion_signatures(DeducedSigs*...) noexcept
+  -> _make_completion_signatures_t<ExplicitSigs..., DeducedSigs...>
+{
+  return {};
+}
+
+// concat_completion_signatures
 struct _concat_completion_signatures_helper;
 
 template <class... Sigs>
 using _concat_completion_signatures_t =
   _call_result_t<_call_result_t<_concat_completion_signatures_helper, const Sigs&...>>;
 
-struct _concat_completion_signatures_fn
+inline constexpr struct _concat_completion_signatures_fn
 {
   template <class... Sigs>
   USTDEX_TRIVIAL_API constexpr auto operator()(const Sigs&...) const noexcept
-    -> _concat_completion_signatures_t<Sigs...>;
+    -> _concat_completion_signatures_t<Sigs...>
+  {
+    return {};
+  }
+} concat_completion_signatures{};
+
+extern const completion_signatures<>& _empty_completion_signatures;
+
+struct _concat_completion_signatures_helper
+{
+  USTDEX_TRIVIAL_API constexpr auto operator()() const noexcept -> completion_signatures<> (*)()
+  {
+    return nullptr;
+  }
+
+  template <class... Sigs>
+  USTDEX_TRIVIAL_API constexpr auto operator()(const completion_signatures<Sigs...>&) const noexcept
+    -> _make_completion_signatures_t<Sigs...> (*)()
+  {
+    return nullptr;
+  }
+
+  template <class Self = _concat_completion_signatures_helper,
+            class... As,
+            class... Bs,
+            class... Cs,
+            class... Ds,
+            class... Rest>
+  USTDEX_TRIVIAL_API constexpr auto operator()(
+    const completion_signatures<As...>&,
+    const completion_signatures<Bs...>&,
+    const completion_signatures<Cs...>& = _empty_completion_signatures,
+    const completion_signatures<Ds...>& = _empty_completion_signatures,
+    const Rest&...) const noexcept
+  {
+    using Tmp       = completion_signatures<As..., Bs..., Cs..., Ds...>;
+    using SigsFnPtr = _call_result_t<Self, const Tmp&, const Rest&...>;
+    return static_cast<SigsFnPtr>(nullptr);
+  }
+
+  template <class Ap, class Bp = _ignore, class Cp = _ignore, class Dp = _ignore, class... Rest>
+  USTDEX_TRIVIAL_API constexpr auto
+  operator()(const Ap&, const Bp& = {}, const Cp& = {}, const Dp& = {}, const Rest&...) const noexcept
+  {
+    if constexpr (!_valid_completion_signatures<Ap>)
+    {
+      return static_cast<Ap (*)()>(nullptr);
+    }
+    else if constexpr (!_valid_completion_signatures<Bp>)
+    {
+      return static_cast<Bp (*)()>(nullptr);
+    }
+    else if constexpr (!_valid_completion_signatures<Cp>)
+    {
+      return static_cast<Cp (*)()>(nullptr);
+    }
+    else
+    {
+      static_assert(!_valid_completion_signatures<Dp>);
+      return static_cast<Dp (*)()>(nullptr);
+    }
+  }
 };
 
+// invalid_completion_signature
 #if defined(__cpp_constexpr_exceptions) // C++26, https://wg21.link/p3068
 template <class... What, class... Values>
-[[noreturn, nodiscard]] constexpr completion_signatures<> invalid_completion_signature(Values... values);
+[[noreturn, nodiscard]] consteval auto invalid_completion_signature(Values... values) -> completion_signatures<>;
 #else
 template <class... What, class... Values>
 [[nodiscard]] USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto invalid_completion_signature(Values... values);
@@ -193,11 +280,11 @@ USTDEX_API constexpr auto completion_signatures<Sigs...>::transform_reduce(Trans
   return _reduce(_transform(static_cast<Sigs*>(nullptr))...);
 }
 
-template <class Ty>
-USTDEX_CONCEPT _valid_completion_signatures = _is_specialization_of<Ty, completion_signatures>;
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _compile_time_error_base
+{};
 
 template <class Derived>
-struct USTDEX_TYPE_VISIBILITY_DEFAULT _compile_time_error // : ::std::exception
+struct USTDEX_TYPE_VISIBILITY_DEFAULT _compile_time_error : _compile_time_error_base // : ::std::exception
 {
   _compile_time_error() = default;
 
@@ -248,14 +335,9 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _dependent_sender_error : dependent_sender
 };
 
 #if defined(__cpp_constexpr_exceptions) // C++26, https://wg21.link/p3068
-#  define USTDEX_LET_COMPLETIONS(...)                  \
-    if constexpr ([[maybe_unused]] __VA_ARGS__; false) \
-    {                                                  \
-    }                                                  \
-    else
-
 template <class... What, class... Values>
-[[noreturn, nodiscard]] USTDEX_API consteval completion_signatures<> invalid_completion_signature(Values... values)
+[[noreturn, nodiscard]]
+USTDEX_API consteval auto invalid_completion_signature(Values... values) -> completion_signatures<>
 {
   if constexpr (sizeof...(Values) == 1)
   {
@@ -272,21 +354,8 @@ template <class... Sndr>
 {
   throw _dependent_sender_error<Sndr...>();
 }
+
 #else
-
-#  define USTDEX_PP_EAT_AUTO_auto(ID)     ID USTDEX_PP_EAT USTDEX_PP_LPAREN
-#  define USTDEX_PP_EXPAND_AUTO_auto(_ID) auto _ID
-
-#  define USTDEX_LET_COMPLETIONS_ID(...) \
-    USTDEX_PP_EXPAND(USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__) USTDEX_PP_RPAREN)
-
-#  define USTDEX_LET_COMPLETIONS(...)                                                                        \
-    if constexpr (USTDEX_PP_CAT(USTDEX_PP_EXPAND_AUTO_, __VA_ARGS__);                                        \
-                  !::ustdex::_valid_completion_signatures<decltype(USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__))>) \
-    {                                                                                                        \
-      return USTDEX_LET_COMPLETIONS_ID(__VA_ARGS__);                                                         \
-    }                                                                                                        \
-    else
 
 template <class... What, class... Values>
 [[nodiscard]] USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto invalid_completion_signature([[maybe_unused]] Values... values)
@@ -299,6 +368,66 @@ template <class... Sndr>
 {
   return _dependent_sender_error<Sndr...>();
 }
+#endif
+
+#if defined(__cpp_constexpr_exceptions) // C++26, https://wg21.link/p3068
+#  define USTDEX_LET(...)                              \
+    if constexpr ([[maybe_unused]] __VA_ARGS__; false) \
+    {                                                  \
+      return completion_signatures<>();                \
+    }                                                  \
+    else
+
+#else
+
+#  define USTDEX_PP_EAT_AUTO_auto
+#  define USTDEX_PP_PROBE_CONSTEXPR_constexpr USTDEX_PP_PROBE(~)
+#  define USTDEX_PP_EAT_CONSTEXPR_constexpr
+
+// no constexpr
+#  define USTDEX_LET_VALUE_I0(...) \
+  ::ustdex::_select_t() ->* USTDEX_PP_CAT(USTDEX_PP_EAT_AUTO_, __VA_ARGS__)
+
+// yes constexpr
+#  define USTDEX_LET_VALUE_I1(...) \
+  USTDEX_PP_EVAL(USTDEX_LET_VALUE_I0, USTDEX_PP_CAT(USTDEX_PP_EAT_CONSTEXPR_, __VA_ARGS__))
+
+#  define USTDEX_LET_VALUE_SELECT(A, ...) \
+  USTDEX_PP_CAT(USTDEX_LET_VALUE_I, USTDEX_PP_CHECK(USTDEX_PP_CAT(USTDEX_PP_PROBE_CONSTEXPR_, A)))
+
+#  define USTDEX_LET_VALUE(...) \
+  USTDEX_LET_VALUE_SELECT(__VA_ARGS__)(__VA_ARGS__)
+
+#  define USTDEX_LET(...)                                                                             \
+  if constexpr (__VA_ARGS__; ::ustdex::_should_propagate_v<decltype(USTDEX_LET_VALUE(__VA_ARGS__))>)  \
+  {                                                                                                   \
+    return USTDEX_LET_VALUE(__VA_ARGS__);                                                             \
+  }                                                                                                   \
+  else
+
+template <class T>
+inline constexpr bool _should_propagate_v =
+  USTDEX_IS_BASE_OF(dependent_sender_error, T)      //
+  || USTDEX_IS_BASE_OF(_compile_time_error_base, T) //
+  || USTDEX_IS_BASE_OF(_merror_base, T);
+
+struct _select_t
+{
+  template <class T>
+  struct _wrap_t
+  {
+    constexpr T operator=(T value) noexcept(noexcept(static_cast<T&&>(value)))
+    {
+      return static_cast<T&&>(value);
+    }
+  };
+
+  template <class T>
+  constexpr _wrap_t<T> operator->*(T const&) noexcept
+  {
+    return {};
+  }
+};
 #endif
 
 USTDEX_PRAGMA_PUSH()
@@ -316,7 +445,7 @@ struct A_GET_COMPLETION_SIGNATURES_CUSTOMIZATION_RETURNED_A_TYPE_THAT_IS_NOT_A_C
 template <class Completions>
 USTDEX_TRIVIAL_API USTDEX_CONSTEVAL auto _checked_complsigs()
 {
-  USTDEX_LET_COMPLETIONS(auto(_cs) = Completions())
+  USTDEX_LET(auto _cs = Completions())
   {
     if constexpr (_valid_completion_signatures<Completions>)
     {
@@ -516,99 +645,6 @@ struct _partitioned_fold_fn<set_stopped_t>
     -> _m_undefined<_partitioned_completions<Values, Errors, true>>&;
 };
 
-// make_completion_signatures
-template <class Tag, class... As>
-USTDEX_API auto _normalize_helper(As&&...) -> Tag (*)(As...);
-
-template <class Tag, class... As>
-USTDEX_API auto _normalize(Tag (*)(As...)) -> decltype(ustdex::_normalize_helper<Tag>(declval<As>()...));
-
-template <class... Sigs>
-USTDEX_API auto _make_unique(Sigs*...) -> _m_apply<_m_quote<completion_signatures>, _m_make_set<Sigs...>>;
-
-template <class... Sigs>
-using _make_completion_signatures_t =
-  decltype(ustdex::_make_unique(ustdex::_normalize(static_cast<Sigs*>(nullptr))...));
-
-template <class... ExplicitSigs, class... DeducedSigs>
-USTDEX_TRIVIAL_API constexpr auto make_completion_signatures(DeducedSigs*...) noexcept
-  -> _make_completion_signatures_t<ExplicitSigs..., DeducedSigs...>
-{
-  return {};
-}
-
-// concat_completion_signatures
-extern const completion_signatures<>& _empty_completion_signatures;
-
-struct _concat_completion_signatures_helper
-{
-  USTDEX_TRIVIAL_API constexpr auto operator()() const noexcept -> completion_signatures<> (*)()
-  {
-    return nullptr;
-  }
-
-  template <class... Sigs>
-  USTDEX_TRIVIAL_API constexpr auto operator()(const completion_signatures<Sigs...>&) const noexcept
-    -> _make_completion_signatures_t<Sigs...> (*)()
-  {
-    return nullptr;
-  }
-
-  template <class Self = _concat_completion_signatures_helper,
-            class... As,
-            class... Bs,
-            class... Cs,
-            class... Ds,
-            class... Rest>
-  USTDEX_TRIVIAL_API constexpr auto operator()(
-    const completion_signatures<As...>&,
-    const completion_signatures<Bs...>&,
-    const completion_signatures<Cs...>& = _empty_completion_signatures,
-    const completion_signatures<Ds...>& = _empty_completion_signatures,
-    const Rest&...) const noexcept
-  {
-    using Tmp       = completion_signatures<As..., Bs..., Cs..., Ds...>;
-    using SigsFnPtr = _call_result_t<Self, const Tmp&, const Rest&...>;
-    return static_cast<SigsFnPtr>(nullptr);
-  }
-
-  template <class Ap, class Bp = _ignore, class Cp = _ignore, class Dp = _ignore, class... Rest>
-  USTDEX_TRIVIAL_API constexpr auto
-  operator()(const Ap&, const Bp& = {}, const Cp& = {}, const Dp& = {}, const Rest&...) const noexcept
-  {
-    if constexpr (!_valid_completion_signatures<Ap>)
-    {
-      return static_cast<Ap (*)()>(nullptr);
-    }
-    else if constexpr (!_valid_completion_signatures<Bp>)
-    {
-      return static_cast<Bp (*)()>(nullptr);
-    }
-    else if constexpr (!_valid_completion_signatures<Cp>)
-    {
-      return static_cast<Cp (*)()>(nullptr);
-    }
-    else
-    {
-      static_assert(!_valid_completion_signatures<Dp>);
-      return static_cast<Dp (*)()>(nullptr);
-    }
-  }
-};
-
-template <class... Sigs>
-using _concat_completion_signatures_t =
-  _call_result_t<_call_result_t<_concat_completion_signatures_helper, const Sigs&...>>;
-
-template <class... Sigs>
-USTDEX_TRIVIAL_API constexpr auto _concat_completion_signatures_fn::operator()(const Sigs&...) const noexcept
-  -> _concat_completion_signatures_t<Sigs...>
-{
-  return {};
-}
-
-inline constexpr _concat_completion_signatures_fn concat_completion_signatures{};
-
 template <class... Sigs>
 template <class... OtherSigs>
 USTDEX_API constexpr auto
@@ -787,9 +823,9 @@ USTDEX_API constexpr auto transform_completion_signatures(
   StoppedFn _stopped_fn = {},
   ExtraSigs             = {})
 {
-  USTDEX_LET_COMPLETIONS(auto(_completions) = Completions())
+  USTDEX_LET(auto _completions = Completions())
   {
-    USTDEX_LET_COMPLETIONS(auto(_extra) = ExtraSigs())
+    USTDEX_LET(auto _extra = ExtraSigs())
     {
       _transform_one<ValueFn, ErrorFn, StoppedFn> _tfx1{_value_fn, _error_fn, _stopped_fn};
       return concat_completion_signatures(_completions.apply(_transform_all_fn{_tfx1}), _extra);

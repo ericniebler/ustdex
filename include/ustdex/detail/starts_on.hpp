@@ -101,9 +101,9 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT start_on_t::_sndr_t
   {
     using _sch_sndr   = schedule_result_t<Sch>;
     using _child_sndr = _copy_cvref_t<Self, Sndr>;
-    USTDEX_LET_COMPLETIONS(auto(_sndr_completions) = ustdex::get_completion_signatures<_child_sndr, _env_t<Env>...>())
+    USTDEX_LET(auto _sndr_completions = ustdex::get_completion_signatures<_child_sndr, _env_t<Env>...>())
     {
-      USTDEX_LET_COMPLETIONS(auto(_sch_completions) = ustdex::get_completion_signatures<_sch_sndr, FWD_ENV_T<Env>...>())
+      USTDEX_LET(auto _sch_completions = ustdex::get_completion_signatures<_sch_sndr, FWD_ENV_T<Env>...>())
       {
         return _sndr_completions + transform_completion_signatures(_sch_completions, _swallow_transform());
       }

@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#if !defined(USTDEX_ASYNC_PROLOGUE_INCLUDED)
+#if !defined(USTDEX_PROLOGUE_INCLUDED)
 #  error epilogue.cuh included without a prior inclusion of prologue.cuh
 #endif
 
-#undef USTDEX_ASYNC_PROLOGUE_INCLUDED
+#undef USTDEX_PROLOGUE_INCLUDED
 
 USTDEX_PRAGMA_POP()

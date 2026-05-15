@@ -19,10 +19,11 @@
 #define USTDEX_DETAIL_STOP_TOKEN
 
 #include "config.hpp"
+
+#include "atomic.hpp"
 #include "thread.hpp"
 #include "utility.hpp"
 
-#include <atomic>
 #if __has_include(<stop_token>) && __cpp_lib_jthread >= 201911
 #  include <stop_token>
 #endif
@@ -43,7 +44,7 @@ USTDEX_PRAGMA_IGNORE_EDG(20012)
 #  define USTDEX_ASM_THREAD_YIELD (;)
 #endif // ! USTDEX_ARCH(X86_64)
 
-USTDEX_API void _ustdex_thread_yield_processor()
+inline USTDEX_API void _ustdex_thread_yield_processor()
 {
   USTDEX_IF_TARGET(USTDEX_IS_HOST, USTDEX_ASM_THREAD_YIELD)
 }
@@ -88,7 +89,7 @@ protected:
   _inplace_stop_callback_base* _next_      = nullptr;
   _inplace_stop_callback_base** _prev_ptr_ = nullptr;
   bool* _removed_during_callback_          = nullptr;
-  std::atomic<bool> _callback_completed_{false};
+  ustd::atomic<bool> _callback_completed_{false};
 };
 
 struct _spin_wait
@@ -168,7 +169,7 @@ public:
 
   USTDEX_API auto stop_requested() const noexcept -> bool
   {
-    return (_state_.load(std::memory_order_acquire) & _stop_requested_flag) != 0;
+    return (_state_.load(ustd::memory_order_acquire) & _stop_requested_flag) != 0;
   }
 
 private:
@@ -189,7 +190,7 @@ private:
   static constexpr uint8_t _stop_requested_flag = 1;
   static constexpr uint8_t _locked_flag         = 2;
 
-  mutable std::atomic<uint8_t> _state_{0};
+  mutable ustd::atomic<uint8_t> _state_{0};
   mutable _stok::_inplace_stop_callback_base* _callbacks_ = nullptr;
   ustdex::_thread_id _notifying_thread_;
 };
@@ -311,7 +312,7 @@ USTDEX_API inline void _inplace_stop_callback_base::_register_callback() noexcep
 
 USTDEX_API inline inplace_stop_source::~inplace_stop_source()
 {
-  USTDEX_ASSERT((_state_.load(std::memory_order_relaxed) & _locked_flag) == 0, "");
+  USTDEX_ASSERT((_state_.load(ustd::memory_order_relaxed) & _locked_flag) == 0, "");
   USTDEX_ASSERT(_callbacks_ == nullptr, "");
 }
 
@@ -335,7 +336,7 @@ USTDEX_API inline auto inplace_stop_source::request_stop() noexcept -> bool
       _callbacks_->_prev_ptr_ = &_callbacks_;
     }
 
-    _state_.store(_stop_requested_flag, std::memory_order_release);
+    _state_.store(_stop_requested_flag, ustd::memory_order_release);
 
     bool _removed_during_callback_     = false;
     _callbk->_removed_during_callback_ = &_removed_during_callback_;
@@ -345,43 +346,43 @@ USTDEX_API inline auto inplace_stop_source::request_stop() noexcept -> bool
     if (!_removed_during_callback_)
     {
       _callbk->_removed_during_callback_ = nullptr;
-      _callbk->_callback_completed_.store(true, std::memory_order_release);
+      _callbk->_callback_completed_.store(true, ustd::memory_order_release);
     }
 
     _lock();
   }
 
-  _state_.store(_stop_requested_flag, std::memory_order_release);
+  _state_.store(_stop_requested_flag, ustd::memory_order_release);
   return false;
 }
 
 USTDEX_API inline auto inplace_stop_source::_lock() const noexcept -> uint8_t
 {
   _stok::_spin_wait _spin;
-  auto _old_state = _state_.load(std::memory_order_relaxed);
+  auto _old_state = _state_.load(ustd::memory_order_relaxed);
   do
   {
     while ((_old_state & _locked_flag) != 0)
     {
       _spin._wait();
-      _old_state = _state_.load(std::memory_order_relaxed);
+      _old_state = _state_.load(ustd::memory_order_relaxed);
     }
   } while (!_state_.compare_exchange_weak(
-    _old_state, _old_state | _locked_flag, std::memory_order_acquire, std::memory_order_relaxed));
+    _old_state, _old_state | _locked_flag, ustd::memory_order_acquire, ustd::memory_order_relaxed));
 
   return _old_state;
 }
 
 USTDEX_API inline void inplace_stop_source::_unlock(uint8_t _old_state) const noexcept
 {
-  (void) _state_.store(_old_state, std::memory_order_release);
+  (void) _state_.store(_old_state, ustd::memory_order_release);
 }
 
 USTDEX_API inline auto inplace_stop_source::_try_lock_unless_stop_requested(bool _set_stop_requested) const noexcept
   -> bool
 {
   _stok::_spin_wait _spin;
-  auto _old_state = _state_.load(std::memory_order_relaxed);
+  auto _old_state = _state_.load(ustd::memory_order_relaxed);
   do
   {
     while (true)
@@ -398,14 +399,14 @@ USTDEX_API inline auto inplace_stop_source::_try_lock_unless_stop_requested(bool
       else
       {
         _spin._wait();
-        _old_state = _state_.load(std::memory_order_relaxed);
+        _old_state = _state_.load(ustd::memory_order_relaxed);
       }
     }
   } while (!_state_.compare_exchange_weak(
     _old_state,
     _set_stop_requested ? (_locked_flag | _stop_requested_flag) : _locked_flag,
-    std::memory_order_acq_rel,
-    std::memory_order_relaxed));
+    ustd::memory_order_acq_rel,
+    ustd::memory_order_relaxed));
 
   // Lock acquired successfully
   return true;
@@ -466,7 +467,7 @@ USTDEX_API inline void inplace_stop_source::_remove_callback(_stok::_inplace_sto
       // Concurrently executing on another thread.
       // Wait until the other thread finishes executing the callback.
       _stok::_spin_wait _spin;
-      while (!_callbk->_callback_completed_.load(std::memory_order_acquire))
+      while (!_callbk->_callback_completed_.load(ustd::memory_order_acquire))
       {
         _spin._wait();
       }

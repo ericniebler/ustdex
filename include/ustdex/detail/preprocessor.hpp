@@ -220,7 +220,7 @@
 #  define USTDEX_REQUIRES_EXPR_REQUIRES_typename(...) static_cast<ustdex::_tag<__VA_ARGS__>*>(nullptr)
 
 // This macro handles nested `noexcept` requirements
-#  if USTDEX_GCC() && (__GNUC__ < 14)
+#  if USTDEX_GCC() && (USTDEX_GCC_VERSION < 1400)
 // GCC < 14 can't mangle noexcept expressions, so just check that the
 // expression is well-formed.
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70790

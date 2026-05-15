@@ -218,7 +218,7 @@ struct USTDEX_TYPE_VISIBILITY_DEFAULT _cond_t::_sndr_t
   template <class Self, class... Env>
   USTDEX_API static constexpr auto get_completion_signatures()
   {
-    USTDEX_LET_COMPLETIONS(auto(_child_completions) = get_child_completion_signatures<Self, Sndr, Env...>())
+    USTDEX_LET(auto _child_completions = get_child_completion_signatures<Self, Sndr, Env...>())
     {
       return concat_completion_signatures(
         transform_completion_signatures(_child_completions, _either_sig_fn<Pred, Then, Else, Env...>{}),

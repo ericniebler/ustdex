@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-#if defined(USTDEX_ASYNC_PROLOGUE_INCLUDED)
+#if defined(USTDEX_PROLOGUE_INCLUDED)
 #  error multiple inclusion of prologue.cuh
 #endif
 
-#define USTDEX_ASYNC_PROLOGUE_INCLUDED
+#define USTDEX_PROLOGUE_INCLUDED
 
 #include "config.hpp"
 
 USTDEX_PRAGMA_PUSH()
 USTDEX_PRAGMA_IGNORE_GNU("-Wsubobject-linkage")
 USTDEX_PRAGMA_IGNORE_GNU("-Wunused-value")
+USTDEX_PRAGMA_IGNORE_GNU("-Wgnu-zero-variadic-macro-arguments")
 USTDEX_PRAGMA_IGNORE_MSVC(4848) // [[no_unique_address]] prior to C++20 as a vendor extension
 USTDEX_PRAGMA_IGNORE_EDG(attribute_requires_external_linkage)
 
